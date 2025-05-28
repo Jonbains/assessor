@@ -138,16 +138,24 @@ export class AgencyScoringEngine extends ScoringBase {
       );
       
       // Prepare final results
-      return {
+      console.log('[AgencyScoringEngine] Final scores before rounding:', { 
+        overallScore, 
+        dimensionScores, 
+        serviceVulnerabilityScore, 
+        serviceAdaptabilityScore, 
+        adjustedAiScore 
+      });
+      
+      const result = {
         overallScore: Math.round(overallScore),
         dimensionScores: {
-          operational: Math.round(dimensionScores.operational),
-          financial: Math.round(dimensionScores.financial),
-          ai: Math.round(dimensionScores.ai),
+          operational: Math.round(dimensionScores.operational || 0),
+          financial: Math.round(dimensionScores.financial || 0),
+          ai: Math.round(dimensionScores.ai || 0),
           strategic: Math.round(dimensionScores.strategic || 0),
-          serviceVulnerability: Math.round(serviceVulnerabilityScore),
-          serviceAdaptability: Math.round(serviceAdaptabilityScore),
-          adjustedAi: Math.round(adjustedAiScore)
+          serviceVulnerability: Math.round(serviceVulnerabilityScore || 0),
+          serviceAdaptability: Math.round(serviceAdaptabilityScore || 0),
+          adjustedAi: Math.round(adjustedAiScore || 0)
         },
         serviceScores: serviceScoresResult,
         vulnerabilityLevel: scoreCategory,
@@ -157,6 +165,9 @@ export class AgencyScoringEngine extends ScoringBase {
         agencyType: selectedAgencyType,
         assessmentType: this.type
       };
+      
+      console.log('[AgencyScoringEngine] Final result object:', result);
+      return result;
     } catch (error) {
       console.error('[AgencyScoringEngine] Error calculating results:', error);
       return {
@@ -185,17 +196,29 @@ export class AgencyScoringEngine extends ScoringBase {
    */
   weightedCalculateDimensionScore(answers, questions, dimension) {
     if (!questions || questions.length === 0) {
+      console.log(`[AgencyScoringEngine] No questions for dimension: ${dimension}`);
       return 0;
     }
     
+    console.log(`[AgencyScoringEngine] Calculating score for dimension: ${dimension} with ${questions.length} questions`);
+    
     let totalWeightedScore = 0;
     let totalWeight = 0;
+    let answeredQuestions = 0;
     
     questions.forEach(question => {
       const answer = answers[question.id];
       if (answer !== undefined) {
+        answeredQuestions++;
         const weight = question.weight || 1;
-        const score = answer; // Assuming answer is already a score (0-5)
+        
+        // Extract the score properly from the answer object
+        // Answer can be either a direct score value (legacy) or an object with a score property
+        const score = typeof answer === 'object' && answer.score !== undefined ? 
+          answer.score : 
+          (typeof answer === 'number' ? answer : 0);
+        
+        console.log(`[AgencyScoringEngine] Question ${question.id} has answer:`, answer, 'extracted score:', score);
         
         // Convert to percentage (0-100)
         const normalizedScore = (score / 5) * 100;
@@ -205,8 +228,11 @@ export class AgencyScoringEngine extends ScoringBase {
       }
     });
     
+    const dimensionScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
+    console.log(`[AgencyScoringEngine] ${dimension} dimension score: ${dimensionScore.toFixed(2)} (${answeredQuestions}/${questions.length} questions answered)`);
+    
     // Return weighted average
-    return totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
+    return dimensionScore;
   }
   
   /**
@@ -312,21 +338,36 @@ export class AgencyScoringEngine extends ScoringBase {
    * @return {Number} - The overall score (0-100)
    */
   calculateOverallScore(dimensionScores) {
-    let weightSum = 0;
-    let weightedScoreSum = 0;
+    console.log('[AgencyScoringEngine] Calculating overall score with dimension scores:', dimensionScores);
     
-    // Calculate weighted sum of dimension scores
-    Object.keys(dimensionScores).forEach(dimension => {
-      const weight = this.agencyWeights[dimension] || 1;
-      weightSum += weight;
-      weightedScoreSum += dimensionScores[dimension] * weight;
+    // Use the agency-specific weights
+    const weights = this.agencyWeights;
+    console.log('[AgencyScoringEngine] Using dimension weights:', weights);
+    
+    let totalScore = 0;
+    let totalWeight = 0;
+    
+    // Calculate weighted sum
+    Object.keys(weights).forEach(dimension => {
+      if (dimensionScores[dimension] !== undefined) {
+        const dimensionScore = dimensionScores[dimension];
+        const dimensionWeight = weights[dimension];
+        const weightedScore = dimensionScore * dimensionWeight;
+        
+        console.log(`[AgencyScoringEngine] Dimension ${dimension}: score=${dimensionScore.toFixed(2)}, weight=${dimensionWeight}, weighted=${weightedScore.toFixed(2)}`);
+        
+        totalScore += weightedScore;
+        totalWeight += dimensionWeight;
+      } else {
+        console.log(`[AgencyScoringEngine] Warning: Dimension ${dimension} has no score but has weight ${weights[dimension]}`);
+      }
     });
     
-    // Calculate weighted average
-    const overallScore = weightSum > 0 ? weightedScoreSum / weightSum : 0;
+    // Return weighted average
+    const overallScore = totalWeight > 0 ? totalScore / totalWeight : 0;
+    console.log(`[AgencyScoringEngine] Overall score: ${overallScore.toFixed(2)} (totalScore=${totalScore.toFixed(2)}, totalWeight=${totalWeight})`);
     
-    // Round to the nearest integer
-    return Math.round(overallScore);
+    return overallScore;
   }
   
   /**
@@ -561,6 +602,11 @@ export class AgencyScoringEngine extends ScoringBase {
    * @returns {number} - Enhanced overall score (0-100)
    */
   calculateEnhancedOverallScore(dimensionScores, serviceScores, serviceVulnerability, adjustedAiScore) {
+    console.log('[AgencyScoringEngine] Calculating enhanced overall score with inputs:');
+    console.log('- Dimension scores:', dimensionScores);
+    console.log('- Service vulnerability:', serviceVulnerability);
+    console.log('- Adjusted AI score:', adjustedAiScore);
+    
     // Agency-specific weights
     const weights = {
       operational: 0.2,
@@ -569,21 +615,59 @@ export class AgencyScoringEngine extends ScoringBase {
       strategic: 0.1
     };
     
+    // Check that dimension scores exist and log any missing values
+    if (dimensionScores.operational === undefined) {
+      console.warn('[AgencyScoringEngine] Missing operational score, defaulting to 0');
+      dimensionScores.operational = 0;
+    }
+    
+    if (dimensionScores.financial === undefined) {
+      console.warn('[AgencyScoringEngine] Missing financial score, defaulting to 0');
+      dimensionScores.financial = 0;
+    }
+    
+    if (dimensionScores.ai === undefined) {
+      console.warn('[AgencyScoringEngine] Missing AI score, defaulting to 0');
+      dimensionScores.ai = 0;
+    }
+    
+    if (dimensionScores.strategic === undefined) {
+      console.warn('[AgencyScoringEngine] Missing strategic score, defaulting to 0');
+      dimensionScores.strategic = 0;
+    }
+    
+    // Calculate each weighted component separately for better debugging
+    const weightedOperational = dimensionScores.operational * weights.operational;
+    const weightedFinancial = dimensionScores.financial * weights.financial;
+    const weightedAi = adjustedAiScore * weights.ai;
+    const weightedStrategic = dimensionScores.strategic * weights.strategic;
+    
+    console.log(`[AgencyScoringEngine] Weighted components:`);
+    console.log(`- Operational: ${dimensionScores.operational.toFixed(2)} × ${weights.operational} = ${weightedOperational.toFixed(2)}`);
+    console.log(`- Financial: ${dimensionScores.financial.toFixed(2)} × ${weights.financial} = ${weightedFinancial.toFixed(2)}`);
+    console.log(`- AI (adjusted): ${adjustedAiScore.toFixed(2)} × ${weights.ai} = ${weightedAi.toFixed(2)}`);
+    console.log(`- Strategic: ${dimensionScores.strategic.toFixed(2)} × ${weights.strategic} = ${weightedStrategic.toFixed(2)}`);
+    
     // Calculate weighted dimension score
     const weightedDimensionScore = 
-      (dimensionScores.operational * weights.operational) +
-      (dimensionScores.financial * weights.financial) +
-      (adjustedAiScore * weights.ai) +
-      ((dimensionScores.strategic || 0) * weights.strategic);
+      weightedOperational + 
+      weightedFinancial + 
+      weightedAi + 
+      weightedStrategic;
+    
+    console.log(`[AgencyScoringEngine] Total weighted dimension score: ${weightedDimensionScore.toFixed(2)}`);
     
     // Adjust by service vulnerability (agency-specific adjustment)
     const vulnerabilityAdjustment = (100 - serviceVulnerability) * 0.25;
+    console.log(`[AgencyScoringEngine] Vulnerability adjustment: (100 - ${serviceVulnerability}) × 0.25 = ${vulnerabilityAdjustment.toFixed(2)}`);
     
     // Calculate final score
     let finalScore = (weightedDimensionScore * 0.75) + vulnerabilityAdjustment;
+    console.log(`[AgencyScoringEngine] Final score before range check: ${finalScore.toFixed(2)}`);
     
     // Ensure score is within range
     finalScore = Math.max(0, Math.min(100, finalScore));
+    console.log(`[AgencyScoringEngine] Final enhanced overall score: ${finalScore.toFixed(2)}`);
     
     return finalScore;
   }
