@@ -104,6 +104,9 @@ export class ServicesStep extends StepBase {
     afterRender(container) {
         console.log('[ServicesStep] afterRender called');
         
+        // Setup revenue selector
+        this.setupRevenueSelector(container);
+        
         const selectorContainer = container.querySelector('#services-selector-container');
         
         if (!selectorContainer) {
@@ -133,9 +136,9 @@ export class ServicesStep extends StepBase {
             
             // Try to get services from various possible locations
             let servicesObj = this.assessment.config.services || 
-                             (this.assessment.config.questions && this.assessment.config.questions.services) || 
-                             (this.assessment.config.questions && this.assessment.config.questions.questions && 
-                              this.assessment.config.questions.questions.services);
+                              (this.assessment.config.questions && this.assessment.config.questions.services) || 
+                              (this.assessment.config.questions && this.assessment.config.questions.questions && 
+                               this.assessment.config.questions.questions.services);
             
             if (typeof servicesObj === 'object' && servicesObj !== null && !Array.isArray(servicesObj)) {
                 console.log('[ServicesStep] Converting services object to array');
@@ -151,8 +154,6 @@ export class ServicesStep extends StepBase {
         }
         
         console.log(`[ServicesStep] Found ${services.length} services to render:`, services);
-        
-
         
         // Get previously selected services and revenue allocation from state
         let selectedServices = this.assessment.state.selectedServices || [];
@@ -185,27 +186,21 @@ export class ServicesStep extends StepBase {
             serviceCard.style.padding = '15px';
             serviceCard.style.marginBottom = '15px';
             
-            // Service name/label section
+            // Create service label
             const serviceLabel = document.createElement('div');
             serviceLabel.className = 'service-label';
-            serviceLabel.style.display = 'flex';
-            serviceLabel.style.alignItems = 'center';
-            serviceLabel.style.marginBottom = '10px';
+            serviceLabel.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold; font-size: 18px; color: #fff;">${service.name}</span>
+                    <span class="revenue-percentage" style="font-weight: bold; color: ${value > 0 ? '#ffff66' : '#666'};">${value}%</span>
+                </div>
+            `;
             
-            // Service name
-            const serviceName = document.createElement('span');
-            serviceName.textContent = service.name;
-            serviceName.style.fontWeight = 'bold';
-            
-            serviceLabel.appendChild(serviceName);
-            
-            // Slider controls section
+            // Create slider controls
             const sliderControls = document.createElement('div');
             sliderControls.className = 'slider-controls';
             sliderControls.style.display = 'flex';
             sliderControls.style.alignItems = 'center';
-            sliderControls.style.justifyContent = 'space-between';
-            sliderControls.style.width = '100%';
             
             // Minus button
             const minusBtn = document.createElement('button');
@@ -265,118 +260,157 @@ export class ServicesStep extends StepBase {
                 serviceRevenue[service.id] = value;
                 this.assessment.state.serviceRevenue = serviceRevenue;
                 
-                // Update the selectedServices array based on non-zero allocation
-                let selectedServices = this.assessment.state.selectedServices || [];
-                
-                if (value > 0) {
-                    // Add to selectedServices if not already present
-                    if (!selectedServices.includes(service.id)) {
-                        selectedServices.push(service.id);
-                        console.log(`[ServicesStep] Added ${service.id} to selectedServices:`, selectedServices);
-                    }
-                } else {
-                    // Remove from selectedServices if present
-                    const index = selectedServices.indexOf(service.id);
-                    if (index !== -1) {
-                        selectedServices.splice(index, 1);
-                        console.log(`[ServicesStep] Removed ${service.id} from selectedServices:`, selectedServices);
-                    }
+                // Update the percentage display
+                const percentageDisplay = serviceCard.querySelector('.revenue-percentage');
+                if (percentageDisplay) {
+                    percentageDisplay.textContent = `${value}%`;
+                    percentageDisplay.style.color = value > 0 ? '#ffff66' : '#666';
                 }
                 
-                // Update the service card class
+                // Update card styling
                 if (value > 0) {
                     serviceCard.classList.add('service-selected');
                 } else {
                     serviceCard.classList.remove('service-selected');
                 }
                 
-                // Update the state
-                this.assessment.state.selectedServices = selectedServices;
-                this.assessment.stateManager.updateState('selectedServices', selectedServices);
-                this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
-            });
-            
-            // Button event listeners
-            minusBtn.addEventListener('click', () => {
-                const newValue = Math.max(0, parseInt(slider.value, 10) - 5);
-                slider.value = newValue;
-                
-                // Update revenue state
-                const serviceRevenue = this.assessment.state.serviceRevenue || {};
-                serviceRevenue[service.id] = newValue;
-                this.assessment.state.serviceRevenue = serviceRevenue;
-                
-                // Update selectedServices array based on non-zero allocation
-                let selectedServices = this.assessment.state.selectedServices || [];
-                
-                if (newValue > 0) {
-                    // Add to selectedServices if not already present
-                    if (!selectedServices.includes(service.id)) {
-                        selectedServices.push(service.id);
-                        console.log(`[ServicesStep] Added ${service.id} to selectedServices:`, selectedServices);
-                    }
-                } else {
-                    // Remove from selectedServices if present
-                    const index = selectedServices.indexOf(service.id);
-                    if (index !== -1) {
-                        selectedServices.splice(index, 1);
-                        console.log(`[ServicesStep] Removed ${service.id} from selectedServices:`, selectedServices);
-                    }
-                }
-                
-                // Update the service card class
-                if (newValue > 0) {
-                    serviceCard.classList.add('service-selected');
-                } else {
-                    serviceCard.classList.remove('service-selected');
-                }
-                
-                // Update the state
-                this.assessment.state.selectedServices = selectedServices;
-                this.assessment.stateManager.updateState('selectedServices', selectedServices);
-                this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
-                
-                // Calculate and update total revenue display
+                // Update total revenue display
                 this.updateTotalRevenueDisplay(serviceRevenue);
             });
             
+            // Plus button increases slider value by 5%
             plusBtn.addEventListener('click', () => {
-                const newValue = Math.min(100, parseInt(slider.value, 10) + 5);
+                const currentValue = parseInt(slider.value, 10);
+                const newValue = Math.min(currentValue + 5, 100);
                 slider.value = newValue;
                 
-                // Update revenue state
-                const serviceRevenue = this.assessment.state.serviceRevenue || {};
-                serviceRevenue[service.id] = newValue;
-                this.assessment.state.serviceRevenue = serviceRevenue;
+                // Trigger input event to update state and UI
+                const inputEvent = new Event('input', { bubbles: true });
+                slider.dispatchEvent(inputEvent);
+            });
+            
+            // Minus button decreases slider value by 5%
+            minusBtn.addEventListener('click', () => {
+                const currentValue = parseInt(slider.value, 10);
+                const newValue = Math.max(currentValue - 5, 0);
+                slider.value = newValue;
                 
-                // Update selectedServices array based on non-zero allocation
-                let selectedServices = this.assessment.state.selectedServices || [];
-                
-                if (newValue > 0) {
-                    // Add to selectedServices if not already present
-                    if (!selectedServices.includes(service.id)) {
-                        selectedServices.push(service.id);
-                        console.log(`[ServicesStep] Added ${service.id} to selectedServices:`, selectedServices);
-                    }
-                }
-                
-                // Update the service card class
-                if (newValue > 0) {
-                    serviceCard.classList.add('service-selected');
-                }
-                
-                // Update the state
-                this.assessment.state.selectedServices = selectedServices;
-                this.assessment.stateManager.updateState('selectedServices', selectedServices);
-                this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
-                
-                // Calculate and update total revenue display
-                this.updateTotalRevenueDisplay(serviceRevenue);
+                // Trigger input event to update state and UI
+                const inputEvent = new Event('input', { bubbles: true });
+                slider.dispatchEvent(inputEvent);
             });
         });
         
-        // Set up event listeners for navigation
-        this.setupEventListeners(container);
+        // Update total revenue display
+        this.updateTotalRevenueDisplay(serviceRevenue);
+        
+        // Add event listeners for nav buttons
+        const nextButton = container.querySelector('#next-button');
+        if (nextButton) {
+            const cleanup = addEvent(nextButton, 'click', this.handleNext.bind(this));
+            this.cleanupListeners.push(cleanup);
+        }
+        
+        const prevButton = container.querySelector('#prev-button');
+        if (prevButton) {
+            const cleanup = addEvent(prevButton, 'click', this.handlePrev.bind(this));
+            this.cleanupListeners.push(cleanup);
+        }
+    }
+
+    /**
+     * Set up the revenue selector input and sliders
+     * @param {Element} container - The container element
+     */
+    setupRevenueSelector(container) {
+        console.log('[ServicesStep] Setting up revenue selector');
+        
+        const revenueInput = container.querySelector('#revenue-input');
+        const revenueFormat = container.querySelector('#revenue-format');
+        const revenueSlider = container.querySelector('#revenue-slider');
+        const revenueDisplay = container.querySelector('#revenue-display');
+        
+        if (!revenueInput || !revenueFormat || !revenueSlider || !revenueDisplay) {
+            console.error('[ServicesStep] Revenue selector elements not found');
+            return;
+        }
+        
+        // Get revenue value from state, or use default
+        const stateRevenue = this.assessment.state.revenue || 1500000;
+        
+        // Set initial values
+        const initialRevenue = stateRevenue || 1500000;
+        const initialValue = initialRevenue / 1000000; // Convert to millions for slider
+        
+        revenueSlider.value = initialValue;
+        revenueInput.value = initialValue;
+        revenueDisplay.textContent = this.formatRevenueDisplay(initialRevenue);
+        
+        // Update state with initial value
+        this.assessment.state.revenue = initialRevenue;
+        
+        // Format revenue for display
+        revenueInput.addEventListener('input', () => {
+            const inputValue = parseFloat(revenueInput.value) || 0;
+            const multiplier = parseInt(revenueFormat.value, 10);
+            const newRevenue = inputValue * multiplier;
+            
+            // Update slider
+            revenueSlider.value = newRevenue / 1000000; // Convert to millions for slider
+            
+            // Update display
+            revenueDisplay.textContent = this.formatRevenueDisplay(newRevenue);
+            
+            // Update state
+            this.assessment.state.revenue = newRevenue;
+            console.log(`[ServicesStep] Revenue updated from input: $${newRevenue}`);
+        });
+        
+        // Handle format change
+        revenueFormat.addEventListener('change', () => {
+            const inputValue = parseFloat(revenueInput.value) || 0;
+            const multiplier = parseInt(revenueFormat.value, 10);
+            const newRevenue = inputValue * multiplier;
+            
+            // Update display
+            revenueDisplay.textContent = this.formatRevenueDisplay(newRevenue);
+            
+            // Update state
+            this.assessment.state.revenue = newRevenue;
+            console.log(`[ServicesStep] Revenue format changed: $${newRevenue}`);
+        });
+        
+        // Handle slider change
+        revenueSlider.addEventListener('input', () => {
+            const sliderValue = parseFloat(revenueSlider.value) || 0;
+            const newRevenue = sliderValue * 1000000; // Convert to dollars
+            
+            // Update input based on format
+            const multiplier = parseInt(revenueFormat.value, 10);
+            revenueInput.value = (newRevenue / multiplier).toFixed(1);
+            
+            // Update display
+            revenueDisplay.textContent = this.formatRevenueDisplay(newRevenue);
+            
+            // Update state
+            this.assessment.state.revenue = newRevenue;
+            console.log(`[ServicesStep] Revenue updated from slider: $${newRevenue}`);
+        });
+    }
+    
+    /**
+     * Format revenue value for display
+     * @param {Number} value - Revenue value in dollars
+     * @return {String} - Formatted revenue string
+     */
+    formatRevenueDisplay(value) {
+        if (value >= 1000000) {
+            return `$${(value / 1000000).toFixed(1)}M`;
+        } else if (value >= 1000) {
+            return `$${(value / 1000).toFixed(1)}K`;
+        } else {
+            return `$${value}`;
+        }
     }
     
     /**
@@ -385,24 +419,36 @@ export class ServicesStep extends StepBase {
      */
     renderNavigation() {
         return `
-            <div class="assessment-navigation">
-                <button class="btn btn-secondary btn-prev">Previous</button>
-                <button class="btn btn-primary btn-next" style="float: right;">Next</button>
+            <div class="step-navigation">
+                <button id="prev-button" class="btn btn-secondary">Previous</button>
+                <button id="next-button" class="btn btn-primary">Next</button>
             </div>
         `;
     }
     
-    // Add event listeners for nav buttons
-    const nextButton = container.querySelector('#next-button');
-    if (nextButton) {
-        const cleanup = addEvent(nextButton, 'click', this.handleNext.bind(this));
-        this.cleanupListeners.push(cleanup);
+    /**
+     * Set up event listeners for this step
+     * @param {Element} container - The step container element
+     */
+    setupEventListeners(container) {
+        // Navigation button handlers
+        const nextButton = container.querySelector('.btn-next');
+        if (nextButton) {
+            const nextClickListener = this.handleNext.bind(this);
+            nextButton.addEventListener('click', nextClickListener);
+            this.cleanupListeners.push(() => nextButton.removeEventListener('click', nextClickListener));
+        }
+        
+        const prevButton = container.querySelector('.btn-prev');
+        if (prevButton) {
+            const prevClickListener = this.handlePrev.bind(this);
+            prevButton.addEventListener('click', prevClickListener);
+            this.cleanupListeners.push(() => prevButton.removeEventListener('click', prevClickListener));
+        }
     }
     
-    const prevButton = container.querySelector('#prev-button');
-    if (prevButton) {
-        const cleanup = addEvent(prevButton, 'click', this.handlePrev.bind(this));
-        this.cleanupListeners.push(cleanup);
+    /**
+     * Clean up event listeners when leaving the step
      */
     cleanupEventListeners() {
         this.cleanupListeners.forEach(cleanup => {
@@ -418,33 +464,22 @@ export class ServicesStep extends StepBase {
      * @param {Object} serviceRevenue - Object containing service revenue allocations
      */
     updateTotalRevenueDisplay(serviceRevenue) {
-        const totalRevenue = Object.values(serviceRevenue || {}).reduce((sum, value) => sum + value, 0);
         const totalDisplay = document.getElementById('total-revenue-display');
+        if (!totalDisplay) return;
         
-        if (totalDisplay) {
-            totalDisplay.textContent = totalRevenue;
-            
-            // Change color based on total
-            if (totalRevenue === 100) {
-                totalDisplay.style.color = '#28a745'; // Green if exactly 100%
-            } else if (totalRevenue > 100) {
-                totalDisplay.style.color = '#dc3545'; // Red if over 100%
-            } else {
-                totalDisplay.style.color = '#007bff'; // Blue otherwise
-            }
-        }
+        // Calculate total revenue percentage
+        const totalRevenue = Object.values(serviceRevenue).reduce((sum, value) => sum + value, 0);
         
-        // Update error message if applicable
-        const errorElement = document.getElementById('services-error');
-        if (errorElement) {
-            if (totalRevenue > 100) {
-                errorElement.textContent = `Total allocation exceeds 100%. Please reduce some allocations.`;
-                errorElement.style.display = 'block';
-            } else if (totalRevenue < 100) {
-                errorElement.style.display = 'none'; // Hide error unless validating on next
-            } else {
-                errorElement.style.display = 'none';
-            }
+        // Update display
+        totalDisplay.textContent = totalRevenue;
+        
+        // Update color based on total
+        if (totalRevenue === 100) {
+            totalDisplay.style.color = '#4caf50'; // Green for exactly 100%
+        } else if (totalRevenue > 100) {
+            totalDisplay.style.color = '#f44336'; // Red for over 100%
+        } else {
+            totalDisplay.style.color = '#ffff66'; // Yellow for under 100%
         }
     }
     
@@ -453,23 +488,17 @@ export class ServicesStep extends StepBase {
      * @return {Boolean} - Whether the step is valid
      */
     validate() {
-        console.log('[ServicesStep] Validating services step');
+        console.log('[ServicesStep] Validating step');
         
-        // Get all revenue sliders
-        const sliders = document.querySelectorAll('.revenue-slider');
-        console.log(`[ServicesStep] Found ${sliders.length} sliders to validate`);
+        // Get the service revenue allocations
+        const serviceRevenue = this.assessment.state.serviceRevenue || {};
         
-        // Get current values for all services
-        const serviceRevenue = {};
+        // Extract selected services (any with non-zero revenue)
         const selectedServices = [];
         let totalRevenue = 0;
         
-        // Loop through sliders and build service revenue object
-        sliders.forEach(slider => {
-            const serviceId = slider.dataset.serviceId;
-            const value = parseInt(slider.value, 10);
-            
-            console.log(`[ServicesStep] Service ${serviceId} has value: ${value}`);
+        Object.entries(serviceRevenue).forEach(([serviceId, value]) => {
+            console.log(`[ServicesStep] Service ${serviceId} has revenue allocation ${value}%`);
             
             serviceRevenue[serviceId] = value;
             totalRevenue += value;
@@ -575,3 +604,6 @@ export class ServicesStep extends StepBase {
         this.cleanupEventListeners();
     }
 }
+
+// Export default
+export default ServicesStep;
