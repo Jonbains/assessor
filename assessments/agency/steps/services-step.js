@@ -3,14 +3,10 @@
  * 
  * Implements the services selection step with integrated revenue allocation
  * for the agency assessment.
- * Integrates with the ServicesSelector component which combines both
- * service selection and revenue allocation in a single step.
  */
 
 import { StepBase } from '../../../core/step-base.js';
 import { addEvent } from '../../../shared/utils/event-manager.js';
-import { formatPercentage } from '../../../shared/utils/formatting-utils.js';
-// ServicesSelector is loaded as a global object via script tag in the HTML
 
 /**
  * ServicesStep class
@@ -28,19 +24,10 @@ export class ServicesStep extends StepBase {
         this.validationRules = {
             selectedServices: [
                 { type: 'required', message: 'Please select at least one service' }
-            ],
-            totalRevenue: [
-                { 
-                    type: 'custom', 
-                    validator: (value) => value === 100,
-                    message: 'Total revenue allocation must equal 100%'
-                }
             ]
         };
         
         this.cleanupListeners = [];
-        this.servicesSelector = null;
-        this.revenueAllocator = null;
     }
     
     /**
@@ -48,20 +35,21 @@ export class ServicesStep extends StepBase {
      * @return {String} - HTML content for the step
      */
     render() {
-        // Create a simplified template that will be populated by the original components
         return `
             <div class="assessment-step services-step">
-                <!-- Container for the combined services and revenue allocation component -->
+                <h2>Select Your Services & Allocate Revenue</h2>
+                <div class="services-instruction">
+                    <div class="instruction-bar" style="background-color: #ffff66; padding: 8px 12px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #000;">Drag sliders to allocate your agency revenue percentage across services</p>
+                    </div>
+                </div>
+                
                 <div id="services-selector-container" class="services-selector-container">
-                    <!-- ServicesSelector will render both service selection and revenue allocation here -->
+                    <!-- Dynamic services content will be inserted here -->
                 </div>
                 
                 <div id="services-error" class="error-message" style="display: none;">
                     Please select at least one service
-                </div>
-                
-                <div id="revenue-error" class="error-message" style="display: none;">
-                    Total revenue allocation must equal 100%
                 </div>
                 
                 ${this.renderNavigation()}
@@ -83,136 +71,265 @@ export class ServicesStep extends StepBase {
             return;
         }
         
-        // We're implementing a simplified version of the services selector directly
-        console.log('[ServicesStep] Implementing simplified services selector');
-        
         // Get the services from the agency assessment config
-        const services = this.assessment.config.services || [];
-        console.log('[ServicesStep] Services:', services);
+        let services = [];
+        
+        // Try all possible locations where services might be defined
+        if (Array.isArray(this.assessment.config.services)) {
+            console.log('[ServicesStep] Found services array in config.services');
+            services = this.assessment.config.services;
+        } else if (this.assessment.config.questions && Array.isArray(this.assessment.config.questions.services)) {
+            console.log('[ServicesStep] Found services array in config.questions.services');
+            services = this.assessment.config.questions.services;
+        } else if (this.assessment.config.questions && this.assessment.config.questions.questions && 
+                   Array.isArray(this.assessment.config.questions.questions.services)) {
+            console.log('[ServicesStep] Found services array in config.questions.questions.services');
+            services = this.assessment.config.questions.questions.services;
+        }
+        
+        // If we still don't have an array, try to extract from an object
+        if (services.length === 0) {
+            console.log('[ServicesStep] No services array found, checking for objects');
+            
+            // Try to get services from various possible locations
+            let servicesObj = this.assessment.config.services || 
+                             (this.assessment.config.questions && this.assessment.config.questions.services) || 
+                             (this.assessment.config.questions && this.assessment.config.questions.questions && 
+                              this.assessment.config.questions.questions.services);
+            
+            if (typeof servicesObj === 'object' && servicesObj !== null && !Array.isArray(servicesObj)) {
+                console.log('[ServicesStep] Converting services object to array');
+                services = Object.values(servicesObj);
+            }
+        }
+        
+        // Final validation to ensure we have services
+        if (services.length === 0) {
+            console.error('[ServicesStep] No services found in the configuration. Debugging config:', this.assessment.config);
+            selectorContainer.innerHTML = '<div class="error-message">No services available. Please check the configuration.</div>';
+            return;
+        }
+        
+        console.log(`[ServicesStep] Found ${services.length} services to render:`, services);
+        
+
         
         // Get previously selected services and revenue allocation from state
-        const selectedServices = this.assessment.state.selectedServices || [];
+        let selectedServices = this.assessment.state.selectedServices || [];
         const serviceRevenue = this.assessment.state.serviceRevenue || {};
         
-        // Create a direct implementation of the services selector
-        let html = `
-            <div class="services-selection">
-                <h3>Select Services</h3>
-                <p>Please select the services your agency provides:</p>
-                <div class="services-list">
-        `;
+        // Initialize HTML container
+        selectorContainer.innerHTML = '';
         
-        // Generate services checkboxes
-        services.forEach(service => {
-            const isChecked = selectedServices.includes(service.id) ? 'checked' : '';
-            html += `
-                <div class="service-item">
-                    <label>
-                        <input type="checkbox" name="service" value="${service.id}" ${isChecked}>
-                        ${service.name}
-                    </label>
-                </div>
-            `;
-        });
+        // Create service selection and slider for each service
+        console.log('[ServicesStep] Starting to create service cards');
         
-        html += `
-                </div>
-            </div>
+        services.forEach((service, index) => {
+            // Make sure service has an id
+            if (!service.id) {
+                console.warn('[ServicesStep] Service without ID:', service);
+                return; // Skip this service
+            }
             
-            <div class="revenue-allocation" style="margin-top: 20px;">
-                <h3>Revenue Allocation</h3>
-                <p>Allocate your revenue across selected services:</p>
-                <div class="revenue-sliders">
-        `;
-        
-        // Generate revenue sliders for selected services
-        selectedServices.forEach(serviceId => {
-            const service = services.find(s => s.id === serviceId) || { name: serviceId };
-            const value = serviceRevenue[serviceId] || 0;
+            console.log(`[ServicesStep] Creating card for service ${index+1}/${services.length}: ${service.name} (ID: ${service.id})`);
+            const isSelected = selectedServices.includes(service.id);
+            const value = serviceRevenue[service.id] || 0;
             
-            html += `
-                <div class="revenue-slider-item" data-service-id="${serviceId}">
-                    <label>${service.name}</label>
-                    <div class="slider-container">
-                        <input type="range" min="0" max="100" value="${value}" class="revenue-slider">
-                        <span class="revenue-value">${value}%</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `
-                </div>
-                <div class="revenue-total">
-                    <p>Total: <span id="revenue-total-value">0</span>%</p>
-                </div>
-            </div>
-        `;
-        
-        // Insert into the container
-        selectorContainer.innerHTML = html;
-        
-        // Setup event handlers
-        const checkboxes = selectorContainer.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                const serviceId = e.target.value;
-                const isChecked = e.target.checked;
+            // Create service card
+            const serviceCard = document.createElement('div');
+            serviceCard.className = 'service-card';
+            serviceCard.className += value > 0 ? ' service-selected' : '';
+            serviceCard.dataset.serviceId = service.id;
+            serviceCard.style.backgroundColor = '#1a1a1a';
+            serviceCard.style.borderRadius = '6px';
+            serviceCard.style.padding = '15px';
+            serviceCard.style.marginBottom = '15px';
+            
+            // Service name/label section
+            const serviceLabel = document.createElement('div');
+            serviceLabel.className = 'service-label';
+            serviceLabel.style.display = 'flex';
+            serviceLabel.style.alignItems = 'center';
+            serviceLabel.style.marginBottom = '10px';
+            
+            // Service name
+            const serviceName = document.createElement('span');
+            serviceName.textContent = service.name;
+            serviceName.style.fontWeight = 'bold';
+            
+            serviceLabel.appendChild(serviceName);
+            
+            // Slider controls section
+            const sliderControls = document.createElement('div');
+            sliderControls.className = 'slider-controls';
+            sliderControls.style.display = 'flex';
+            sliderControls.style.alignItems = 'center';
+            sliderControls.style.justifyContent = 'space-between';
+            sliderControls.style.width = '100%';
+            
+            // Minus button
+            const minusBtn = document.createElement('button');
+            minusBtn.textContent = '-';
+            minusBtn.className = 'slider-btn minus';
+            minusBtn.style.backgroundColor = '#ffff66';
+            minusBtn.style.color = '#000';
+            minusBtn.style.width = '30px';
+            minusBtn.style.height = '30px';
+            minusBtn.style.borderRadius = '4px';
+            minusBtn.style.border = 'none';
+            minusBtn.style.fontWeight = 'bold';
+            minusBtn.style.cursor = 'pointer';
+            
+            // Slider input
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = '100';
+            slider.value = value;
+            slider.className = 'revenue-slider';
+            slider.style.flex = '1';
+            slider.style.margin = '0 10px';
+            slider.dataset.serviceId = service.id;
+            
+            // Plus button
+            const plusBtn = document.createElement('button');
+            plusBtn.textContent = '+';
+            plusBtn.className = 'slider-btn plus';
+            plusBtn.style.backgroundColor = '#ffff66';
+            plusBtn.style.color = '#000';
+            plusBtn.style.width = '30px';
+            plusBtn.style.height = '30px';
+            plusBtn.style.borderRadius = '4px';
+            plusBtn.style.border = 'none';
+            plusBtn.style.fontWeight = 'bold';
+            plusBtn.style.cursor = 'pointer';
+            
+            sliderControls.appendChild(minusBtn);
+            sliderControls.appendChild(slider);
+            sliderControls.appendChild(plusBtn);
+            
+            // Add all elements to the service card
+            serviceCard.appendChild(serviceLabel);
+            serviceCard.appendChild(sliderControls);
+            
+            // Add card to container
+            selectorContainer.appendChild(serviceCard);
+            
+            // No checkbox event listeners needed anymore
+            
+            // Slider event listeners
+            slider.addEventListener('input', () => {
+                // Save revenue value in state (no percentage display to user)
+                const value = parseInt(slider.value, 10);
+                const serviceRevenue = this.assessment.state.serviceRevenue || {};
+                serviceRevenue[service.id] = value;
+                this.assessment.state.serviceRevenue = serviceRevenue;
                 
-                // Update selected services
-                let updatedServices = [...selectedServices];
+                // Update the selectedServices array based on non-zero allocation
+                let selectedServices = this.assessment.state.selectedServices || [];
                 
-                if (isChecked && !updatedServices.includes(serviceId)) {
-                    updatedServices.push(serviceId);
-                } else if (!isChecked && updatedServices.includes(serviceId)) {
-                    updatedServices = updatedServices.filter(id => id !== serviceId);
+                if (value > 0) {
+                    // Add to selectedServices if not already present
+                    if (!selectedServices.includes(service.id)) {
+                        selectedServices.push(service.id);
+                        console.log(`[ServicesStep] Added ${service.id} to selectedServices:`, selectedServices);
+                    }
+                } else {
+                    // Remove from selectedServices if present
+                    const index = selectedServices.indexOf(service.id);
+                    if (index !== -1) {
+                        selectedServices.splice(index, 1);
+                        console.log(`[ServicesStep] Removed ${service.id} from selectedServices:`, selectedServices);
+                    }
                 }
                 
-                // Update state
-                this.assessment.state.selectedServices = updatedServices;
-                this.assessment.stateManager.saveState();
+                // Update the service card class
+                if (value > 0) {
+                    serviceCard.classList.add('service-selected');
+                } else {
+                    serviceCard.classList.remove('service-selected');
+                }
                 
-                // Refresh the component to show/hide revenue sliders
-                this.afterRender(container);
+                // Update the state
+                this.assessment.state.selectedServices = selectedServices;
+                this.assessment.stateManager.updateState('selectedServices', selectedServices);
+                this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
+            });
+            
+            // Button event listeners
+            minusBtn.addEventListener('click', () => {
+                const newValue = Math.max(0, parseInt(slider.value, 10) - 5);
+                slider.value = newValue;
+                
+                // Update revenue state
+                const serviceRevenue = this.assessment.state.serviceRevenue || {};
+                serviceRevenue[service.id] = newValue;
+                this.assessment.state.serviceRevenue = serviceRevenue;
+                
+                // Update selectedServices array based on non-zero allocation
+                let selectedServices = this.assessment.state.selectedServices || [];
+                
+                if (newValue > 0) {
+                    // Add to selectedServices if not already present
+                    if (!selectedServices.includes(service.id)) {
+                        selectedServices.push(service.id);
+                        console.log(`[ServicesStep] Added ${service.id} to selectedServices:`, selectedServices);
+                    }
+                } else {
+                    // Remove from selectedServices if present
+                    const index = selectedServices.indexOf(service.id);
+                    if (index !== -1) {
+                        selectedServices.splice(index, 1);
+                        console.log(`[ServicesStep] Removed ${service.id} from selectedServices:`, selectedServices);
+                    }
+                }
+                
+                // Update the service card class
+                if (newValue > 0) {
+                    serviceCard.classList.add('service-selected');
+                } else {
+                    serviceCard.classList.remove('service-selected');
+                }
+                
+                // Update the state
+                this.assessment.state.selectedServices = selectedServices;
+                this.assessment.stateManager.updateState('selectedServices', selectedServices);
+                this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
+            });
+            
+            plusBtn.addEventListener('click', () => {
+                const newValue = Math.min(100, parseInt(slider.value, 10) + 5);
+                slider.value = newValue;
+                
+                // Update revenue state
+                const serviceRevenue = this.assessment.state.serviceRevenue || {};
+                serviceRevenue[service.id] = newValue;
+                this.assessment.state.serviceRevenue = serviceRevenue;
+                
+                // Update selectedServices array based on non-zero allocation
+                let selectedServices = this.assessment.state.selectedServices || [];
+                
+                if (newValue > 0) {
+                    // Add to selectedServices if not already present
+                    if (!selectedServices.includes(service.id)) {
+                        selectedServices.push(service.id);
+                        console.log(`[ServicesStep] Added ${service.id} to selectedServices:`, selectedServices);
+                    }
+                }
+                
+                // Update the service card class
+                if (newValue > 0) {
+                    serviceCard.classList.add('service-selected');
+                }
+                
+                // Update the state
+                this.assessment.state.selectedServices = selectedServices;
+                this.assessment.stateManager.updateState('selectedServices', selectedServices);
+                this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
             });
         });
         
-        // Setup revenue sliders
-        const sliders = selectorContainer.querySelectorAll('.revenue-slider');
-        const totalDisplay = selectorContainer.querySelector('#revenue-total-value');
-        
-        const updateTotal = () => {
-            let total = 0;
-            const newServiceRevenue = {};
-            
-            sliders.forEach(slider => {
-                const serviceId = slider.closest('.revenue-slider-item').dataset.serviceId;
-                const value = parseInt(slider.value, 10);
-                newServiceRevenue[serviceId] = value;
-                total += value;
-            });
-            
-            totalDisplay.textContent = total;
-            totalDisplay.style.color = Math.abs(total - 100) <= 1 ? 'green' : 'red';
-            
-            // Update state
-            this.assessment.state.serviceRevenue = newServiceRevenue;
-            this.assessment.state.totalRevenue = total;
-            this.assessment.stateManager.saveState();
-        };
-        
-        sliders.forEach(slider => {
-            slider.addEventListener('input', (e) => {
-                const valueDisplay = e.target.nextElementSibling;
-                valueDisplay.textContent = `${e.target.value}%`;
-                updateTotal();
-            });
-        });
-        
-        // Initialize total
-        updateTotal();
-        
-        // Set up event listeners
+        // Set up event listeners for navigation
         this.setupEventListeners(container);
     }
     
@@ -224,7 +341,7 @@ export class ServicesStep extends StepBase {
         return `
             <div class="assessment-navigation">
                 <button class="btn btn-secondary btn-prev">Previous</button>
-                <button class="btn btn-primary btn-next">Next</button>
+                <button class="btn btn-primary btn-next" style="float: right;">Next</button>
             </div>
         `;
     }
@@ -251,7 +368,7 @@ export class ServicesStep extends StepBase {
     }
     
     /**
-     * Clean up event listeners when leaving this step
+     * Clean up event listeners when leaving the step
      */
     cleanupEventListeners() {
         this.cleanupListeners.forEach(cleanup => {
@@ -263,58 +380,86 @@ export class ServicesStep extends StepBase {
     }
     
     /**
+     * Validate the step
+     * @return {Boolean} - Whether the step is valid
+     */
+    validate() {
+        console.log('[ServicesStep] Validating services step');
+        
+        // Get all revenue sliders
+        const sliders = document.querySelectorAll('.revenue-slider');
+        console.log(`[ServicesStep] Found ${sliders.length} sliders to validate`);
+        
+        // Get current values for all services
+        const serviceRevenue = {};
+        const selectedServices = [];
+        let totalRevenue = 0;
+        
+        // Loop through sliders and build service revenue object
+        sliders.forEach(slider => {
+            const serviceId = slider.dataset.serviceId;
+            const value = parseInt(slider.value, 10);
+            
+            console.log(`[ServicesStep] Service ${serviceId} has value: ${value}`);
+            
+            serviceRevenue[serviceId] = value;
+            totalRevenue += value;
+            
+            // Add to selected services if it has a non-zero value
+            if (value > 0) {
+                selectedServices.push(serviceId);
+                console.log(`[ServicesStep] Added ${serviceId} to selected services (non-zero value)`);
+            }
+        });
+        
+        // Save the revenue data to assessment state
+        this.assessment.state.serviceRevenue = serviceRevenue;
+        this.assessment.state.selectedServices = selectedServices;
+        this.assessment.state.totalRevenue = totalRevenue;
+        
+        console.log('[ServicesStep] Services with non-zero allocations:', selectedServices);
+        console.log('[ServicesStep] Service revenue allocations:', serviceRevenue);
+        console.log('[ServicesStep] Total revenue:', totalRevenue);
+        
+        // Check if at least one service is selected
+        if (selectedServices.length === 0) {
+            console.log('[ServicesStep] Validation failed: No services have allocations');
+            const errorElement = document.getElementById('services-error');
+            if (errorElement) {
+                errorElement.style.display = 'block';
+            }
+            return false;
+        }
+        
+        // Make sure we're explicitly setting the selected services based on non-zero allocations
+        console.log('[ServicesStep] Updating assessment state with selected services:', selectedServices);
+        
+        // Force immediate updates to state
+        this.assessment.stateManager.updateState('selectedServices', selectedServices);
+        this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
+        this.assessment.stateManager.updateState('totalRevenue', totalRevenue);
+        
+        // Log current state for debugging
+        console.log('[ServicesStep] Current assessment state:', this.assessment.state);
+        
+        // Always save state before proceeding
+        this.assessment.stateManager.saveState();
+        return true;
+    }
+    
+    /**
      * Handle next button click
      * @param {Event} event - Click event
      */
     handleNext(event) {
         event.preventDefault();
         
-        // Get the current selected services and revenue allocations
-        const selectedServices = this.assessment.state.selectedServices || [];
-        const serviceRevenue = this.assessment.state.serviceRevenue || {};
-        
-        // Validate that at least one service is selected
-        if (selectedServices.length === 0) {
-            const errorElement = document.getElementById('services-error');
-            if (errorElement) {
-                errorElement.style.display = 'block';
-                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            return false;
+        // Validate the step
+        if (this.validate()) {
+            // Navigate to the next step
+            this.onNext();
+            this.assessment.nextStep();
         }
-        
-        // Validate that revenue allocations exist for all selected services
-        const missingRevenue = selectedServices.some(serviceId => {
-            return serviceRevenue[serviceId] === undefined || serviceRevenue[serviceId] === null;
-        });
-        
-        if (missingRevenue) {
-            const errorElement = document.getElementById('revenue-error');
-            if (errorElement) {
-                errorElement.style.display = 'block';
-                errorElement.textContent = 'Please allocate revenue for all selected services.';
-                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            return false;
-        }
-        
-        // Validate that revenue allocations add up to 100%
-        const totalRevenue = Object.values(serviceRevenue).reduce((sum, val) => sum + Number(val), 0);
-        if (Math.abs(totalRevenue - 100) > 0.1) { // Allow a small margin of error for floating point
-            const errorElement = document.getElementById('revenue-error');
-            if (errorElement) {
-                errorElement.style.display = 'block';
-                errorElement.textContent = `Total revenue must equal 100%. Current total: ${totalRevenue.toFixed(1)}%`;
-                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            return false;
-        }
-        
-        // Save the state and proceed to the next step
-        this.assessment.state.totalRevenue = 100; // Set to exactly 100 to avoid precision issues
-        this.assessment.stateManager.saveState();
-        this.assessment.nextStep();
-        return true;
     }
     
     /**
@@ -323,69 +468,8 @@ export class ServicesStep extends StepBase {
      */
     handlePrev(event) {
         event.preventDefault();
+        this.onPrevious();
         this.assessment.previousStep();
-    }
-    
-    /**
-     * Validate the step
-     * @return {Boolean} - True if the step is valid
-     */
-    validate() {
-        console.log('[ServicesStep] Validating step');
-        const selectedServices = this.assessment.state.selectedServices || [];
-        
-        console.log('[ServicesStep] Selected services:', selectedServices);
-        
-        // Check if at least one service is selected
-        if (selectedServices.length === 0) {
-            console.log('[ServicesStep] Validation failed: No services selected');
-            const errorElement = document.getElementById('services-error');
-            if (errorElement) {
-                errorElement.style.display = 'block';
-            }
-            return false;
-        }
-        
-        // Calculate total revenue
-        const serviceRevenue = this.assessment.state.serviceRevenue || {};
-        console.log('[ServicesStep] Service revenue:', serviceRevenue);
-        
-        const totalRevenue = Object.values(serviceRevenue).reduce((sum, val) => sum + Number(val), 0);
-        console.log('[ServicesStep] Total revenue:', totalRevenue);
-        
-        // If services are selected but no revenue is allocated, auto-allocate equally
-        if (totalRevenue === 0 && selectedServices.length > 0) {
-            console.log('[ServicesStep] Auto-allocating revenue equally');
-            const equalShare = Math.floor(100 / selectedServices.length);
-            const remainder = 100 - (equalShare * selectedServices.length);
-            
-            selectedServices.forEach((serviceId, index) => {
-                // Add the remainder to the first service to ensure total is 100%
-                serviceRevenue[serviceId] = equalShare + (index === 0 ? remainder : 0);
-            });
-            
-            // Update state
-            this.assessment.state.serviceRevenue = serviceRevenue;
-            this.assessment.state.totalRevenue = 100;
-            this.assessment.stateManager.saveState();
-            
-            console.log('[ServicesStep] Auto-allocated revenue:', serviceRevenue);
-            return true;
-        }
-        
-        // Check if total revenue equals 100%
-        if (Math.abs(totalRevenue - 100) > 0.1) {
-            console.log('[ServicesStep] Validation failed: Total revenue not 100%');
-            const errorElement = document.getElementById('revenue-error');
-            if (errorElement) {
-                errorElement.style.display = 'block';
-                errorElement.textContent = `Total revenue must equal 100%. Current total: ${totalRevenue.toFixed(1)}%`;
-            }
-            return false;
-        }
-        
-        console.log('[ServicesStep] Validation passed');
-        return true;
     }
     
     /**

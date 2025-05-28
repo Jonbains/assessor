@@ -226,22 +226,54 @@ export class AgencyAssessment extends AssessmentBase {
     getQuestionsForSelectedServices() {
         const questions = [];
         
+        console.log('[AgencyAssessment] Getting questions for selected services');
+        console.log('[AgencyAssessment] Selected services:', this.state.selectedServices);
+        
+        if (!this.state.selectedServices || this.state.selectedServices.length === 0) {
+            console.warn('[AgencyAssessment] No services selected, cannot load service-specific questions');
+            return questions;
+        }
+        
+        // Make sure we have a valid questions configuration
+        if (!this.config.questions) {
+            console.error('[AgencyAssessment] No questions configuration found');
+            return questions;
+        }
+        
+        // Get the questions config - might be nested
+        let questionsConfig = this.config.questions;
+        
+        // If questions config is nested inside itself (from the import structure)
+        if (questionsConfig.questions) {
+            questionsConfig = questionsConfig.questions;
+        }
+        
         // Add core questions
-        if (this.config.questions && this.config.questions.core) {
-            questions.push(...this.config.questions.core);
+        if (questionsConfig.core) {
+            console.log('[AgencyAssessment] Adding core questions:', questionsConfig.core.length);
+            questions.push(...questionsConfig.core);
         }
         
         // Add service-specific questions
-        if (this.config.questions && this.config.questions.serviceSpecific) {
+        if (questionsConfig.serviceSpecific) {
+            console.log('[AgencyAssessment] Available service-specific questions for services:', 
+                Object.keys(questionsConfig.serviceSpecific));
+            
+            // For each selected service, add its questions
             this.state.selectedServices.forEach(serviceId => {
-                const serviceQuestions = this.config.questions.serviceSpecific[serviceId];
+                console.log(`[AgencyAssessment] Looking for questions for service: ${serviceId}`);
+                const serviceQuestions = questionsConfig.serviceSpecific[serviceId];
                 
                 if (Array.isArray(serviceQuestions)) {
+                    console.log(`[AgencyAssessment] Found ${serviceQuestions.length} questions for ${serviceId}`);
                     questions.push(...serviceQuestions);
+                } else {
+                    console.warn(`[AgencyAssessment] No questions found for service: ${serviceId}`);
                 }
             });
         }
         
+        console.log(`[AgencyAssessment] Total questions collected: ${questions.length}`);
         return questions;
     }
     

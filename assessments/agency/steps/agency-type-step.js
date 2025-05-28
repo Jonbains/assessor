@@ -54,6 +54,8 @@ export class AgencyTypeStep extends StepBase {
      * @param {Element} container - The rendered container element
      */
     afterRender(container) {
+        console.log('[AgencyTypeStep] afterRender called');
+        
         // Get the agency type container
         const agencyTypeContainer = container.querySelector('#agency-type-container');
         
@@ -127,21 +129,9 @@ export class AgencyTypeStep extends StepBase {
             // Render the component
             this.agencyTypeSelector.render();
             
-            // Override the Next button to use our validation
-            const nextButton = container.querySelector('.btn-next');
-            if (nextButton) {
-                nextButton.addEventListener('click', () => {
-                    if (this.validate()) {
-                        this.assessment.navigationController.nextStep();
-                    } else {
-                        // Show error message
-                        const errorElement = container.querySelector('#agency-type-error');
-                        if (errorElement) {
-                            errorElement.style.display = 'block';
-                        }
-                    }
-                });
-            }
+            // Set up event listeners for navigation buttons
+            console.log('[AgencyTypeStep] Setting up event listeners');
+            this.setupEventListeners(container);
             
             console.log('AgencyTypeSelector component initialized successfully');
             console.log('Current assessment state:', this.assessment.state);
@@ -197,16 +187,14 @@ export class AgencyTypeStep extends StepBase {
     }
     
     /**
-     * Render the navigation buttons
-     * @return {String} - HTML content for the navigation
+     * Render navigation buttons
+     * @return {String} - HTML for navigation buttons
      */
     renderNavigation() {
-        const isFirstStep = this.assessment.state.currentStep === this.assessment.config.steps[0];
-        
         return `
             <div class="assessment-navigation">
-                ${!isFirstStep ? '<button class="btn btn-secondary btn-prev">Previous</button>' : ''}
-                <button class="btn btn-primary btn-next">NEXT</button>
+                <button class="btn btn-secondary btn-prev">Previous</button>
+                <button class="btn btn-primary btn-next">Next</button>
             </div>
         `;
     }
@@ -274,11 +262,46 @@ export class AgencyTypeStep extends StepBase {
         }
         
         // Pre-select default services based on agency type if configured
+        console.log('[AgencyTypeStep] Looking for default services for agency type:', agencyTypeId);
+        console.log('[AgencyTypeStep] Config structure:', this.assessment.config);
+        
+        // Try different paths to find defaultServices
+        let defaultServices = null;
+        
+        // Path 1: Direct in config
         if (this.assessment.config.defaultServices && 
             this.assessment.config.defaultServices[agencyTypeId]) {
-            this.assessment.state.selectedServices = 
-                [...this.assessment.config.defaultServices[agencyTypeId]];
+            defaultServices = this.assessment.config.defaultServices[agencyTypeId];
+            console.log('[AgencyTypeStep] Found default services in config.defaultServices');
+        }
+        // Path 2: In questions object
+        else if (this.assessment.config.questions && 
+                 this.assessment.config.questions.defaultServices && 
+                 this.assessment.config.questions.defaultServices[agencyTypeId]) {
+            defaultServices = this.assessment.config.questions.defaultServices[agencyTypeId];
+            console.log('[AgencyTypeStep] Found default services in config.questions.defaultServices');
+        }
+        
+        // Set selected services if found
+        if (defaultServices) {
+            this.assessment.state.selectedServices = [...defaultServices];
             console.log('[AgencyTypeStep] Pre-selected services:', this.assessment.state.selectedServices);
+            
+            // Also initialize service revenue with equal distribution
+            const serviceRevenue = {};
+            const equalShare = Math.floor(100 / defaultServices.length);
+            const remainder = 100 - (equalShare * defaultServices.length);
+            
+            defaultServices.forEach((serviceId, index) => {
+                // Add remainder to first service to ensure total of 100%
+                serviceRevenue[serviceId] = equalShare + (index === 0 ? remainder : 0);
+            });
+            
+            this.assessment.state.serviceRevenue = serviceRevenue;
+            this.assessment.state.totalRevenue = 100;
+            console.log('[AgencyTypeStep] Pre-allocated revenue:', serviceRevenue);
+        } else {
+            console.log('[AgencyTypeStep] No default services found for agency type:', agencyTypeId);
         }
         
         // Save state

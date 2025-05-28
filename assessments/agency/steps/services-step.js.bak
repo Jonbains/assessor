@@ -1,0 +1,484 @@
+/**
+ * Assessment Framework - Services Step
+ * 
+ * Implements the services selection step with integrated revenue allocation
+ * for the agency assessment.
+ */
+
+import { StepBase } from '../../../core/step-base.js';
+import { addEvent } from '../../../shared/utils/event-manager.js';
+
+/**
+ * ServicesStep class
+ * Allows users to select their agency services and allocate revenue
+ */
+export class ServicesStep extends StepBase {
+    /**
+     * Constructor for services step
+     * @param {AgencyAssessment} assessment - The parent assessment
+     */
+    constructor(assessment) {
+        super(assessment);
+        
+        // Define validation rules
+        this.validationRules = {
+            selectedServices: [
+                { type: 'required', message: 'Please select at least one service' }
+            ]
+        };
+        
+        this.cleanupListeners = [];
+    }
+    
+    /**
+     * Render the services step
+     * @return {String} - HTML content for the step
+     */
+    render() {
+        return `
+            <div class="assessment-step services-step">
+                <h2>Select Your Services & Allocate Revenue</h2>
+                <div class="services-instruction">
+                    <div class="instruction-bar" style="background-color: #ffff66; padding: 8px 12px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #000;">Drag sliders to allocate your agency revenue percentage across services</p>
+                    </div>
+                </div>
+                
+                <div id="services-selector-container" class="services-selector-container">
+                    <!-- Dynamic services content will be inserted here -->
+                </div>
+                
+                <div id="services-error" class="error-message" style="display: none;">
+                    Please select at least one service
+                </div>
+                
+                ${this.renderNavigation()}
+            </div>
+        `;
+    }
+    
+    /**
+     * After render hook to set up the services selector
+     * @param {Element} container - The rendered container element
+     */
+    afterRender(container) {
+        console.log('[ServicesStep] afterRender called');
+        
+        const selectorContainer = container.querySelector('#services-selector-container');
+        
+        if (!selectorContainer) {
+            console.error('[ServicesStep] Services selector container not found');
+            return;
+        }
+        
+        // Get the services from the agency assessment config
+        const services = this.assessment.config.services || [];
+        console.log('[ServicesStep] Services:', services);
+        
+        // Get previously selected services and revenue allocation from state
+        let selectedServices = this.assessment.state.selectedServices || [];
+        const serviceRevenue = this.assessment.state.serviceRevenue || {};
+        
+        // Initialize HTML container
+        selectorContainer.innerHTML = '';
+        
+        // Create service selection and slider for each service
+        services.forEach(service => {
+            const isSelected = selectedServices.includes(service.id);
+            const value = serviceRevenue[service.id] || 0;
+            
+            // Create service card
+            const serviceCard = document.createElement('div');
+            serviceCard.className = 'service-card';
+            serviceCard.style.backgroundColor = '#1a1a1a';
+            serviceCard.style.borderRadius = '6px';
+            serviceCard.style.padding = '15px';
+            serviceCard.style.marginBottom = '15px';
+            
+            // Service name/label section
+            const serviceLabel = document.createElement('div');
+            serviceLabel.className = 'service-label';
+            serviceLabel.style.display = 'flex';
+            serviceLabel.style.alignItems = 'center';
+            serviceLabel.style.marginBottom = '10px';
+            
+            // Checkbox for selection
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = service.id;
+            checkbox.checked = isSelected;
+            checkbox.style.marginRight = '10px';
+            
+            // Service name
+            const serviceName = document.createElement('span');
+            serviceName.textContent = service.name;
+            serviceName.style.fontWeight = 'bold';
+            
+            serviceLabel.appendChild(checkbox);
+            serviceLabel.appendChild(serviceName);
+            
+            // Slider controls section
+            const sliderControls = document.createElement('div');
+            sliderControls.className = 'slider-controls';
+            sliderControls.style.display = 'flex';
+            sliderControls.style.alignItems = 'center';
+            sliderControls.style.justifyContent = 'space-between';
+            sliderControls.style.width = '100%';
+            
+            // Minus button
+            const minusBtn = document.createElement('button');
+            minusBtn.textContent = '-';
+            minusBtn.className = 'slider-btn minus';
+            minusBtn.style.backgroundColor = '#ffff66';
+            minusBtn.style.color = '#000';
+            minusBtn.style.width = '30px';
+            minusBtn.style.height = '30px';
+            minusBtn.style.borderRadius = '4px';
+            minusBtn.style.border = 'none';
+            minusBtn.style.fontWeight = 'bold';
+            minusBtn.style.cursor = 'pointer';
+            
+            // Slider input
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.min = '0';
+            slider.max = '100';
+            slider.value = value;
+            slider.className = 'revenue-slider';
+            slider.style.flex = '1';
+            slider.style.margin = '0 10px';
+            slider.dataset.serviceId = service.id;
+            
+            // Plus button
+            const plusBtn = document.createElement('button');
+            plusBtn.textContent = '+';
+            plusBtn.className = 'slider-btn plus';
+            plusBtn.style.backgroundColor = '#ffff66';
+            plusBtn.style.color = '#000';
+            plusBtn.style.width = '30px';
+            plusBtn.style.height = '30px';
+            plusBtn.style.borderRadius = '4px';
+            plusBtn.style.border = 'none';
+            plusBtn.style.fontWeight = 'bold';
+            plusBtn.style.cursor = 'pointer';
+            
+            sliderControls.appendChild(minusBtn);
+            sliderControls.appendChild(slider);
+            sliderControls.appendChild(plusBtn);
+            
+            // Add all elements to the service card
+            serviceCard.appendChild(serviceLabel);
+            serviceCard.appendChild(sliderControls);
+            
+            // Add card to container
+            selectorContainer.appendChild(serviceCard);
+            
+            // Event listeners
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    // Add to selected services
+                    selectedServices.push(service.id);
+                } else {
+                    // Remove from selected services
+                    selectedServices = selectedServices.filter(id => id !== service.id);
+                }
+                
+                // Update state
+                this.assessment.state.selectedServices = selectedServices;
+                this.assessment.stateManager.saveState();
+            });
+            
+            // Slider event listeners
+            slider.addEventListener('input', () => {
+                // Save revenue value in state (no percentage display to user)
+                const value = parseInt(slider.value, 10);
+                const serviceRevenue = this.assessment.state.serviceRevenue || {};
+                serviceRevenue[service.id] = value;
+                this.assessment.state.serviceRevenue = serviceRevenue;
+                this.assessment.stateManager.saveState();
+            });
+            
+            // Button event listeners
+            minusBtn.addEventListener('click', () => {
+                const newValue = Math.max(0, parseInt(slider.value, 10) - 5);
+                slider.value = newValue;
+                
+                // Update state
+                const serviceRevenue = this.assessment.state.serviceRevenue || {};
+                serviceRevenue[service.id] = newValue;
+                this.assessment.state.serviceRevenue = serviceRevenue;
+                this.assessment.stateManager.saveState();
+            });
+            
+            plusBtn.addEventListener('click', () => {
+                const newValue = Math.min(100, parseInt(slider.value, 10) + 5);
+                slider.value = newValue;
+                
+                // Update state
+                const serviceRevenue = this.assessment.state.serviceRevenue || {};
+                serviceRevenue[service.id] = newValue;
+                this.assessment.state.serviceRevenue = serviceRevenue;
+                this.assessment.stateManager.saveState();
+            });
+        });
+        
+        // Set up event listeners for navigation
+        this.setupEventListeners(container);
+    }
+    
+    /**
+     * Render navigation buttons
+     * @return {String} - HTML for navigation buttons
+     */
+    renderNavigation() {
+        return `
+            <div class="assessment-navigation">
+                <button class="btn btn-secondary btn-prev">Previous</button>
+                <button class="btn btn-primary btn-next">Next</button>
+            </div>
+        `;
+    }
+    
+    /**
+     * Set up event listeners for this step
+     * @param {Element} container - The step container element
+     */
+    setupEventListeners(container) {
+        // Navigation button handlers
+        const nextButton = container.querySelector('.btn-next');
+        if (nextButton) {
+            const nextClickListener = this.handleNext.bind(this);
+            nextButton.addEventListener('click', nextClickListener);
+            this.cleanupListeners.push(() => nextButton.removeEventListener('click', nextClickListener));
+        }
+        
+        const prevButton = container.querySelector('.btn-prev');
+        if (prevButton) {
+            const prevClickListener = this.handlePrev.bind(this);
+            prevButton.addEventListener('click', prevClickListener);
+            this.cleanupListeners.push(() => prevButton.removeEventListener('click', prevClickListener));
+        }
+    }
+    
+    /**
+     * Clean up event listeners when leaving this step
+     */
+    cleanupEventListeners() {
+        this.cleanupListeners.forEach(cleanup => {
+            if (typeof cleanup === 'function') {
+                cleanup();
+            }
+        
+        // Create service card
+        const serviceCard = document.createElement('div');
+        serviceCard.className = 'service-card';
+        serviceCard.style.backgroundColor = '#1a1a1a';
+        serviceCard.style.borderRadius = '6px';
+        serviceCard.style.padding = '15px';
+        serviceCard.style.marginBottom = '15px';
+        
+        // Service name/label section
+        const serviceLabel = document.createElement('div');
+        serviceLabel.className = 'service-label';
+        serviceLabel.style.display = 'flex';
+        serviceLabel.style.alignItems = 'center';
+        serviceLabel.style.marginBottom = '10px';
+        
+        // Checkbox for selection
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = service.id;
+        checkbox.checked = isSelected;
+        checkbox.style.marginRight = '10px';
+        
+        // Service name
+        const serviceName = document.createElement('span');
+        serviceName.textContent = service.name;
+        serviceName.style.fontWeight = 'bold';
+        
+        serviceLabel.appendChild(checkbox);
+        serviceLabel.appendChild(serviceName);
+        
+        // Slider controls section
+        const sliderControls = document.createElement('div');
+        sliderControls.className = 'slider-controls';
+        sliderControls.style.display = 'flex';
+        sliderControls.style.alignItems = 'center';
+        sliderControls.style.justifyContent = 'space-between';
+        sliderControls.style.width = '100%';
+        
+        // Minus button
+        const minusBtn = document.createElement('button');
+        minusBtn.textContent = '-';
+        minusBtn.className = 'slider-btn minus';
+        minusBtn.style.backgroundColor = '#ffff66';
+        minusBtn.style.color = '#000';
+        minusBtn.style.width = '30px';
+        minusBtn.style.height = '30px';
+        minusBtn.style.borderRadius = '4px';
+        minusBtn.style.border = 'none';
+        minusBtn.style.fontWeight = 'bold';
+        minusBtn.style.cursor = 'pointer';
+        
+        // Slider input
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '100';
+        slider.value = value;
+        slider.className = 'revenue-slider';
+        slider.style.flex = '1';
+        slider.style.margin = '0 10px';
+        slider.dataset.serviceId = service.id;
+        
+        // Plus button
+        const plusBtn = document.createElement('button');
+        plusBtn.textContent = '+';
+        plusBtn.className = 'slider-btn plus';
+        plusBtn.style.backgroundColor = '#ffff66';
+        plusBtn.style.color = '#000';
+        plusBtn.style.width = '30px';
+        plusBtn.style.height = '30px';
+        plusBtn.style.borderRadius = '4px';
+        plusBtn.style.border = 'none';
+        plusBtn.style.fontWeight = 'bold';
+        plusBtn.style.cursor = 'pointer';
+        
+        sliderControls.appendChild(minusBtn);
+        sliderControls.appendChild(slider);
+        sliderControls.appendChild(plusBtn);
+        
+        // Add all elements to the service card
+        serviceCard.appendChild(serviceLabel);
+        serviceCard.appendChild(sliderControls);
+        
+        // Add card to container
+        selectorContainer.appendChild(serviceCard);
+        
+        // Event listeners
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                // Add to selected services
+                selectedServices.push(service.id);
+            } else {
+                // Remove from selected services
+                selectedServices = selectedServices.filter(id => id !== service.id);
+            }
+            
+            // Update state
+            this.assessment.state.selectedServices = selectedServices;
+            this.assessment.stateManager.saveState();
+        });
+        
+        // Slider event listeners
+        slider.addEventListener('input', () => {
+            // Save revenue value in state (no percentage display to user)
+            const value = parseInt(slider.value, 10);
+            const serviceRevenue = this.assessment.state.serviceRevenue || {};
+            serviceRevenue[service.id] = value;
+            this.assessment.state.serviceRevenue = serviceRevenue;
+            this.assessment.stateManager.saveState();
+        });
+        
+        // Button event listeners
+        minusBtn.addEventListener('click', () => {
+            const newValue = Math.max(0, parseInt(slider.value, 10) - 5);
+            slider.value = newValue;
+            
+            // Update state
+            const serviceRevenue = this.assessment.state.serviceRevenue || {};
+            serviceRevenue[service.id] = newValue;
+            this.assessment.state.serviceRevenue = serviceRevenue;
+            this.assessment.stateManager.saveState();
+        });
+        
+        plusBtn.addEventListener('click', () => {
+            const newValue = Math.min(100, parseInt(slider.value, 10) + 5);
+            slider.value = newValue;
+            
+            // Update state
+            const serviceRevenue = this.assessment.state.serviceRevenue || {};
+            serviceRevenue[service.id] = newValue;
+            this.assessment.state.serviceRevenue = serviceRevenue;
+            this.assessment.stateManager.saveState();
+        });
+    });
+    
+    // Set up event listeners for navigation
+    this.setupEventListeners(container);
+}
+
+/**
+ * Validate the step
+ * @return {Boolean} - True if valid, false otherwise
+ */
+validate() {
+    console.log('[ServicesStep] Validating step');
+    
+    // Get the selected services and revenue allocation
+    const selectedServices = this.assessment.state.selectedServices || [];
+    const serviceRevenue = this.assessment.state.serviceRevenue || {};
+    
+    console.log('[ServicesStep] Selected services:', selectedServices);
+    console.log('[ServicesStep] Service revenue:', serviceRevenue);
+    
+    // Check if at least one service is selected
+    if (selectedServices.length === 0) {
+        console.log('[ServicesStep] Validation failed: No services selected');
+        const errorElement = document.getElementById('services-error');
+        if (errorElement) {
+            errorElement.style.display = 'block';
+        }
+        return false;
+    }
+    
+    // Filter selected services to only include those with non-zero slider values
+    let activeServices = [];
+    
+    // Check all services with non-zero allocations and add them to activeServices
+    for (const serviceId in serviceRevenue) {
+        if (serviceRevenue[serviceId] > 0) {
+            activeServices.push(serviceId);
+        }
+    }
+    
+    // If no services have allocations but some are checked, set equal allocations
+    if (activeServices.length === 0 && selectedServices.length > 0) {
+        const equalValue = 50; // Set a default value for each selected service
+        const newRevenue = {};
+        
+        selectedServices.forEach(serviceId => {
+            newRevenue[serviceId] = equalValue;
+            activeServices.push(serviceId);
+        });
+        
+        this.assessment.state.serviceRevenue = newRevenue;
+    } else if (activeServices.length > 0) {
+        // Update selectedServices to match those with allocations
+        this.assessment.state.selectedServices = activeServices;
+    }
+    
+    // Always save state before proceeding
+    this.assessment.stateManager.saveState();
+    return true;
+}
+
+/**
+ * Handle next button click
+ * @param {Event} event - Click event
+ */
+handleNext(event) {
+    event.preventDefault();
+    
+    // Validate the step
+    if (this.validate()) {
+        // Navigate to the next step
+        this.onNext();
+        this.assessment.nextStep();
+    }
+     */
+    onPrevious() {
+        // Clean up event listeners
+        this.cleanupEventListeners();
+    }
+}

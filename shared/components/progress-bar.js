@@ -50,31 +50,30 @@ export class ProgressBar {
         const percentComplete = this.getPercentComplete();
         const currentIndex = this.getCurrentStepIndex();
         
-        // Create a dark-themed container instead of the yellow box
-        let html = `<div class="${this.containerClass}" style="background-color: #111; padding: 15px; margin-bottom: 20px; color: #fff;">`;
+        // Create minimal, professional progress bar container
+        let html = `<div class="${this.containerClass}" style="padding: 0; margin: 0 0 30px 0;">`;
         
-        // Create step labels
-        html += `<div class="progress-steps" style="display: flex; justify-content: space-between; margin-bottom: 10px;">`;
+        // Create dots-style progress indicator
+        html += `<div class="progress-dots" style="display: flex; justify-content: center; align-items: center; gap: 8px;">`;
         
-        this.steps.forEach((step, index) => {
-            const isActive = index === currentIndex;
-            const isCompleted = index < currentIndex;
+        // Only show the essential steps - filter out email and similar utility steps
+        const displayableSteps = this.steps.filter(step => 
+            !['email', 'confirmation'].includes(step.id));
+        
+        displayableSteps.forEach((step, index) => {
+            const isActive = this.steps.indexOf(step) === currentIndex;
+            const isCompleted = this.steps.indexOf(step) < currentIndex;
             
-            // Set color based on status
-            const color = isActive ? '#ffff66' : isCompleted ? '#aaa' : '#666';
-            const fontWeight = isActive ? 'bold' : 'normal';
+            // Set styles based on status
+            const backgroundColor = isActive ? '#ffff66' : isCompleted ? '#444' : '#222';
+            const size = isActive ? '14px' : '10px';
+            const border = isActive ? '2px solid #ffff66' : isCompleted ? '2px solid #444' : '2px solid #222';
             
-            html += `<div class="progress-step ${isActive ? 'active' : ''}" 
-                       style="color: ${color}; font-weight: ${fontWeight}; font-size: 14px;">${step.label || ''}</div>`;
+            // Create dot indicator
+            html += `<div class="progress-dot ${isActive ? 'active' : ''}" 
+                       style="width: ${size}; height: ${size}; border-radius: 50%; 
+                              background-color: ${backgroundColor}; border: ${border};"></div>`;
         });
-        
-        html += `</div>`;
-        
-        // Create progress track (thin dark line)
-        html += `<div class="progress-track" style="height: 4px; background-color: #333; position: relative;">`;
-        
-        // Create progress fill (yellow fill line)
-        html += `<div class="progress-fill" style="height: 100%; width: ${percentComplete}%; background-color: #ffff66;"></div>`;
         
         html += `</div>`;
         html += `</div>`;

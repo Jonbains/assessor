@@ -16,11 +16,17 @@ class ServicesSelector {
    * @param {Object} options.config - Assessment configuration
    */
   constructor(options) {
+    console.log('[ServicesSelector] Initializing with options:', options);
+    
     this.container = options.container;
     this.eventBus = options.eventBus;
     this.engine = options.engine;
     this.state = options.state || {};
     this.config = options.config || {};
+    
+    console.log('[ServicesSelector] Container:', this.container);
+    console.log('[ServicesSelector] State:', this.state);
+    console.log('[ServicesSelector] Config:', this.config);
     
     // Initialize revenue data structure
     this.serviceRevenue = {};
@@ -38,6 +44,8 @@ class ServicesSelector {
     } catch (e) {
       console.warn('[ServicesSelector] Could not load raw values from localStorage:', e);
     }
+    
+    console.log('[ServicesSelector] Initialization complete');
     
     // Bind methods
     this.handleServiceSelection = this.handleServiceSelection.bind(this);

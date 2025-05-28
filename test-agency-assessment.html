@@ -88,8 +88,7 @@
 <body>
     <div class="test-container">
         <div class="test-header">
-            <h1>Agency Assessment Test</h1>
-            <p>This test page allows you to verify the agency assessment functionality.</p>
+            <h1>The Obsolete Agency Assessor</h1>
         </div>
         
         <div id="assessment-container" class="assessment-container">
@@ -246,6 +245,38 @@
         
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', initializeAssessment);
+    </script>
+    <!-- Fix for Next button on first page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Give time for the assessment to initialize
+            setTimeout(function() {
+                // Find the Next button on the first page
+                const nextButton = document.querySelector('.assessment-step.agency-type-step .btn-next');
+                if (nextButton) {
+                    console.log('Found Next button on first page, adding direct click handler');
+                    nextButton.addEventListener('click', function(event) {
+                        console.log('Next button clicked via direct handler');
+                        // Access the assessment instance
+                        const assessmentContainer = document.getElementById('assessment-container');
+                        if (assessmentContainer && assessmentContainer._assessment) {
+                            const assessment = assessmentContainer._assessment;
+                            // Check if an agency type is selected
+                            if (assessment.state.selectedAgencyType) {
+                                console.log('Agency type selected, proceeding to next step');
+                                assessment.nextStep();
+                            } else {
+                                console.log('No agency type selected, showing error');
+                                const errorElement = document.querySelector('#agency-type-error');
+                                if (errorElement) {
+                                    errorElement.style.display = 'block';
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 1000); // Wait 1 second for everything to initialize
+        });
     </script>
 </body>
 </html>

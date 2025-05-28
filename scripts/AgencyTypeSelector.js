@@ -203,15 +203,6 @@ class AgencyTypeSelector {
     // Add agency type options to container
     this.container.appendChild(typesContainer);
     
-    // Add help text
-    const helpText = document.createElement('p');
-    helpText.className = 'agency-type-help';
-    helpText.textContent = 'This will help us tailor the assessment to your agency type.';
-    helpText.style.marginTop = '20px';
-    helpText.style.color = '#888888';
-    helpText.style.fontSize = '14px';
-    this.container.appendChild(helpText);
-    
     // Add divider
     const divider = document.createElement('hr');
     divider.style.margin = '30px 0';
@@ -220,31 +211,7 @@ class AgencyTypeSelector {
     divider.style.backgroundColor = '#333333';
     this.container.appendChild(divider);
     
-    // Add navigation button
-    const nextButton = document.createElement('button');
-    nextButton.className = 'btn-next';
-    nextButton.textContent = 'NEXT';
-    nextButton.style.backgroundColor = '#ffff66';
-    nextButton.style.color = '#111111';
-    nextButton.style.border = 'none';
-    nextButton.style.borderRadius = '4px';
-    nextButton.style.padding = '10px 24px';
-    nextButton.style.cursor = 'pointer';
-    nextButton.style.fontWeight = 'bold';
-    nextButton.style.marginTop = '20px';
-    
-    nextButton.addEventListener('click', () => {
-      if (this.validate()) {
-        // Navigate to next step if engine is available
-        if (this.engine && typeof this.engine.navigateNext === 'function') {
-          this.engine.navigateNext();
-        }
-      } else {
-        alert('Please select an agency type to continue.');
-      }
-    });
-    
-    this.container.appendChild(nextButton);
+    // Next button removed - using the one from the assessment navigation instead
   }
 }
 
