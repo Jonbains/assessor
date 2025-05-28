@@ -1,0 +1,955 @@
+/**
+ * Obsolete Theme Styling
+ * 
+ * Dark theme with yellow accent for Agency Assessment Framework
+ */
+
+:root {
+  /* Core brand colors */
+  --color-background: #141414;
+  --color-background-light: #222222;
+  --color-background-medium: #2a2a2a;
+  --color-background-card: #1c1c1c;
+  
+  /* Grays derived from brand black */
+  --color-gray-100: #333333;
+  --color-gray-200: #444444;
+  --color-gray-300: #555555;
+  --color-gray-400: #666666;
+  --color-gray-500: #888888;
+  --color-gray-600: #aaaaaa;
+  --color-gray-700: #cccccc;
+  --color-gray-800: #e0e0e0;
+  --color-gray-900: #f0f0f0;
+  
+  /* Brand yellow and variations */
+  --color-accent: #ffff66;
+  --color-accent-light: #ffffaa;
+  --color-accent-lighter: #ffffcc;
+  --color-accent-bright: #ffff33;
+  --color-accent-dim: #cccc44;
+  --color-accent-muted: rgba(255, 255, 102, 0.6);
+  --color-accent-subtle: rgba(255, 255, 102, 0.2);
+  
+  /* Text colors */
+  --color-text: #f0f0f0;
+  --color-text-muted: #cccccc;
+  --color-text-dim: #aaaaaa;
+  
+  /* Border colors */
+  --color-border: #333333;
+  --color-border-light: #444444;
+  --color-border-accent: #aaaa33;
+  
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  
+  /* Effects */
+  --shadow-standard: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+
+/* Basic Styling */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-primary);
+}
+
+.assessment-container {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-primary);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 auto;
+  box-shadow: var(--shadow-standard);
+}
+
+.assessment-step-content {
+  padding: 30px;
+  border-radius: 0 0 8px 8px;
+  background-color: var(--color-background);
+}
+
+/* Typography */
+.assessment-step-title {
+  color: var(--color-accent);
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.assessment-step-description {
+  color: var(--color-text);
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 30px;
+}
+
+.assessment-question-meta {
+  margin-bottom: 10px;
+}
+
+.assessment-question-dimension {
+  display: inline-block;
+  background-color: var(--color-background-light);
+  color: var(--color-accent);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 15px;
+  border: 1px solid var(--color-accent);
+}
+
+.assessment-question-text {
+  font-size: 18px;
+  line-height: 1.5;
+  margin-bottom: 25px;
+  color: var(--color-text);
+}
+
+.assessment-question-progress {
+  color: var(--color-accent-light);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Progress Bar */
+.assessment-progress {
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.assessment-progress-bar, .assessment-progress-fill {
+  height: 100%;
+  background-color: var(--color-accent); /* Yellow accent color */
+  transition: width 0.3s ease;
+}
+
+.assessment-progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding: 0 10px;
+}
+
+.assessment-progress-step {
+  color: var(--color-text);
+  font-size: 14px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.assessment-progress-step.active {
+  color: var(--color-accent);
+  font-weight: bold;
+  opacity: 1;
+}
+
+/* Options Styling */
+.assessment-options {
+  margin-bottom: 30px;
+}
+
+.assessment-option {
+  position: relative;
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.assessment-option:hover {
+  border-color: var(--color-accent-light);
+  box-shadow: 0 0 0 1px var(--color-accent-light);
+}
+
+.assessment-option.assessment-option-selected {
+  border-color: var(--color-accent);
+  background-color: rgba(255, 204, 0, 0.1);
+}
+
+.assessment-option input[type="radio"],
+.assessment-option input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.assessment-option-content {
+  position: relative;
+  padding-left: 30px;
+}
+
+.assessment-option-content:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  background-color: var(--color-background);
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+}
+
+.assessment-option input[type="radio"] ~ .assessment-option-content:before {
+  border-radius: 50%;
+}
+
+.assessment-option input[type="checkbox"] ~ .assessment-option-content:before {
+  border-radius: 4px;
+}
+
+.assessment-option.assessment-option-selected .assessment-option-content:after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 9px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+}
+
+.assessment-option input[type="checkbox"] ~ .assessment-option-content.assessment-option-selected:after {
+  border-radius: 2px;
+}
+
+.assessment-option-label {
+  display: block;
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.assessment-option-description {
+  color: var(--color-text);
+  font-size: 14px;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Buttons */
+.assessment-button {
+  background-color: var(--color-accent);
+  color: #000000;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.assessment-button:hover {
+  background-color: var(--color-accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.assessment-button:disabled {
+  background-color: var(--color-border);
+  color: var(--color-text);
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.assessment-button-secondary {
+  background-color: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.assessment-button-secondary:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: transparent;
+}
+
+.assessment-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+/* Range Slider */
+.assessment-range-container {
+  margin-bottom: 30px;
+}
+
+.assessment-range {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--color-background-light);
+  outline: none;
+  margin: 15px 0;
+}
+
+.assessment-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  border: 2px solid var(--color-background);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.assessment-range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  border: 2px solid var(--color-background);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.assessment-range-value {
+  color: var(--color-accent);
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.assessment-range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.assessment-range-label {
+  color: var(--color-text);
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Results Styling */
+.assessment-results {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-md);
+}
+
+.assessment-results-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+  position: relative;
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.assessment-results-powered-by {
+  font-size: 14px;
+  color: var(--color-text-dim);
+  margin-top: var(--space-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.assessment-results-title {
+  color: var(--color-accent);
+  font-size: 32px;
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-sm);
+  letter-spacing: -0.5px;
+  position: relative;
+}
+
+.assessment-results-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background-color: var(--color-accent);
+}
+
+.assessment-results-subtitle {
+  color: var(--color-text-muted);
+  font-size: 16px;
+  margin-bottom: var(--space-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Overall score showcase */
+.assessment-results-overall {
+  background-color: var(--color-background-card);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+  text-align: center;
+  border: 1px solid var(--color-gray-100);
+  box-shadow: var(--shadow-elevated);
+  position: relative;
+  overflow: hidden;
+}
+
+.assessment-results-overall::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, var(--color-accent-bright), var(--color-accent-light));
+}
+
+.assessment-results-score-container {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: var(--space-sm);
+}
+
+.assessment-results-score {
+  font-size: 72px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.assessment-results-scale {
+  font-size: 28px;
+  color: var(--color-text-dim);
+  margin-left: var(--space-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.assessment-results-level {
+  font-size: 24px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-sm);
+}
+
+.assessment-results-score-label {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-dim);
+  margin-bottom: var(--space-lg);
+}
+
+.assessment-results-interpretation {
+  color: var(--color-accent-light);
+  font-size: 16px;
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--color-gray-100);
+  padding-top: var(--space-md);
+}
+
+/* Business impact styling */
+.assessment-impact-card {
+  display: flex;
+  background-color: var(--color-background-medium);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  position: relative;
+  border-left: 4px solid var(--color-accent);
+  box-shadow: var(--shadow-standard);
+}
+
+.assessment-impact-icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  margin-right: var(--space-lg);
+  background-color: var(--color-accent-subtle);
+  border-radius: 50%;
+}
+
+.assessment-impact-icon::before {
+  content: '$';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+}
+
+.assessment-impact-content {
+  flex: 1;
+}
+
+.assessment-impact-metric {
+  font-size: 32px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+  margin-bottom: var(--space-xs);
+}
+
+.assessment-impact-label {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.assessment-impact-desc {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Section titles */
+.assessment-results-section {
+  margin-bottom: var(--space-xxl);
+  background-color: var(--color-background-card);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-gray-100);
+  box-shadow: var(--shadow-standard);
+}
+
+.assessment-results-section-title {
+  color: var(--color-accent);
+  font-size: 22px;
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-lg);
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--color-gray-100);
+  display: flex;
+  align-items: center;
+}
+
+.assessment-results-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-accent);
+  margin-right: var(--space-sm);
+  transform: rotate(45deg);
+}
+
+.assessment-results-subsection-title {
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+  margin: var(--space-lg) 0 var(--space-md);
+  position: relative;
+  padding-left: var(--space-lg);
+}
+
+.assessment-results-subsection-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 2px;
+  background-color: var(--color-accent);
+}
+
+/* Dimension bars */
+.assessment-results-dimensions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.assessment-results-dimension {
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-background-medium);
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid var(--color-accent);
+}
+
+.assessment-results-dimension-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.assessment-results-dimension-name {
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+  font-size: 15px;
+}
+
+.assessment-results-dimension-score {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+  font-size: 18px;
+}
+
+.assessment-results-dimension-bar {
+  height: 8px;
+  background-color: var(--color-gray-100);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.assessment-results-dimension-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--color-accent-dim), var(--color-accent));
+  border-radius: 4px;
+  position: relative;
+  transition: width 1s ease-in-out;
+}
+
+/* Chart containers */
+.assessment-dimension-radar-container,
+.assessment-vulnerability-container {
+  background-color: var(--color-background-card);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+  box-shadow: var(--shadow-elevated);
+  border: 1px solid var(--color-gray-100);
+  position: relative;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.assessment-dimension-radar-container::before,
+.assessment-vulnerability-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, var(--color-accent-dim), var(--color-accent), var(--color-accent-light));
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+}
+
+.chart-title {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  color: var(--color-accent);
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+  z-index: 5;
+}
+
+.chart-legend {
+  position: absolute;
+  bottom: var(--space-md);
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  z-index: 5;
+}
+
+/* Canvas styles for better visualization */
+#dimension-radar-chart,
+#service-vulnerability-chart {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto !important;
+  z-index: 2;
+}
+
+/* Service table styling */
+.assessment-service-table-container {
+  margin-top: var(--space-xl);
+  overflow: auto;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-standard);
+  border: 1px solid var(--color-gray-100);
+  margin-bottom: var(--space-xl);
+}
+
+.assessment-service-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+  background-color: var(--color-background-card);
+  font-size: 14px;
+}
+
+.assessment-service-table th {
+  background-color: var(--color-background-medium);
+  color: var(--color-accent);
+  text-align: left;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 2px solid var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.assessment-service-table td {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-gray-100);
+  color: var(--color-text);
+  transition: background-color 0.2s;
+}
+
+.assessment-service-table tr:hover td {
+  background-color: var(--color-background-medium);
+}
+
+.assessment-service-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Priority indicators */
+.priority-high {
+  color: var(--color-accent-bright);
+  font-weight: var(--font-weight-bold);
+}
+
+.priority-medium {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+.priority-low {
+  color: var(--color-accent-dim);
+}
+
+/* Recommendations */
+.assessment-recommendations-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.assessment-recommendation {
+  background-color: var(--color-background-card);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  border-left: 4px solid var(--color-accent);
+  box-shadow: var(--shadow-standard);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.assessment-recommendation:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.assessment-recommendation-tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--color-accent);
+  color: var(--color-background);
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
+  padding: 4px 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 0 0 0 var(--border-radius-sm);
+}
+
+.assessment-recommendation-title {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-md);
+  font-size: 17px;
+  padding-top: var(--space-md);
+  border-bottom: 1px solid var(--color-gray-100);
+  padding-bottom: var(--space-sm);
+}
+
+.assessment-recommendation-text {
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  flex: 1;
+  font-size: 15px;
+}
+
+.assessment-recommendation-action {
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-gray-100);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent-light);
+  font-size: 14px;
+}
+
+/* Email Step */
+.assessment-form-field {
+  margin-bottom: 20px;
+}
+
+.assessment-form-label {
+  display: block;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.assessment-form-input {
+  width: 100%;
+  padding: 10px 15px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background-light);
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.assessment-form-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.2);
+}
+
+.assessment-form-error {
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* Dark theme for Chart.js */
+#dimension-radar-chart,
+#service-vulnerability-chart {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+}
+
+/* Action Plan Timeline */
+.assessment-action-plan-timeline {
+  position: relative;
+  margin-top: var(--space-xl);
+  padding-left: 32px;
+}
+
+.assessment-action-plan-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 15px;
+  width: 2px;
+  background-color: var(--color-gray-200);
+}
+
+.assessment-action-plan-item {
+  position: relative;
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+}
+
+.assessment-action-plan-marker {
+  position: absolute;
+  left: -32px;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 0 0 4px var(--color-background-dark);
+}
+
+.assessment-action-plan-marker span {
+  color: var(--color-background-dark);
+  font-weight: var(--font-weight-bold);
+  font-size: 16px;
+}
+
+.assessment-action-plan-content {
+  background-color: var(--color-background-medium);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-standard);
+}
+
+.assessment-action-plan-timeframe {
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-accent);
+  margin-bottom: var(--space-sm);
+}
+
+.assessment-action-plan-title {
+  margin: 0 0 var(--space-sm);
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.assessment-action-plan-desc {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: var(--space-md);
+}
+
+.assessment-action-plan-impact {
+  font-size: 13px;
+  color: var(--color-text-dim);
+}
+
+.assessment-action-plan-impact span {
+  color: var(--color-accent-light);
+  font-weight: var(--font-weight-medium);
+}
