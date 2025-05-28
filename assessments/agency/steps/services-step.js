@@ -44,6 +44,41 @@ export class ServicesStep extends StepBase {
                     </div>
                 </div>
                 
+                <div class="revenue-input-section" style="margin-bottom: 25px; padding: 20px; background-color: #2a2a2a; border-radius: 8px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #fff;">Annual Agency Revenue</h3>
+                    <p style="margin-bottom: 15px; color: #ddd;">Please enter your agency's annual revenue to help us calculate your valuation metrics.</p>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <div style="position: relative; flex: 1;">
+                            <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999;">$</span>
+                            <input type="text" id="revenue-input" 
+                                   style="width: 100%; padding: 10px 10px 10px 30px; font-size: 18px; border: 1px solid #444; 
+                                          border-radius: 4px; background-color: #333; color: #fff;" 
+                                   placeholder="Enter annual revenue" />
+                        </div>
+                        
+                        <div style="margin-left: 10px;">
+                            <select id="revenue-format" style="padding: 10px; font-size: 18px; background-color: #333; color: #fff; border: 1px solid #444; border-radius: 4px;">
+                                <option value="1">Exact</option>
+                                <option value="1000">Thousands</option>
+                                <option value="1000000" selected>Millions</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="color: #aaa; font-size: 14px;">$100K</span>
+                            <span style="color: #aaa; font-size: 14px;">$100M+</span>
+                        </div>
+                        <input type="range" id="revenue-slider" min="0.1" max="100" step="0.1" value="1.5"
+                               style="width: 100%; accent-color: #ffff66;" />
+                        <div style="text-align: center; margin-top: 5px;">
+                            <span id="revenue-display" style="font-weight: bold; color: #ffff66; font-size: 16px;">$1,500,000</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="services-selector-container" class="services-selector-container">
                     <!-- Dynamic services content will be inserted here -->
                 </div>
@@ -357,29 +392,17 @@ export class ServicesStep extends StepBase {
         `;
     }
     
-    /**
-     * Set up event listeners for this step
-     * @param {Element} container - The step container element
-     */
-    setupEventListeners(container) {
-        // Navigation button handlers
-        const nextButton = container.querySelector('.btn-next');
-        if (nextButton) {
-            const nextClickListener = this.handleNext.bind(this);
-            nextButton.addEventListener('click', nextClickListener);
-            this.cleanupListeners.push(() => nextButton.removeEventListener('click', nextClickListener));
-        }
-        
-        const prevButton = container.querySelector('.btn-prev');
-        if (prevButton) {
-            const prevClickListener = this.handlePrev.bind(this);
-            prevButton.addEventListener('click', prevClickListener);
-            this.cleanupListeners.push(() => prevButton.removeEventListener('click', prevClickListener));
-        }
+    // Add event listeners for nav buttons
+    const nextButton = container.querySelector('#next-button');
+    if (nextButton) {
+        const cleanup = addEvent(nextButton, 'click', this.handleNext.bind(this));
+        this.cleanupListeners.push(cleanup);
     }
     
-    /**
-     * Clean up event listeners when leaving the step
+    const prevButton = container.querySelector('#prev-button');
+    if (prevButton) {
+        const cleanup = addEvent(prevButton, 'click', this.handlePrev.bind(this));
+        this.cleanupListeners.push(cleanup);
      */
     cleanupEventListeners() {
         this.cleanupListeners.forEach(cleanup => {

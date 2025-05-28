@@ -96,21 +96,21 @@ export class ResultsStep extends StepBase {
             scoreMessage = 'Your agency has a solid foundation but has areas to improve.';
         } else if (overallScore >= 40) {
             scoreCategory = 'fair';
-            scoreMessage = 'Your agency has significant vulnerabilities that need addressing.';
+            scoreMessage = 'Your agency has significant vulnerabilities that should be addressed.';
         } else {
             scoreCategory = 'critical';
-            scoreMessage = 'Your agency faces critical AI disruption risks requiring immediate action.';
+            scoreMessage = 'Your agency faces critical AI disruption risks that require immediate attention.';
         }
         
-        // Format the score for display
-        const formattedScore = Math.round(overallScore);
-        
-        // Generate the HTML for the score card
         return `
-            <div class="summary-score ${scoreCategory}">
-                <div class="score-value">${formattedScore}</div>
-                <div class="score-label">AI Readiness Score</div>
-                <div class="score-message">${scoreMessage}</div>
+            <div class="summary-score">
+                <div class="score-display ${scoreCategory}">
+                    <span class="score-value">${Math.round(overallScore)}</span>
+                    <span class="score-label">Overall Score</span>
+                </div>
+                <div class="score-message">
+                    <p><strong>${scoreMessage}</strong></p>
+                </div>
             </div>
         `;
     }
@@ -121,14 +121,41 @@ export class ResultsStep extends StepBase {
      * @return {String} - HTML for the complete dashboard
      */
     generateDashboardHTML(results) {
-        // Get valuation dashboard data
-        const dashboardData = this.valuationDashboard.generateDashboard(
-            results, 
-            {
-                theme: 'dark',
-                showAllSections: true
-            }
-        );
+        console.log('[ResultsStep] Generating dashboard with results structure:', results);
+        
+        // Map the scoring engine result format to the format expected by the ValuationDashboard
+        // The scoring engine returns: overallScore, dimensionScores, serviceScores, etc.
+        // But the dashboard expects a slightly different structure
+        const assessmentData = {
+            // Map dimension scores to the format expected by the dashboard
+            scores: {
+                overall: results.overallScore || 0,
+                operational: results.dimensionScores?.operational || 0,
+                financial: results.dimensionScores?.financial || 0,
+                ai: results.dimensionScores?.ai || 0,
+                strategic: results.dimensionScores?.strategic || 0
+            },
+            // Service scores directly from the results
+            serviceScores: results.serviceScores || {},
+            // All dimension scores for additional metrics
+            dimensionScores: results.dimensionScores || {},
+            // Pass additional metrics that might be needed
+            serviceVulnerability: results.dimensionScores?.serviceVulnerability || 0,
+            serviceAdaptability: results.dimensionScores?.serviceAdaptability || 0,
+            adjustedAiScore: results.dimensionScores?.adjustedAi || 0,
+            vulnerabilityLevel: results.vulnerabilityLevel || '',
+            insights: results.insights || [],
+            
+            // Additional assessment data
+            revenue: this.assessment.state.revenue,
+            selectedServices: this.assessment.state.selectedServices || [],
+            serviceRevenue: this.assessment.state.serviceRevenue || {}
+        };
+        
+        console.log('[ResultsStep] Mapped assessment data for dashboard:', assessmentData);
+        
+        // Generate dashboard with the properly mapped data
+        const dashboardData = this.valuationDashboard.generateDashboard(assessmentData);
         
         // Use the complete dashboard HTML that already contains all formatted sections
         return `
@@ -183,37 +210,14 @@ export class ResultsStep extends StepBase {
      * Clean up event listeners when leaving this step
      */
     cleanupEventListeners() {
-        this.cleanupListeners.forEach(cleanup => cleanup());
-        this.cleanupListeners = [];
-    }
-    
-    /**
-     * Handle download report button click
-     */
-    handleDownloadReport() {
-        console.log('[ResultsStep] Generating PDF report');
-        
-        const results = this.assessment.state.results;
-        if (!results) {
-            console.error('[ResultsStep] No results to generate PDF report');
-            alert('No assessment results available to generate a report.');
-            return;
-        }
-        
-        // Use the export manager if available, otherwise show a message
-        if (this.assessment.exportManager) {
-            this.assessment.exportManager.exportToPDF(results);
-        } else {
-            console.error('[ResultsStep] Export manager not available');
-            alert('PDF export functionality is not available.');
-        }
-    }
-    
-    /**
-     * Handle download database button click
-     */
-    handleDownloadData() {
-        console.log('[ResultsStep] Downloading assessment data');
+
+/**
+ * Render the results step
+ * @return {String} - HTML content for the step
+ */
+render() {
+    const { state } = this.assessment;
+    const results = state.results || {};
         
         // Create a downloadable JSON file of the entire assessment state
         const dataStr = JSON.stringify(this.assessment.state, null, 2);
@@ -231,7 +235,7 @@ export class ResultsStep extends StepBase {
         downloadLink.click();
         document.body.removeChild(downloadLink);
     }
-    
+
     /**
      * Handle restart assessment button click
      */
@@ -241,6 +245,7 @@ export class ResultsStep extends StepBase {
             this.assessment.reset();
             this.assessment.startStep('intro');
         }
+        this.assessment.resetAssessment();
     }
     
     /**

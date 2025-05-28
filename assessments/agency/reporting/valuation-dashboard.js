@@ -3,8 +3,27 @@
  * Generates M&A valuation and EBITDA-focused dashboard components
  */
 
-// Import valuation calculation functions
+// Import valuation calculation functions and recommendation engine
 import ValuationCalculations from '../scoring/valuation-calculations.js';
+import { ServiceRecommendations } from '../recommendations/service-recommendations.js';
+import AgencyRecommendationsEngine from '../recommendations/recommendations-engine.js';
+
+// Helper functions to replace missing imports
+const formatMoney = (amount) => {
+    if (!amount) return '$0';
+    return '$' + amount.toLocaleString('en-US');
+};
+
+const formatPercentage = (value) => {
+    if (value === undefined || value === null) return '0%';
+    return Math.round(value) + '%';
+};
+
+const addEvent = (element, eventType, handler) => {
+    if (!element) return () => {};
+    element.addEventListener(eventType, handler);
+    return () => element.removeEventListener(eventType, handler);
+};
 
 export class ValuationDashboard {
     /**
@@ -69,19 +88,25 @@ export class ValuationDashboard {
         
         const scores = assessmentData.scores || {};
         const services = assessmentData.serviceScores || {};
+        const selectedServices = assessmentData.selectedServices || [];
+        const revenue = assessmentData.revenue || 0;
+        const agencyType = assessmentData.agencyType || '';
         
-        // Use actual scores without overriding with hardcoded fallbacks
-        // Only use fallbacks if the scores are completely missing
+        // Use actual scores without any hardcoded fallbacks
         const operationalScore = scores.operational !== undefined ? scores.operational : 0;
         const financialScore = scores.financial !== undefined ? scores.financial : 0;
         const aiScore = scores.ai !== undefined ? scores.ai : 0;
         const overallScore = scores.overall !== undefined ? scores.overall : 0;
+        const serviceVulnerability = assessmentData.serviceVulnerability || 0;
+        const serviceAdaptability = assessmentData.serviceAdaptability || 0;
         
         console.log('[ValuationDashboard] Using actual scores:', {
             operational: operationalScore,
             financial: financialScore,
             ai: aiScore,
-            overall: overallScore
+            overall: overallScore,
+            serviceVulnerability,
+            serviceAdaptability
         });
         
         // Calculate base EBITDA multiple with proper gradations for very low scores
@@ -424,77 +449,146 @@ export class ValuationDashboard {
      * @returns {String} - HTML for the valuation roadmap
      */
     generateValuationRoadmapHTML(assessmentData, valuationData) {
-        const serviceAnalysis = valuationData.serviceAnalysis || [];
+        console.log('[ValuationDashboard] Generating valuation roadmap');  
+        
+        // Get scores and agency type
+        const scores = valuationData.scores || {};
+        const overallScore = scores.overall || 0;
+        const agencyType = assessmentData.agencyType || '';
         
         // Define action items based on service analysis and scores
         const immediateActions = [];
         const shortTermActions = [];
         const strategicActions = [];
         
-        // Process service analysis to generate specific actions
-        serviceAnalysis.forEach(service => {
-            if (service.riskLevel === 'Critical' || service.riskLevel === 'High') {
-                if (service.riskLevel === 'Critical') {
-                    immediateActions.push({
-                        title: `Implement ${this.capitalizeFirstLetter(service.name)} transformation`,
-                        note: 'Critical for maintaining valuation',
-                        critical: true
+        // Determine score category based on actual overall score
+        const scoreCategory = overallScore >= 70 ? 'highScore' : 
+                             overallScore >= 40 ? 'midScore' : 'lowScore';
+        
+        console.log(`[ValuationDashboard] Roadmap using score category: ${scoreCategory} based on score ${overallScore}`);
+        
+        try {
+            // Get score-specific recommendations from ServiceRecommendations
+            console.log('[ValuationDashboard] ServiceRecommendations available:', !!ServiceRecommendations);
+            console.log('[ValuationDashboard] Score category for roadmap:', scoreCategory);
+            
+            // Direct access to score category recommendations
+            if (ServiceRecommendations && ServiceRecommendations[scoreCategory]) {
+                console.log('[ValuationDashboard] Found score category recommendations:', scoreCategory);
+                const categoryRecommendations = ServiceRecommendations[scoreCategory];
+                
+                if (categoryRecommendations) {
+                    console.log('[ValuationDashboard] Found score category recommendations:', scoreCategory);
+                    // Add immediate recommendations to immediate actions
+                    const immediateRecs = categoryRecommendations.immediate || [];
+                    immediateRecs.forEach(rec => {
+                        immediateActions.push({
+                            title: rec.title,
+                            note: rec.description,
+                            critical: rec.complexity === 'high'
+                        });
                     });
-                } else {
-                    shortTermActions.push({
-                        title: `Enhance ${this.capitalizeFirstLetter(service.name)} with AI tools`,
-                        note: 'Important for competitive positioning'
+                    
+                    // Add short-term recommendations to short-term actions
+                    const shortTermRecs = categoryRecommendations.shortTerm || [];
+                    shortTermRecs.forEach(rec => {
+                        shortTermActions.push({
+                            title: rec.title,
+                            note: rec.description
+                        });
+                    });
+                    
+                    // Add strategic recommendations to strategic actions
+                    const strategicRecs = categoryRecommendations.strategic || [];
+                    strategicRecs.forEach(rec => {
+                        strategicActions.push({
+                            title: rec.title,
+                            note: rec.description
+                        });
                     });
                 }
             }
-        });
-        
-        // Add standard actions based on the brief
-        if (immediateActions.length < 3) {
-            immediateActions.push({
-                title: 'Deploy AI content tools',
-                note: 'Increases efficiency by 30-40%'
-            });
-            immediateActions.push({
-                title: 'Shift to retainer pricing',
-                note: 'Improves revenue predictability'
-            });
+        } catch (error) {
+            console.error('[ValuationDashboard] Error getting roadmap recommendations:', error);
         }
         
-        // Add short-term actions
+        // Add fallback actions if we don't have enough from the recommendations
+        
+        // Add fallback immediate actions
+        if (immediateActions.length < 2) {
+            if (!immediateActions.some(a => a.title.includes('AI content'))) {
+                immediateActions.push({
+                    title: 'Deploy AI content tools',
+                    note: 'Increases efficiency by 30-40%'
+                });
+            }
+            
+            if (!immediateActions.some(a => a.title.includes('retainer'))) {
+                immediateActions.push({
+                    title: 'Shift to retainer pricing',
+                    note: 'Improves revenue predictability'
+                });
+            }
+        }
+        
+        // Add fallback short-term actions
         if (shortTermActions.length < 3) {
-            shortTermActions.push({
-                title: 'Reduce client concentration <20%',
-                note: 'Critical for reducing valuation risk'
-            });
-            shortTermActions.push({
-                title: 'Document all processes',
-                note: 'Addresses key person risk'
-            });
-            shortTermActions.push({
-                title: 'Launch AI service offerings',
-                note: 'Creates new revenue streams'
-            });
+            if (!shortTermActions.some(a => a.title.includes('client concentration'))) {
+                shortTermActions.push({
+                    title: 'Reduce client concentration <20%',
+                    note: 'Critical for reducing valuation risk'
+                });
+            }
+            
+            if (!shortTermActions.some(a => a.title.includes('processes'))) {
+                shortTermActions.push({
+                    title: 'Document all processes',
+                    note: 'Addresses key person risk'
+                });
+            }
+            
+            if (!shortTermActions.some(a => a.title.includes('AI service'))) {
+                shortTermActions.push({
+                    title: 'Launch AI service offerings',
+                    note: 'Creates new revenue streams'
+                });
+            }
         }
         
-        // Add strategic actions
-        strategicActions.push({
-            title: 'Build proprietary AI tools',
-            note: 'Creates unique IP value'
-        });
-        strategicActions.push({
-            title: 'Achieve 60%+ recurring revenue',
-            note: 'Significantly increases valuation multiple'
-        });
-        strategicActions.push({
-            title: 'Complete service transformation',
-            note: 'Positions for premium acquisition'
+        // Add fallback strategic actions
+        if (strategicActions.length < 3) {
+            if (!strategicActions.some(a => a.title.includes('proprietary'))) {
+                strategicActions.push({
+                    title: 'Build proprietary AI tools',
+                    note: 'Creates unique IP value'
+                });
+            }
+            
+            if (!strategicActions.some(a => a.title.includes('recurring'))) {
+                strategicActions.push({
+                    title: 'Achieve 60%+ recurring revenue',
+                    note: 'Significantly increases valuation multiple'
+                });
+            }
+            
+            if (!strategicActions.some(a => a.title.includes('transformation'))) {
+                strategicActions.push({
+                    title: 'Complete service transformation',
+                    note: 'Positions for premium acquisition'
+                });
+            }
+        }
+        
+        console.log('[ValuationDashboard] Actions for roadmap:', {
+            immediateActions,
+            shortTermActions,
+            strategicActions
         });
         
         // Generate the HTML
         let html = '<div class="valuation-roadmap">';
         html += '<h2 class="valuation-roadmap-title">Path to Premium Valuation (8-12x EBITDA)</h2>';
-        
+            
         // Immediate Actions
         html += '<div class="action-group">';
         html += '<div class="action-group-header">';
@@ -558,9 +652,6 @@ export class ValuationDashboard {
         
         html += '</ul>';
         html += '</div>';
-        
-        // Calculator Button
-        html += '<div class="valuation-calculator-button">Calculate My Improved Valuation →</div>';
         
         html += '</div>'; // End valuation-roadmap
         
@@ -1012,9 +1103,6 @@ export class ValuationDashboard {
      * @returns {String} - HTML for the service recommendations
      */
     generateServiceRecommendationsHTML(assessmentData, valuationData) {
-        // Import service recommendations dynamically
-        const ServiceRecommendations = window.ServiceRecommendations; // Assuming this is globally available
-        
         console.log('[ValuationDashboard] Generating service recommendations');  
         console.log('[ValuationDashboard] Assessment data:', assessmentData);
         
@@ -1023,94 +1111,169 @@ export class ValuationDashboard {
         const overallScore = scores.overall || 0;
         const selectedServices = assessmentData.selectedServices || [];
         const agencyType = assessmentData.agencyType || '';
-                    title: 'Replace manual ' + this.capitalizeFirstLetter(service.name) + ' processes',
-                    description: 'Current ' + service.name + ' processes are at critical risk due to AI disruption. Implement automated workflows and AI-assisted tools to maintain competitiveness.',
-                    impact: '+0.6x EBITDA',
-                    difficulty: 2, // Scale of 1-3, where 3 is most difficult
-                    timeframe: '60-90 days'
-                });
-            } else if (service.riskLevel === 'High') {
-                recommendations.push({
-                    service: service.name,
-                    title: 'Enhance ' + this.capitalizeFirstLetter(service.name) + ' with AI integration',
-                    description: 'This service line shows high vulnerability to AI disruption. Integrate AI tools to improve efficiency while maintaining quality and reducing delivery costs.',
-                    impact: '+0.4x EBITDA',
-                    difficulty: 2,
-                    timeframe: '30-60 days'
-                });
-            }
-        });
         
-        // Add standard service recommendations if we don't have enough from risk analysis
-        if (recommendations.length < 4) {
-            // General AI service transformation recommendations - FIXED COMMAS
-            const standardRecommendations = [
+        console.log('[ValuationDashboard] Using scores:', scores);
+        console.log('[ValuationDashboard] Agency type:', agencyType);
+        console.log('[ValuationDashboard] Selected services:', selectedServices);
+        
+        // Get service-specific recommendations based on score category
+        const recommendations = [];
+        
+        // Determine score category based on actual overall score
+        const scoreCategory = overallScore >= 70 ? 'highScore' : 
+                             overallScore >= 40 ? 'midScore' : 'lowScore';
+                             
+        console.log(`[ValuationDashboard] Using score category: ${scoreCategory} based on score ${overallScore}`);
+        
+        try {
+            // Direct access to score category recommendations
+            if (ServiceRecommendations && ServiceRecommendations[scoreCategory]) {
+                console.log('[ValuationDashboard] Found score category for recommendations:', scoreCategory);
+                const categoryRecommendations = ServiceRecommendations[scoreCategory];
+                
+                if (categoryRecommendations) {
+                    // Add immediate recommendations
+                    const immediateRecs = categoryRecommendations.immediate || [];
+                    immediateRecs.forEach(rec => {
+                        recommendations.push({
+                            service: 'all',
+                            title: rec.title,
+                            description: rec.description,
+                            impact: rec.expectedROI || '+0.5x EBITDA',
+                            difficulty: rec.complexity === 'high' ? 3 : (rec.complexity === 'medium' ? 2 : 1),
+                            timeframe: '14-30 days'
+                        });
+                    });
+                    
+                    // Add short-term recommendations
+                    const shortTermRecs = categoryRecommendations.shortTerm || [];
+                    shortTermRecs.forEach(rec => {
+                        recommendations.push({
+                            service: 'all',
+                            title: rec.title,
+                            description: rec.description,
+                            impact: rec.expectedROI || '+0.2x EBITDA',
+                            difficulty: rec.complexity === 'high' ? 3 : (rec.complexity === 'medium' ? 2 : 1),
+                            timeframe: '30-60 days'
+                        });
+                    });
+                    
+                    // Add strategic recommendations
+                    const strategicRecs = categoryRecommendations.strategic || [];
+                    strategicRecs.forEach(rec => {
+                        recommendations.push({
+                            service: 'all',
+                            title: rec.title,
+                            description: rec.description,
+                            impact: rec.expectedROI || '+1.0x EBITDA',
+                            difficulty: rec.complexity === 'high' ? 3 : (rec.complexity === 'medium' ? 2 : 1),
+                            timeframe: '90+ days'
+                        });
+                    });
+                    console.log(`[ValuationDashboard] Added ${recommendations.length} recommendations from score category`);
+                }
+            }
+        } catch (error) {
+            console.error('[ValuationDashboard] Error getting recommendations:', error);
+        }
+        
+        console.log('[ValuationDashboard] Recommendations based on agency type and score:', recommendations);
+        
+        // If we don't have enough recommendations, add service-specific ones
+        console.log('[ValuationDashboard] Current recommendations:', recommendations.length);
+        console.log('[ValuationDashboard] Selected services:', selectedServices);
+        
+        if (recommendations.length < 8 && selectedServices.length > 0) {
+            // Add service-specific recommendations based on selected services
+            for (const service of selectedServices) {
+                if (recommendations.length >= 8) break;
+                
+                const serviceId = typeof service === 'object' ? service.id : service;
+                console.log('[ValuationDashboard] Adding recommendations for service:', serviceId);
+                
+                // Check if this service exists in ServiceRecommendations
+                if (ServiceRecommendations?.services?.[serviceId]) {
+                    const serviceInfo = ServiceRecommendations.services[serviceId];
+                    const serviceName = serviceInfo.serviceName || serviceId.toUpperCase();
+                    console.log('[ValuationDashboard] Found service:', serviceName);
+                    
+                    const serviceRecs = serviceInfo[scoreCategory] || null;
+                    
+                    if (serviceRecs) {
+                        // Prioritize immediate recommendations first
+                        const immediateRecs = serviceRecs.immediate || [];
+                        if (immediateRecs.length > 0 && recommendations.length < 8) {
+                            recommendations.push({
+                                service: serviceName,
+                                title: immediateRecs[0].title,
+                                description: immediateRecs[0].description,
+                                impact: immediateRecs[0].expectedROI || '+0.3x EBITDA',
+                                difficulty: immediateRecs[0].complexity === 'high' ? 3 : 2,
+                                timeframe: '14-30 days'
+                            });
+                            console.log(`[ValuationDashboard] Added ${serviceId} recommendation: ${immediateRecs[0].title}`);
+                        }
+                        
+                        // Add short-term recommendations if we still need more
+                        const shortTermRecs = serviceRecs.shortTerm || [];
+                        if (shortTermRecs.length > 0 && recommendations.length < 8) {
+                            recommendations.push({
+                                service: serviceName,
+                                title: shortTermRecs[0].title,
+                                description: shortTermRecs[0].description,
+                                impact: shortTermRecs[0].expectedROI || '+0.2x EBITDA',
+                                difficulty: shortTermRecs[0].complexity === 'high' ? 3 : 2,
+                                timeframe: '30-60 days'
+                            });
+                            console.log(`[ValuationDashboard] Added ${serviceId} recommendation: ${shortTermRecs[0].title}`);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If we still don't have enough recommendations, add fallbacks
+        if (recommendations.length < 8) {
+            // Fallback recommendations based on score category
+            const fallbacks = [
                 {
-                    service: 'content',
-                    title: 'Implement AI content creation workflow',
-                    description: 'Develop a hybrid human+AI content creation process that leverages AI for initial drafts and research while maintaining human oversight for quality and brand voice.',
-                    impact: '+0.5x EBITDA',
+                    service: 'all services',
+                    title: 'Deploy AI content tools',
+                    description: 'Implement AI-assisted content creation tools to increase efficiency by 30-40% while maintaining quality.',
+                    impact: '+0.3x EBITDA',
                     difficulty: 1,
                     timeframe: '14-30 days'
                 },
                 {
-                    service: 'seo',
-                    title: 'Launch AI-powered SEO service tier',
-                    description: 'Create a premium SEO service tier that uses AI for competitive analysis, keyword research, and content optimization to deliver faster results.',
-                    impact: '+0.3x EBITDA',
+                    service: 'all services',
+                    title: 'Shift to retainer pricing',
+                    description: 'Convert project-based clients to monthly retainers to improve revenue predictability and cash flow.',
+                    impact: '+0.4x EBITDA',
                     difficulty: 2,
+                    timeframe: '30-60 days'
+                },
+                {
+                    service: 'all services',
+                    title: 'Document processes',
+                    description: 'Create comprehensive documentation for all key processes to reduce key person dependencies.',
+                    impact: '+0.2x EBITDA',
+                    difficulty: 1,
                     timeframe: '30-45 days'
                 },
                 {
-                    service: 'web design',
-                    title: 'Develop AI design-assist workflow',
-                    description: 'Implement an AI-assisted design workflow that generates initial concepts and variations while maintaining your agency\'s creative direction and quality standards.',
-                    impact: '+0.4x EBITDA',
-                    difficulty: 2,
-                    timeframe: '45-60 days'
-                },
-                {
-                    service: 'marketing',
-                    title: 'Create predictive marketing analytics service',
-                    description: 'Build a new service offering that uses AI to predict campaign performance and optimize budget allocation in real-time for clients.',
-                    impact: '+0.7x EBITDA',
+                    service: 'all services',
+                    title: 'Launch AI service offerings',
+                    description: 'Develop AI-enhanced service packages that create new revenue streams with higher margins.',
+                    impact: '+0.6x EBITDA',
                     difficulty: 3,
                     timeframe: '60-90 days'
                 }
             ];
             
-            // Add standard recommendations that don't duplicate existing ones
-            for (const rec of standardRecommendations) {
+            // Add fallbacks until we have 4 recommendations
+            for (const fallback of fallbacks) {
                 if (recommendations.length >= 4) break;
-                
-                // Check if we already have a recommendation for this service
-                const exists = recommendations.some(r => r.service === rec.service);
-                if (!exists) {
-                    recommendations.push(rec);
-                }
-            }
-        }
-        
-        // If we still don't have enough recommendations, add some general ones
-        while (recommendations.length < 4) {
-            recommendations.push({
-                service: 'all services',
-                title: 'Create service productization framework',
-                description: 'Transform your custom service offerings into standardized, scalable products with clear deliverables, timelines, and pricing tiers to improve operational efficiency.',
-                impact: '+0.3x EBITDA',
-                difficulty: 2,
-                timeframe: '30-60 days'
-            });
-            
-            if (recommendations.length < 4) {
-                recommendations.push({
-                    service: 'all services',
-                    title: 'Implement value-based pricing model',
-                    description: 'Shift from hourly or project-based billing to value-based pricing for all services to better capture the true ROI you deliver to clients.',
-                    impact: '+0.5x EBITDA',
-                    difficulty: 3,
-                    timeframe: '60-90 days'
-                });
+                recommendations.push(fallback);
             }
         }
         
@@ -1120,8 +1283,123 @@ export class ValuationDashboard {
         
         html += '<div class="recommendations-container">';
         
-        // Create recommendation cards
-        recommendations.slice(0, 4).forEach(rec => {
+        // Ensure we have at least 8 recommendations by creating service-specific generic recommendations if needed
+        if (recommendations.length < 8 && selectedServices.length > 0) {
+            // Get a list of service names from the selected services
+            const serviceNames = [];
+            selectedServices.forEach(service => {
+                const serviceId = typeof service === 'object' ? service.id : service;
+                let serviceName = serviceId.toUpperCase();
+                
+                // Try to get the actual service name if available
+                if (ServiceRecommendations?.services?.[serviceId]?.serviceName) {
+                    serviceName = ServiceRecommendations.services[serviceId].serviceName;
+                }
+                
+                serviceNames.push({
+                    id: serviceId,
+                    name: serviceName
+                });
+            });
+            
+            console.log('[ValuationDashboard] Available services for generic recommendations:', serviceNames);
+            
+            // Create service-specific generic recommendations
+            const genericRecommendationsMap = {
+                'creative': [
+                    { title: 'Implement AI-Assisted Design Tools', description: 'Adopt AI design tools to enhance creative output while maintaining brand consistency.' },
+                    { title: 'Create AI Content Guidelines', description: 'Develop standards for blending human and AI creative work to maintain quality.' }
+                ],
+                'media': [
+                    { title: 'Enhance Media Buying Efficiency', description: 'Use AI algorithms to optimize programmatic buying and reduce media waste.' },
+                    { title: 'Implement Cross-Platform Attribution', description: 'Deploy advanced attribution models to better track performance across channels.' }
+                ],
+                'data': [
+                    { title: 'Build Predictive Analytics Models', description: 'Develop custom data models to forecast client performance and optimize strategies.' },
+                    { title: 'Implement Automated Reporting', description: 'Create automated, real-time dashboards to improve client transparency and insights.' }
+                ],
+                'web': [
+                    { title: 'Deploy AI-powered CRO Tools', description: 'Implement conversion rate optimization tools using machine learning algorithms.' },
+                    { title: 'Automate Quality Assurance', description: 'Use AI testing tools to identify and fix website issues before they impact users.' }
+                ],
+                'social': [
+                    { title: 'Implement Content Optimization AI', description: 'Use AI to analyze and optimize social content performance across platforms.' },
+                    { title: 'Create Automated Community Management', description: 'Deploy AI assistants for timely and consistent community engagement.' }
+                ],
+                'content': [
+                    { title: 'Deploy AI Content Generation Tools', description: 'Implement AI writing assistants to speed up content creation while maintaining quality.' },
+                    { title: 'Create Content Performance Prediction', description: 'Use AI to forecast content performance before publication to maximize ROI.' }
+                ],
+                'seo': [
+                    { title: 'Implement AI-Driven SEO Strategies', description: 'Use machine learning to identify high-opportunity keywords and content gaps.' },
+                    { title: 'Automate Technical SEO Audits', description: 'Deploy AI tools to continuously monitor and fix technical SEO issues.' }
+                ],
+                'marketing': [
+                    { title: 'Create AI-Powered Customer Journeys', description: 'Implement AI to personalize customer journeys at scale across touchpoints.' },
+                    { title: 'Develop Predictive Lead Scoring', description: 'Use machine learning to identify and prioritize high-value prospects.' }
+                ],
+            };
+            
+            // Fill in remaining slots with service-specific recommendations
+            let currentService = 0;
+            while (recommendations.length < 8) {
+                if (serviceNames.length === 0) break;
+                
+                // Get the next service in rotation
+                const serviceInfo = serviceNames[currentService % serviceNames.length];
+                const serviceId = serviceInfo.id;
+                const serviceName = serviceInfo.name;
+                
+                // Find generic recommendations for this service
+                const genericRecs = genericRecommendationsMap[serviceId] || [
+                    { title: `Optimize ${serviceName} Processes`, description: `Implement AI tools to improve efficiency and quality in ${serviceName}.` },
+                    { title: `Enhance ${serviceName} Analytics`, description: `Deploy advanced analytics to better measure and improve ${serviceName} performance.` }
+                ];
+                
+                // Get the next generic recommendation for this service
+                const recIndex = Math.floor(recommendations.length / serviceNames.length) % genericRecs.length;
+                const rec = genericRecs[recIndex] || { 
+                    title: `Improve ${serviceName} Performance`, 
+                    description: `Strategic improvements to enhance ${serviceName} operations and competitiveness.` 
+                };
+                
+                recommendations.push({
+                    service: serviceName,
+                    title: rec.title,
+                    description: rec.description,
+                    impact: '+0.2x EBITDA',
+                    difficulty: 2,
+                    timeframe: '30-60 days'
+                });
+                
+                currentService++;
+            }
+        }
+        
+        // If we still need generic recommendations with no services selected
+        while (recommendations.length < 8) {
+            const genericRecs = [
+                { title: 'Deploy AI Content Tools', description: 'Implement AI-assisted content creation tools to increase efficiency by 30-40% while maintaining quality.' },
+                { title: 'Shift to Retainer Pricing', description: 'Convert project-based clients to monthly retainers to improve revenue predictability and cash flow.' },
+                { title: 'Document Key Processes', description: 'Create comprehensive documentation for all key processes to reduce key person dependencies.' },
+                { title: 'Launch AI Service Offerings', description: 'Develop AI-enhanced service packages that create new revenue streams with higher margins.' }
+            ];
+            
+            const recIndex = recommendations.length % genericRecs.length;
+            const rec = genericRecs[recIndex];
+            
+            recommendations.push({
+                service: 'ALL SERVICES',
+                title: rec.title,
+                description: rec.description,
+                impact: '+0.2x EBITDA',
+                difficulty: 2,
+                timeframe: '30-60 days'
+            });
+        }
+        
+        // Display all 8 recommendations
+        recommendations.slice(0, 8).forEach(rec => {
             html += '<div class="recommendation-card">';
             
             // Card header with service name and impact
