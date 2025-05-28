@@ -234,20 +234,32 @@ export class EmailStep extends StepBase {
      * @param {Event} event - Click event
      */
     handleNext(event) {
+        console.log('[EmailStep] View Results button clicked');
+        event.preventDefault(); // Prevent default form submission
+        
         if (this.validate()) {
+            console.log('[EmailStep] Form validated successfully');
+            
             // Calculate assessment results before proceeding to results step
             if (!this.assessment.state.results) {
+                console.log('[EmailStep] Calculating assessment results');
                 this.assessment.state.results = this.assessment.calculateResults();
                 
                 // Save the results and other data
+                console.log('[EmailStep] Saving assessment results to state');
                 this.assessment.stateManager.saveState();
             }
             
             // Trigger onNext callback
+            console.log('[EmailStep] Triggering onNext callback');
             this.onNext();
             
-            // Navigate to next step
-            this.assessment.nextStep();
+            // Force navigation to the results step
+            console.log('[EmailStep] Navigating to results step');
+            this.assessment.state.currentStep = 'results';
+            this.assessment.renderCurrentStep();
+        } else {
+            console.log('[EmailStep] Form validation failed');
         }
     }
     

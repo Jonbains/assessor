@@ -78,8 +78,11 @@ export class ResultsStep extends StepBase {
      * @return {String} - HTML for the summary score
      */
     generateSummaryScoreHTML(results) {
-        const scores = results.scores || {};
-        const overallScore = scores.overall || 0;
+        // Get the overall score from the proper location in the results object
+        // This can come directly from results.overallScore or from mapped scores
+        const overallScore = results.overallScore || results.scores?.overall || 0;
+        
+        console.log('[ResultsStep] Displaying summary score:', overallScore);
         
         // Determine score category and message
         let scoreCategory, scoreMessage;
@@ -117,52 +120,46 @@ export class ResultsStep extends StepBase {
      * @return {String} - HTML for the complete dashboard
      */
     generateDashboardHTML(results) {
-        // Get assessment data for the dashboard
+        console.log('[ResultsStep] Generating dashboard with results structure:', results);
+        
+        // Map the scoring engine result format to the format expected by the ValuationDashboard
+        // The scoring engine returns: overallScore, dimensionScores, serviceScores, etc.
+        // But the dashboard expects a slightly different structure
         const assessmentData = {
-            scores: results.scores || {},
+            // Map dimension scores to the format expected by the dashboard
+            scores: {
+                overall: results.overallScore || 0,
+                operational: results.dimensionScores?.operational || 0,
+                financial: results.dimensionScores?.financial || 0,
+                ai: results.dimensionScores?.ai || 0,
+                strategic: results.dimensionScores?.strategic || 0
+            },
+            // Service scores directly from the results
             serviceScores: results.serviceScores || {},
+            // All dimension scores for additional metrics
             dimensionScores: results.dimensionScores || {},
+            // Pass additional metrics that might be needed
+            serviceVulnerability: results.dimensionScores?.serviceVulnerability || 0,
+            serviceAdaptability: results.dimensionScores?.serviceAdaptability || 0,
+            adjustedAiScore: results.dimensionScores?.adjustedAi || 0,
+            vulnerabilityLevel: results.vulnerabilityLevel || '',
+            insights: results.insights || [],
+            
+            // Additional assessment data
             revenue: this.assessment.state.revenue,
             selectedServices: this.assessment.state.selectedServices || [],
             serviceRevenue: this.assessment.state.serviceRevenue || {}
         };
         
-        // Generate dashboard sections using ValuationDashboard
+        console.log('[ResultsStep] Mapped assessment data for dashboard:', assessmentData);
+        
+        // Generate dashboard with the properly mapped data
         const dashboardData = this.valuationDashboard.generateDashboard(assessmentData);
         
-        // Generate recommendations using ServiceRecommendations
-        const recommendationsHTML = this.serviceRecommendations.generateRecommendationsHTML(
-            assessmentData.selectedServices,
-            assessmentData.scores,
-            assessmentData.serviceScores
-        );
-        
+        // Use the complete dashboard HTML that already contains all formatted sections
         return `
             <div class="dashboard-container">
-                <div class="dashboard-section">
-                    <h3>Executive Summary</h3>
-                    ${dashboardData.executiveSummaryHTML}
-                </div>
-                
-                <div class="dashboard-section">
-                    <h3>Valuation Impact</h3>
-                    ${dashboardData.valuationBreakdownHTML}
-                </div>
-                
-                <div class="dashboard-section">
-                    <h3>Service Portfolio Analysis</h3>
-                    ${dashboardData.servicePortfolioHTML}
-                </div>
-                
-                <div class="dashboard-section">
-                    <h3>Recommendations</h3>
-                    ${recommendationsHTML}
-                </div>
-                
-                <div class="dashboard-section">
-                    <h3>Valuation Improvement Roadmap</h3>
-                    ${dashboardData.valuationRoadmapHTML}
-                </div>
+                ${dashboardData.html}
             </div>
         `;
     }

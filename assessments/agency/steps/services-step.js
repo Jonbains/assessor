@@ -48,8 +48,13 @@ export class ServicesStep extends StepBase {
                     <!-- Dynamic services content will be inserted here -->
                 </div>
                 
-                <div id="services-error" class="error-message" style="display: none;">
+                <div id="services-error" class="error-message" style="display: none; color: #d9534f; margin: 15px 0; padding: 10px; border: 1px solid #d9534f; border-radius: 4px; background-color: #f9f2f2;">
                     Please select at least one service
+                </div>
+                
+                <div class="revenue-total-indicator" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; text-align: center;">
+                    <div style="font-weight: bold; margin-bottom: 8px;">Total Revenue Allocated: <span id="total-revenue-display">0</span>%</div>
+                    <div style="font-size: 14px; color: #666;">Please allocate 100% of your revenue across services</div>
                 </div>
                 
                 ${this.renderNavigation()}
@@ -295,6 +300,9 @@ export class ServicesStep extends StepBase {
                 this.assessment.state.selectedServices = selectedServices;
                 this.assessment.stateManager.updateState('selectedServices', selectedServices);
                 this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
+                
+                // Calculate and update total revenue display
+                this.updateTotalRevenueDisplay(serviceRevenue);
             });
             
             plusBtn.addEventListener('click', () => {
@@ -326,6 +334,9 @@ export class ServicesStep extends StepBase {
                 this.assessment.state.selectedServices = selectedServices;
                 this.assessment.stateManager.updateState('selectedServices', selectedServices);
                 this.assessment.stateManager.updateState('serviceRevenue', serviceRevenue);
+                
+                // Calculate and update total revenue display
+                this.updateTotalRevenueDisplay(serviceRevenue);
             });
         });
         
@@ -377,6 +388,41 @@ export class ServicesStep extends StepBase {
             }
         });
         this.cleanupListeners = [];
+    }
+    
+    /**
+     * Update the total revenue display
+     * @param {Object} serviceRevenue - Object containing service revenue allocations
+     */
+    updateTotalRevenueDisplay(serviceRevenue) {
+        const totalRevenue = Object.values(serviceRevenue || {}).reduce((sum, value) => sum + value, 0);
+        const totalDisplay = document.getElementById('total-revenue-display');
+        
+        if (totalDisplay) {
+            totalDisplay.textContent = totalRevenue;
+            
+            // Change color based on total
+            if (totalRevenue === 100) {
+                totalDisplay.style.color = '#28a745'; // Green if exactly 100%
+            } else if (totalRevenue > 100) {
+                totalDisplay.style.color = '#dc3545'; // Red if over 100%
+            } else {
+                totalDisplay.style.color = '#007bff'; // Blue otherwise
+            }
+        }
+        
+        // Update error message if applicable
+        const errorElement = document.getElementById('services-error');
+        if (errorElement) {
+            if (totalRevenue > 100) {
+                errorElement.textContent = `Total allocation exceeds 100%. Please reduce some allocations.`;
+                errorElement.style.display = 'block';
+            } else if (totalRevenue < 100) {
+                errorElement.style.display = 'none'; // Hide error unless validating on next
+            } else {
+                errorElement.style.display = 'none';
+            }
+        }
     }
     
     /**
@@ -452,11 +498,29 @@ export class ServicesStep extends StepBase {
      * @param {Event} event - Click event
      */
     handleNext(event) {
-        event.preventDefault();
+        console.log('[ServicesStep] Next button clicked');
         
-        // Validate the step
+        // Check if we have a revenue allocation
+        const serviceRevenue = this.assessment.state.serviceRevenue || {};
+        const totalRevenue = Object.values(serviceRevenue).reduce((sum, value) => sum + value, 0);
+        
+        console.log(`[ServicesStep] Total revenue allocated: ${totalRevenue}`);
+        
+        // Ensure the revenue allocation adds up to 100% before proceeding
+        if (totalRevenue < 100) {
+            // Show a warning message about revenue allocation
+            const errorElement = document.getElementById('services-error');
+            if (errorElement) {
+                errorElement.textContent = `Please allocate 100% of your revenue. Currently allocated: ${totalRevenue}%`;
+                errorElement.style.display = 'block';
+            }
+            return false;
+        }
+        
         if (this.validate()) {
-            // Navigate to the next step
+            // Force immediate state update before navigation
+            this.assessment.stateManager.saveState();
+            console.log('[ServicesStep] Navigation validated, proceeding to next step');
             this.onNext();
             this.assessment.nextStep();
         }
