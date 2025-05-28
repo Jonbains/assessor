@@ -6,13 +6,11 @@
  */
 
 import { AssessmentBase } from '../../core/assessment-base.js';
-import { NavigationController } from '../../core/navigation-controller.js';
-import { StateManager } from '../../core/state-manager.js';
+import { ProgressBar } from '../../shared/components/progress-bar.js';
 
 // Import agency steps
 import { AgencyTypeStep } from './steps/agency-type-step.js';
 import { ServicesStep } from './steps/services-step.js';
-import { RevenueStep } from './steps/revenue-step.js';
 import { QuestionsStep } from './steps/questions-step.js';
 import { EmailStep } from './steps/email-step.js';
 import { ResultsStep } from './steps/results-step.js';
@@ -37,15 +35,45 @@ export class AgencyAssessment extends AssessmentBase {
         this.scoringEngine = new AgencyScoringEngine(config);
         this.valuationDashboard = new ValuationDashboard(config);
         
+        console.log('[AgencyAssessment] Initializing with config steps:', config.steps);
+        
         // Create step instances
         this.steps = {
             'agency-type': new AgencyTypeStep(this),
             'services': new ServicesStep(this),
-            'revenue': new RevenueStep(this),
             'questions': new QuestionsStep(this),
             'email': new EmailStep(this),
             'results': new ResultsStep(this)
         };
+        
+        console.log('[AgencyAssessment] Registered steps:', Object.keys(this.steps));
+        
+        // Ensure the steps array and steps object are aligned
+        this.ensureStepsMatch();
+    }
+    
+    /**
+     * Ensure that the steps in the config match the registered step instances
+     * This helps debug step navigation issues
+     */
+    ensureStepsMatch() {
+        console.log('[AgencyAssessment] Ensuring steps match');
+        const configSteps = this.config.steps || [];
+        const registeredSteps = Object.keys(this.steps);
+        
+        // Check if all config steps have registered instances
+        for (const stepId of configSteps) {
+            if (!registeredSteps.includes(stepId)) {
+                console.error(`[AgencyAssessment] Config step '${stepId}' has no registered instance`);
+            }
+        }
+        
+        // Check if any steps are missing from the config
+        for (const stepId of registeredSteps) {
+            if (!configSteps.includes(stepId)) {
+                console.warn(`[AgencyAssessment] Registered step '${stepId}' is not in the config steps array`);
+            }
+        }
     }
     
     /**
@@ -235,6 +263,8 @@ export class AgencyAssessment extends AssessmentBase {
      */
     renderCurrentStep() {
         console.log(`[AgencyAssessment] Rendering step: ${this.state.currentStep}`);
+        console.log('[AgencyAssessment] Available steps:', Object.keys(this.steps));
+        console.log('[AgencyAssessment] Config steps:', this.config.steps);
         
         // Get the current step component
         const step = this.steps[this.state.currentStep];
@@ -244,13 +274,14 @@ export class AgencyAssessment extends AssessmentBase {
             return;
         }
         
+        console.log(`[AgencyAssessment] Step ${this.state.currentStep} found:`, step);
+        
         // Get the step content
         const stepContent = step.render();
         
         // Create a progress bar if configured
         let progressBar = '';
         if (this.config.steps && this.config.steps.length > 0) {
-            const ProgressBar = require('../../shared/components/progress-bar').ProgressBar;
             
             const progressSteps = this.config.steps.map(stepId => {
                 return {
@@ -267,17 +298,64 @@ export class AgencyAssessment extends AssessmentBase {
             progressBar = progress.render();
         }
         
-        // Create the complete HTML
-        const html = `
-            ${progressBar}
-            <div class="assessment-step-content">${stepContent}</div>
+        // Update container with step content
+        this.container.innerHTML = `
+            <div class="assessment-container">
+                ${progressBar}
+                <div class="assessment-content">
+                    ${stepContent}
+                </div>
+            </div>
         `;
         
-        // Update the container
-        this.container.innerHTML = html;
+        // Apply styling classes for proper theme rendering
+        document.body.classList.add('assessment-active');
+        this.container.classList.add('assessment-container');
         
-        // Set up event listeners for this step
+        // Fix the styling for the progress bar to prevent the yellow box
+        const progressElement = this.container.querySelector('.progress-track');
+        if (progressElement) {
+            progressElement.style.backgroundColor = '#333';
+            progressElement.style.border = 'none';
+        }
+        
+        // Ensure the progress bar background color is correct
+        const progressFill = this.container.querySelector('.progress-fill');
+        if (progressFill) {
+            progressFill.style.backgroundColor = '#ffff66';
+        }
+        
+        // Set up event listeners for the step
         step.setupEventListeners(this.container);
+        
+        // Call afterRender if it exists (for integration with original components)
+        if (typeof step.afterRender === 'function') {
+            step.afterRender(this.container);
+        }
+        
+        // Apply additional styling after component initialization
+        setTimeout(() => {
+            // Add dark theme styling to specific components
+            const contentArea = this.container.querySelector('.assessment-content');
+            if (contentArea) {
+                contentArea.style.backgroundColor = '#111';
+                contentArea.style.color = '#fff';
+                contentArea.style.padding = '20px';
+                contentArea.style.borderRadius = '4px';
+            }
+            
+            // Style buttons with yellow/dark theme
+            const buttons = this.container.querySelectorAll('.btn, .btn-next');
+            buttons.forEach(btn => {
+                btn.style.backgroundColor = '#ffff66';
+                btn.style.color = '#111';
+                btn.style.border = 'none';
+                btn.style.padding = '10px 24px';
+                btn.style.borderRadius = '4px';
+                btn.style.cursor = 'pointer';
+                btn.style.fontWeight = 'bold';
+            });
+        }, 100);
     }
     
     /**

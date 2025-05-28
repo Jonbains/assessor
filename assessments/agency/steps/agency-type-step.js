@@ -2,6 +2,7 @@
  * Assessment Framework - Agency Type Step
  * 
  * Implements the agency type selection step for the agency assessment
+ * Integrates with the AgencyTypeSelector.js from the lastworking directory
  */
 
 import { StepBase } from '../../../core/step-base.js';
@@ -27,6 +28,7 @@ export class AgencyTypeStep extends StepBase {
         };
         
         this.cleanupListeners = [];
+        this.agencyTypeSelector = null; // Will hold the AgencyTypeSelector instance
     }
     
     /**
@@ -34,38 +36,10 @@ export class AgencyTypeStep extends StepBase {
      * @return {String} - HTML content for the step
      */
     render() {
-        const { config, state } = this.assessment;
-        const agencyTypes = config.agencyTypes || [];
-        
-        // Build HTML for agency type options
-        let agencyTypeOptions = '';
-        
-        agencyTypes.forEach((type) => {
-            const isSelected = state.selectedAgencyType === type.id;
-            const selectedClass = isSelected ? 'selected' : '';
-            
-            agencyTypeOptions += `
-                <div class="agency-type-option ${selectedClass}" data-agency-type-id="${type.id}">
-                    <div class="agency-type-header">
-                        <div class="agency-type-name">${type.name}</div>
-                    </div>
-                    <div class="agency-type-description">${type.description || ''}</div>
-                </div>
-            `;
-        });
-        
-        // Build complete step HTML
+        // Create a placeholder container for the AgencyTypeSelector component
         return `
             <div class="assessment-step agency-type-step">
-                <h2>What type of agency are you?</h2>
-                <p class="step-description">
-                    Select the agency type that best matches your business to get tailored assessment questions and recommendations.
-                </p>
-                
-                <div class="agency-type-selection">
-                    ${agencyTypeOptions}
-                </div>
-                
+                <div id="agency-type-container"></div>
                 <div id="agency-type-error" class="error-message" style="display: none;">
                     Please select your agency type to continue
                 </div>
@@ -76,8 +50,155 @@ export class AgencyTypeStep extends StepBase {
     }
     
     /**
-     * Render navigation buttons
-     * @return {String} - HTML for navigation buttons
+     * Initialize the AgencyTypeSelector component after rendering
+     * @param {Element} container - The rendered container element
+     */
+    afterRender(container) {
+        // Get the agency type container
+        const agencyTypeContainer = container.querySelector('#agency-type-container');
+        
+        if (!agencyTypeContainer) {
+            console.error('Agency type container not found');
+            return;
+        }
+        
+        // Check if the AgencyTypeSelector component is available
+        if (typeof AgencyTypeSelector === 'undefined') {
+            console.error('AgencyTypeSelector component not found');
+            this.renderFallbackUI(agencyTypeContainer);
+            return;
+        }
+        
+        try {
+            // Create an instance of the AgencyTypeSelector
+            this.agencyTypeSelector = new AgencyTypeSelector({
+                container: agencyTypeContainer,
+                eventBus: {
+                    emit: (event, data) => {
+                        console.log('Event received from AgencyTypeSelector:', event, data);
+                        if (event === 'data:update') {
+                            if (data.selectedType) {
+                                // Update the assessment state directly
+                                this.assessment.state.selectedAgencyType = data.selectedType;
+                                
+                                // Use the state manager to persist the change
+                                this.assessment.stateManager.updateState('selectedAgencyType', data.selectedType);
+                                
+                                console.log('Updated assessment state with agency type:', data.selectedType);
+                                
+                                // Update the error message visibility
+                                const errorElement = container.querySelector('#agency-type-error');
+                                if (errorElement) {
+                                    errorElement.style.display = 'none';
+                                }
+                            }
+                            
+                            if (data.selectedServices) {
+                                // Update selected services if provided
+                                this.assessment.state.selectedServices = data.selectedServices;
+                                this.assessment.stateManager.updateState('selectedServices', data.selectedServices);
+                            }
+                        }
+                    }
+                },
+                engine: {
+                    navigateNext: () => {
+                        if (this.validate()) {
+                            this.assessment.navigationController.nextStep();
+                        } else {
+                            // Show error message if validation fails
+                            const errorElement = container.querySelector('#agency-type-error');
+                            if (errorElement) {
+                                errorElement.style.display = 'block';
+                            }
+                        }
+                    },
+                    navigatePrevious: () => this.assessment.navigationController.previousStep()
+                },
+                state: {
+                    selectedType: this.assessment.state.selectedAgencyType || ''
+                },
+                config: {
+                    agencyTypes: this.assessment.config.agencyTypes,
+                    defaultServices: this.assessment.config.defaultServices
+                }
+            });
+            
+            // Render the component
+            this.agencyTypeSelector.render();
+            
+            // Override the Next button to use our validation
+            const nextButton = container.querySelector('.btn-next');
+            if (nextButton) {
+                nextButton.addEventListener('click', () => {
+                    if (this.validate()) {
+                        this.assessment.navigationController.nextStep();
+                    } else {
+                        // Show error message
+                        const errorElement = container.querySelector('#agency-type-error');
+                        if (errorElement) {
+                            errorElement.style.display = 'block';
+                        }
+                    }
+                });
+            }
+            
+            console.log('AgencyTypeSelector component initialized successfully');
+            console.log('Current assessment state:', this.assessment.state);
+        } catch (error) {
+            console.error('Error initializing AgencyTypeSelector:', error);
+            this.renderFallbackUI(agencyTypeContainer);
+        }
+    }
+    
+    /**
+     * Render a fallback UI if the original component can't be initialized
+     * @param {Element} container - The container element
+     */
+    renderFallbackUI(container) {
+        const { config, state } = this.assessment;
+        const agencyTypes = config.agencyTypes || [];
+        
+        let html = `
+            <h2>Select Your Agency Type</h2>
+            <p class="step-description">
+                Choose the option that best describes your agency's primary focus:
+            </p>
+            
+            <div class="agency-type-selection">
+        `;
+        
+        agencyTypes.forEach((type) => {
+            const isSelected = state.selectedAgencyType === type.id;
+            const checkedAttr = isSelected ? 'checked' : '';
+            
+            html += `
+                <div class="agency-type-option">
+                    <label class="radio-container">
+                        <input type="radio" name="agencyType" value="${type.id}" ${checkedAttr}>
+                        <span class="radio-label">
+                            <span class="agency-type-name">${type.name}</span>
+                            <span class="agency-type-description">${type.description || ''}</span>
+                        </span>
+                    </label>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+        // Set up event listeners
+        const radioInputs = container.querySelectorAll('input[type="radio"][name="agencyType"]');
+        radioInputs.forEach(input => {
+            const cleanup = addEvent(input, 'change', this.handleAgencyTypeSelection.bind(this));
+            this.cleanupListeners.push(cleanup);
+        });
+    }
+    
+    /**
+     * Render the navigation buttons
+     * @return {String} - HTML content for the navigation
      */
     renderNavigation() {
         const isFirstStep = this.assessment.state.currentStep === this.assessment.config.steps[0];
@@ -85,7 +206,7 @@ export class AgencyTypeStep extends StepBase {
         return `
             <div class="assessment-navigation">
                 ${!isFirstStep ? '<button class="btn btn-secondary btn-prev">Previous</button>' : ''}
-                <button class="btn btn-primary btn-next">Next</button>
+                <button class="btn btn-primary btn-next">NEXT</button>
             </div>
         `;
     }
@@ -95,10 +216,10 @@ export class AgencyTypeStep extends StepBase {
      * @param {Element} container - The step container element
      */
     setupEventListeners(container) {
-        // Click handler for agency type options
-        const agencyTypeOptions = container.querySelectorAll('.agency-type-option');
-        agencyTypeOptions.forEach(option => {
-            const cleanup = addEvent(option, 'click', this.handleAgencyTypeSelection.bind(this));
+        // Change handler for radio inputs
+        const radioInputs = container.querySelectorAll('input[type="radio"][name="agencyType"]');
+        radioInputs.forEach(input => {
+            const cleanup = addEvent(input, 'change', this.handleAgencyTypeSelection.bind(this));
             this.cleanupListeners.push(cleanup);
         });
         
@@ -126,26 +247,30 @@ export class AgencyTypeStep extends StepBase {
     
     /**
      * Handle agency type selection
-     * @param {Event} event - Click event
+     * @param {Event} event - Change event from radio input
      */
     handleAgencyTypeSelection(event) {
-        const option = event.currentTarget;
-        const agencyTypeId = option.dataset.agencyTypeId;
+        const radioInput = event.currentTarget;
+        const agencyTypeId = radioInput.value;
         
         // Update selected agency type in state
         this.assessment.state.selectedAgencyType = agencyTypeId;
-        
-        // Update UI to reflect selection
-        const allOptions = document.querySelectorAll('.agency-type-option');
-        allOptions.forEach(opt => {
-            opt.classList.remove('selected');
-        });
-        option.classList.add('selected');
         
         // Hide error message if visible
         const errorElement = document.getElementById('agency-type-error');
         if (errorElement) {
             errorElement.style.display = 'none';
+        }
+        
+        console.log(`Selected agency type: ${agencyTypeId}`);
+        
+        // Store the selection in state with automatic persistence
+        this.assessment.stateManager.updateState('selectedAgencyType', agencyTypeId);
+        
+        // Ensure the navigation button is enabled
+        const nextButton = document.querySelector('.btn-next');
+        if (nextButton) {
+            nextButton.removeAttribute('disabled');
         }
         
         // Pre-select default services based on agency type if configured
@@ -165,12 +290,23 @@ export class AgencyTypeStep extends StepBase {
      * @param {Event} event - Click event
      */
     handleNext(event) {
+        console.log('[AgencyTypeStep] Next button clicked');
+        
         if (this.validate()) {
+            console.log('[AgencyTypeStep] Validation passed, calling onNext');
             // Trigger onNext callback
             this.onNext();
             
+            console.log('[AgencyTypeStep] Navigating to next step');
+            // Get current step and show which step we expect to go to next
+            const currentStepIndex = this.assessment.config.steps.indexOf(this.assessment.state.currentStep);
+            const nextStepId = this.assessment.config.steps[currentStepIndex + 1];
+            console.log(`[AgencyTypeStep] Expected next step: ${nextStepId}`);
+            
             // Navigate to next step
             this.assessment.nextStep();
+        } else {
+            console.log('[AgencyTypeStep] Validation failed, not proceeding');
         }
     }
     
@@ -191,16 +327,20 @@ export class AgencyTypeStep extends StepBase {
      * @return {Boolean} - True if the step is valid
      */
     validate() {
+        console.log('[AgencyTypeStep] Validating step');
+        
         // Check if agency type is selected
         if (!this.assessment.state.selectedAgencyType) {
-            // Show error message
+            console.log('[AgencyTypeStep] Validation failed: No agency type selected');
             const errorElement = document.getElementById('agency-type-error');
             if (errorElement) {
                 errorElement.style.display = 'block';
+                errorElement.textContent = 'Please select an agency type to continue.';
             }
             return false;
         }
         
+        console.log('[AgencyTypeStep] Validation passed');
         return true;
     }
     

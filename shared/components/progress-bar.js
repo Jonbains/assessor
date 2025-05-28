@@ -50,20 +50,31 @@ export class ProgressBar {
         const percentComplete = this.getPercentComplete();
         const currentIndex = this.getCurrentStepIndex();
         
-        let html = `<div class="${this.containerClass}">`;
-        html += `<div class="progress-track">`;
-        html += `<div class="progress-fill" style="width: ${percentComplete}%"></div>`;
+        // Create a dark-themed container instead of the yellow box
+        let html = `<div class="${this.containerClass}" style="background-color: #111; padding: 15px; margin-bottom: 20px; color: #fff;">`;
         
-        // Add step indicators
+        // Create step labels
+        html += `<div class="progress-steps" style="display: flex; justify-content: space-between; margin-bottom: 10px;">`;
+        
         this.steps.forEach((step, index) => {
-            const stepClass = index < currentIndex ? 'completed' : 
-                             index === currentIndex ? 'active' : '';
+            const isActive = index === currentIndex;
+            const isCompleted = index < currentIndex;
             
-            html += `<div class="step-indicator ${stepClass}" style="left: ${index * (100 / (this.steps.length - 1))}%">
-                        <div class="indicator-circle"></div>
-                        <div class="indicator-label">${step.label || ''}</div>
-                    </div>`;
+            // Set color based on status
+            const color = isActive ? '#ffff66' : isCompleted ? '#aaa' : '#666';
+            const fontWeight = isActive ? 'bold' : 'normal';
+            
+            html += `<div class="progress-step ${isActive ? 'active' : ''}" 
+                       style="color: ${color}; font-weight: ${fontWeight}; font-size: 14px;">${step.label || ''}</div>`;
         });
+        
+        html += `</div>`;
+        
+        // Create progress track (thin dark line)
+        html += `<div class="progress-track" style="height: 4px; background-color: #333; position: relative;">`;
+        
+        // Create progress fill (yellow fill line)
+        html += `<div class="progress-fill" style="height: 100%; width: ${percentComplete}%; background-color: #ffff66;"></div>`;
         
         html += `</div>`;
         html += `</div>`;

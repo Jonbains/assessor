@@ -2,12 +2,15 @@
  * Assessment Framework - Services Step
  * 
  * Implements the services selection step with integrated revenue allocation
- * for the agency assessment
+ * for the agency assessment.
+ * Integrates with the ServicesSelector component which combines both
+ * service selection and revenue allocation in a single step.
  */
 
 import { StepBase } from '../../../core/step-base.js';
 import { addEvent } from '../../../shared/utils/event-manager.js';
 import { formatPercentage } from '../../../shared/utils/formatting-utils.js';
+// ServicesSelector is loaded as a global object via script tag in the HTML
 
 /**
  * ServicesStep class
@@ -36,7 +39,8 @@ export class ServicesStep extends StepBase {
         };
         
         this.cleanupListeners = [];
-        this.changedServiceId = null;
+        this.servicesSelector = null;
+        this.revenueAllocator = null;
     }
     
     /**
@@ -44,82 +48,172 @@ export class ServicesStep extends StepBase {
      * @return {String} - HTML content for the step
      */
     render() {
-        const { config, state } = this.assessment;
-        const services = config.services || [];
-        
-        // Build HTML for service options with revenue sliders
-        let servicesOptions = '';
-        
-        services.forEach((service) => {
-            const isSelected = state.selectedServices.includes(service.id);
-            const selectedClass = isSelected ? 'selected' : '';
-            const checkedAttr = isSelected ? 'checked' : '';
-            
-            // Get revenue percentage for this service (default to 0)
-            const revenuePercent = state.serviceRevenue[service.id] || 0;
-            
-            // Determine the risk level class
-            const riskLevelClass = this.getRiskLevelClass(service.riskLevel);
-            
-            servicesOptions += `
-                <div class="service-option ${selectedClass}" data-service-id="${service.id}">
-                    <div class="service-header">
-                        <input type="checkbox" id="service-${service.id}" 
-                            class="service-checkbox" 
-                            data-service-id="${service.id}" ${checkedAttr}>
-                        <label for="service-${service.id}" class="service-name">${service.name}</label>
-                        <span class="risk-level ${riskLevelClass}">${service.riskLevel || ''}</span>
-                    </div>
-                    <div class="service-details">
-                        <div class="service-description">
-                            <div class="disruption-timeline">
-                                <span class="label">Disruption Timeline:</span> 
-                                <span class="value">${service.disruptionTimeline || 'Unknown'}</span>
-                            </div>
-                        </div>
-                        <div class="revenue-allocation" style="${!isSelected ? 'display: none;' : ''}">
-                            <div class="slider-container">
-                                <input type="range" 
-                                    class="revenue-slider" 
-                                    data-service-id="${service.id}" 
-                                    min="0" max="100" value="${revenuePercent}">
-                                <div class="revenue-percentage" data-service-id="${service.id}">${formatPercentage(revenuePercent)}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        // Build complete step HTML
+        // Create a simplified template that will be populated by the original components
         return `
             <div class="assessment-step services-step">
-                <h2>Select Your Agency's Services</h2>
-                <p class="step-description">
-                    Select all services that your agency offers to clients and allocate the approximate percentage of revenue each service contributes to your business.
-                </p>
-                
-                <div class="services-selection">
-                    ${servicesOptions}
-                </div>
-                
-                <div class="revenue-allocation-summary">
-                    <div class="total-revenue">
-                        <span class="label">Total:</span>
-                        <span id="total-revenue-percentage" class="value">${formatPercentage(this.calculateTotalRevenue())}</span>
-                    </div>
-                    <div id="total-revenue-error" class="error-message" style="display: none;">
-                        Please ensure total allocation equals 100%
-                    </div>
+                <!-- Container for the combined services and revenue allocation component -->
+                <div id="services-selector-container" class="services-selector-container">
+                    <!-- ServicesSelector will render both service selection and revenue allocation here -->
                 </div>
                 
                 <div id="services-error" class="error-message" style="display: none;">
-                    Please select at least one service to continue
+                    Please select at least one service
+                </div>
+                
+                <div id="revenue-error" class="error-message" style="display: none;">
+                    Total revenue allocation must equal 100%
                 </div>
                 
                 ${this.renderNavigation()}
             </div>
         `;
+    }
+    
+    /**
+     * After render hook to set up the services selector
+     * @param {Element} container - The rendered container element
+     */
+    afterRender(container) {
+        console.log('[ServicesStep] afterRender called');
+        
+        const selectorContainer = container.querySelector('#services-selector-container');
+        
+        if (!selectorContainer) {
+            console.error('[ServicesStep] Services selector container not found');
+            return;
+        }
+        
+        // We're implementing a simplified version of the services selector directly
+        console.log('[ServicesStep] Implementing simplified services selector');
+        
+        // Get the services from the agency assessment config
+        const services = this.assessment.config.services || [];
+        console.log('[ServicesStep] Services:', services);
+        
+        // Get previously selected services and revenue allocation from state
+        const selectedServices = this.assessment.state.selectedServices || [];
+        const serviceRevenue = this.assessment.state.serviceRevenue || {};
+        
+        // Create a direct implementation of the services selector
+        let html = `
+            <div class="services-selection">
+                <h3>Select Services</h3>
+                <p>Please select the services your agency provides:</p>
+                <div class="services-list">
+        `;
+        
+        // Generate services checkboxes
+        services.forEach(service => {
+            const isChecked = selectedServices.includes(service.id) ? 'checked' : '';
+            html += `
+                <div class="service-item">
+                    <label>
+                        <input type="checkbox" name="service" value="${service.id}" ${isChecked}>
+                        ${service.name}
+                    </label>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+            
+            <div class="revenue-allocation" style="margin-top: 20px;">
+                <h3>Revenue Allocation</h3>
+                <p>Allocate your revenue across selected services:</p>
+                <div class="revenue-sliders">
+        `;
+        
+        // Generate revenue sliders for selected services
+        selectedServices.forEach(serviceId => {
+            const service = services.find(s => s.id === serviceId) || { name: serviceId };
+            const value = serviceRevenue[serviceId] || 0;
+            
+            html += `
+                <div class="revenue-slider-item" data-service-id="${serviceId}">
+                    <label>${service.name}</label>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="${value}" class="revenue-slider">
+                        <span class="revenue-value">${value}%</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+                <div class="revenue-total">
+                    <p>Total: <span id="revenue-total-value">0</span>%</p>
+                </div>
+            </div>
+        `;
+        
+        // Insert into the container
+        selectorContainer.innerHTML = html;
+        
+        // Setup event handlers
+        const checkboxes = selectorContainer.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const serviceId = e.target.value;
+                const isChecked = e.target.checked;
+                
+                // Update selected services
+                let updatedServices = [...selectedServices];
+                
+                if (isChecked && !updatedServices.includes(serviceId)) {
+                    updatedServices.push(serviceId);
+                } else if (!isChecked && updatedServices.includes(serviceId)) {
+                    updatedServices = updatedServices.filter(id => id !== serviceId);
+                }
+                
+                // Update state
+                this.assessment.state.selectedServices = updatedServices;
+                this.assessment.stateManager.saveState();
+                
+                // Refresh the component to show/hide revenue sliders
+                this.afterRender(container);
+            });
+        });
+        
+        // Setup revenue sliders
+        const sliders = selectorContainer.querySelectorAll('.revenue-slider');
+        const totalDisplay = selectorContainer.querySelector('#revenue-total-value');
+        
+        const updateTotal = () => {
+            let total = 0;
+            const newServiceRevenue = {};
+            
+            sliders.forEach(slider => {
+                const serviceId = slider.closest('.revenue-slider-item').dataset.serviceId;
+                const value = parseInt(slider.value, 10);
+                newServiceRevenue[serviceId] = value;
+                total += value;
+            });
+            
+            totalDisplay.textContent = total;
+            totalDisplay.style.color = Math.abs(total - 100) <= 1 ? 'green' : 'red';
+            
+            // Update state
+            this.assessment.state.serviceRevenue = newServiceRevenue;
+            this.assessment.state.totalRevenue = total;
+            this.assessment.stateManager.saveState();
+        };
+        
+        sliders.forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const valueDisplay = e.target.nextElementSibling;
+                valueDisplay.textContent = `${e.target.value}%`;
+                updateTotal();
+            });
+        });
+        
+        // Initialize total
+        updateTotal();
+        
+        // Set up event listeners
+        this.setupEventListeners(container);
     }
     
     /**
@@ -140,31 +234,19 @@ export class ServicesStep extends StepBase {
      * @param {Element} container - The step container element
      */
     setupEventListeners(container) {
-        // Click handler for service checkboxes
-        const serviceCheckboxes = container.querySelectorAll('.service-checkbox');
-        serviceCheckboxes.forEach(checkbox => {
-            const cleanup = addEvent(checkbox, 'change', this.handleServiceSelection.bind(this));
-            this.cleanupListeners.push(cleanup);
-        });
-        
-        // Change handler for revenue sliders
-        const revenueSliders = container.querySelectorAll('.revenue-slider');
-        revenueSliders.forEach(slider => {
-            const cleanup = addEvent(slider, 'input', this.handleRevenueChange.bind(this));
-            this.cleanupListeners.push(cleanup);
-        });
-        
         // Navigation button handlers
         const nextButton = container.querySelector('.btn-next');
         if (nextButton) {
-            const cleanup = addEvent(nextButton, 'click', this.handleNext.bind(this));
-            this.cleanupListeners.push(cleanup);
+            const nextClickListener = this.handleNext.bind(this);
+            nextButton.addEventListener('click', nextClickListener);
+            this.cleanupListeners.push(() => nextButton.removeEventListener('click', nextClickListener));
         }
         
         const prevButton = container.querySelector('.btn-prev');
         if (prevButton) {
-            const cleanup = addEvent(prevButton, 'click', this.handlePrev.bind(this));
-            this.cleanupListeners.push(cleanup);
+            const prevClickListener = this.handlePrev.bind(this);
+            prevButton.addEventListener('click', prevClickListener);
+            this.cleanupListeners.push(() => prevButton.removeEventListener('click', prevClickListener));
         }
     }
     
@@ -172,331 +254,12 @@ export class ServicesStep extends StepBase {
      * Clean up event listeners when leaving this step
      */
     cleanupEventListeners() {
-        this.cleanupListeners.forEach(cleanup => cleanup());
+        this.cleanupListeners.forEach(cleanup => {
+            if (typeof cleanup === 'function') {
+                cleanup();
+            }
+        });
         this.cleanupListeners = [];
-    }
-    
-    /**
-     * Handle service selection
-     * @param {Event} event - Change event
-     */
-    handleServiceSelection(event) {
-        const checkbox = event.target;
-        const serviceId = checkbox.dataset.serviceId;
-        const isSelected = checkbox.checked;
-        
-        // Update selected services in state
-        if (isSelected) {
-            if (!this.assessment.state.selectedServices.includes(serviceId)) {
-                this.assessment.state.selectedServices.push(serviceId);
-            }
-            
-            // Show revenue allocation slider
-            const revenueAllocation = document.querySelector(`.revenue-allocation[data-service-id="${serviceId}"]`);
-            if (revenueAllocation) {
-                revenueAllocation.style.display = 'block';
-            }
-            
-            // Update service option UI
-            const serviceOption = checkbox.closest('.service-option');
-            if (serviceOption) {
-                serviceOption.classList.add('selected');
-            }
-            
-            // Initialize revenue for this service if not already set
-            if (!this.assessment.state.serviceRevenue[serviceId]) {
-                this.assessment.state.serviceRevenue[serviceId] = 0;
-            }
-            
-            // Redistribute revenue
-            this.redistributeRevenue();
-        } else {
-            // Remove from selected services
-            this.assessment.state.selectedServices = this.assessment.state.selectedServices.filter(
-                id => id !== serviceId
-            );
-            
-            // Hide revenue allocation slider
-            const revenueAllocation = document.querySelector(`.revenue-allocation[data-service-id="${serviceId}"]`);
-            if (revenueAllocation) {
-                revenueAllocation.style.display = 'none';
-            }
-            
-            // Update service option UI
-            const serviceOption = checkbox.closest('.service-option');
-            if (serviceOption) {
-                serviceOption.classList.remove('selected');
-            }
-            
-            // Set revenue for this service to 0
-            this.assessment.state.serviceRevenue[serviceId] = 0;
-            
-            // Redistribute revenue
-            this.redistributeRevenue();
-        }
-        
-        // Hide error message if visible
-        const errorElement = document.getElementById('services-error');
-        if (errorElement && this.assessment.state.selectedServices.length > 0) {
-            errorElement.style.display = 'none';
-        }
-        
-        // Save state
-        this.assessment.stateManager.saveState();
-    }
-    
-    /**
-     * Handle revenue slider change
-     * @param {Event} event - Input event
-     */
-    handleRevenueChange(event) {
-        const slider = event.target;
-        const serviceId = slider.dataset.serviceId;
-        const newValue = parseInt(slider.value, 10);
-        
-        // Store which service was changed for balancing algorithm
-        this.changedServiceId = serviceId;
-        
-        // Update revenue percentage display
-        const percentageElement = document.querySelector(`.revenue-percentage[data-service-id="${serviceId}"]`);
-        if (percentageElement) {
-            percentageElement.textContent = formatPercentage(newValue);
-        }
-        
-        // Update state
-        this.assessment.state.serviceRevenue[serviceId] = newValue;
-        
-        // Balance other sliders to ensure total is 100%
-        this.balanceSliders(serviceId, newValue);
-        
-        // Update total revenue display
-        this.showTotalRevenue();
-        
-        // Save state
-        this.assessment.stateManager.saveState();
-    }
-    
-    /**
-     * Redistribute revenue percentages across selected services
-     */
-    redistributeRevenue() {
-        const { selectedServices, serviceRevenue } = this.assessment.state;
-        
-        // Skip if no services are selected
-        if (selectedServices.length === 0) {
-            return;
-        }
-        
-        // Calculate equal distribution
-        const equalShare = Math.floor(100 / selectedServices.length);
-        let remaining = 100 - (equalShare * selectedServices.length);
-        
-        // Assign equal share to each selected service
-        selectedServices.forEach(serviceId => {
-            serviceRevenue[serviceId] = equalShare;
-            
-            // Add remaining points to first services
-            if (remaining > 0) {
-                serviceRevenue[serviceId]++;
-                remaining--;
-            }
-            
-            // Update slider values in UI
-            const slider = document.querySelector(`.revenue-slider[data-service-id="${serviceId}"]`);
-            if (slider) {
-                slider.value = serviceRevenue[serviceId];
-            }
-            
-            // Update percentage display
-            const percentageElement = document.querySelector(`.revenue-percentage[data-service-id="${serviceId}"]`);
-            if (percentageElement) {
-                percentageElement.textContent = formatPercentage(serviceRevenue[serviceId]);
-            }
-        });
-        
-        // Set unselected services to 0
-        Object.keys(serviceRevenue).forEach(serviceId => {
-            if (!selectedServices.includes(serviceId)) {
-                serviceRevenue[serviceId] = 0;
-            }
-        });
-        
-        // Update total revenue display
-        this.showTotalRevenue();
-    }
-    
-    /**
-     * Balance sliders to ensure total is 100%
-     * @param {String} changedServiceId - ID of the service that was changed
-     * @param {Number} newValue - New value for the changed service
-     */
-    balanceSliders(changedServiceId, newValue) {
-        const { selectedServices, serviceRevenue } = this.assessment.state;
-        
-        // Skip if only one service is selected
-        if (selectedServices.length <= 1) {
-            return;
-        }
-        
-        // Calculate current total
-        let currentTotal = this.calculateTotalRevenue();
-        
-        // If the total is already 100%, no need to balance
-        if (currentTotal === 100) {
-            return;
-        }
-        
-        // Calculate how much to adjust (positive if we need to decrease, negative if we need to increase)
-        const adjustment = currentTotal - 100;
-        
-        // Get other services to adjust
-        const otherServices = selectedServices.filter(id => id !== changedServiceId);
-        
-        // If adjustment is positive, we need to decrease other sliders
-        if (adjustment > 0) {
-            // Sort by value descending to adjust largest values first
-            otherServices.sort((a, b) => serviceRevenue[b] - serviceRevenue[a]);
-            
-            let remainingAdjustment = adjustment;
-            
-            // Adjust each service
-            for (const serviceId of otherServices) {
-                if (remainingAdjustment <= 0) break;
-                
-                const currentValue = serviceRevenue[serviceId];
-                const maxDecrease = Math.min(currentValue, remainingAdjustment);
-                
-                // Decrease this service's value
-                serviceRevenue[serviceId] = currentValue - maxDecrease;
-                remainingAdjustment -= maxDecrease;
-                
-                // Update UI
-                this.updateServiceSlider(serviceId);
-            }
-            
-            // If we couldn't balance exactly, adjust the changed service
-            if (remainingAdjustment > 0) {
-                serviceRevenue[changedServiceId] = newValue - remainingAdjustment;
-                this.updateServiceSlider(changedServiceId);
-            }
-        } 
-        // If adjustment is negative, we need to increase other sliders
-        else if (adjustment < 0) {
-            // Sort by value ascending to adjust smallest values first
-            otherServices.sort((a, b) => serviceRevenue[a] - serviceRevenue[b]);
-            
-            let remainingAdjustment = -adjustment;
-            
-            // Adjust each service
-            for (const serviceId of otherServices) {
-                if (remainingAdjustment <= 0) break;
-                
-                const currentValue = serviceRevenue[serviceId];
-                const maxIncrease = Math.min(100 - currentValue, remainingAdjustment);
-                
-                // Increase this service's value
-                serviceRevenue[serviceId] = currentValue + maxIncrease;
-                remainingAdjustment -= maxIncrease;
-                
-                // Update UI
-                this.updateServiceSlider(serviceId);
-            }
-            
-            // If we couldn't balance exactly, adjust the changed service
-            if (remainingAdjustment > 0) {
-                serviceRevenue[changedServiceId] = newValue + remainingAdjustment;
-                this.updateServiceSlider(changedServiceId);
-            }
-        }
-    }
-    
-    /**
-     * Update a service slider in the UI
-     * @param {String} serviceId - Service ID to update
-     */
-    updateServiceSlider(serviceId) {
-        const value = this.assessment.state.serviceRevenue[serviceId];
-        
-        // Update slider
-        const slider = document.querySelector(`.revenue-slider[data-service-id="${serviceId}"]`);
-        if (slider) {
-            slider.value = value;
-        }
-        
-        // Update percentage display
-        const percentageElement = document.querySelector(`.revenue-percentage[data-service-id="${serviceId}"]`);
-        if (percentageElement) {
-            percentageElement.textContent = formatPercentage(value);
-        }
-    }
-    
-    /**
-     * Calculate total revenue percentage
-     * @return {Number} - Total revenue percentage
-     */
-    calculateTotalRevenue() {
-        const { selectedServices, serviceRevenue } = this.assessment.state;
-        let total = 0;
-        
-        selectedServices.forEach(serviceId => {
-            total += serviceRevenue[serviceId] || 0;
-        });
-        
-        return total;
-    }
-    
-    /**
-     * Update the total revenue display
-     */
-    showTotalRevenue() {
-        const totalElement = document.getElementById('total-revenue-percentage');
-        const total = this.calculateTotalRevenue();
-        
-        if (totalElement) {
-            totalElement.textContent = formatPercentage(total);
-            
-            // Highlight in red if not 100%
-            if (total !== 100) {
-                totalElement.classList.add('error');
-                
-                // Show the error message
-                const errorElement = document.getElementById('total-revenue-error');
-                if (errorElement) {
-                    errorElement.style.display = 'block';
-                }
-            } else {
-                totalElement.classList.remove('error');
-                
-                // Hide the error message
-                const errorElement = document.getElementById('total-revenue-error');
-                if (errorElement) {
-                    errorElement.style.display = 'none';
-                }
-            }
-        }
-    }
-    
-    /**
-     * Determine CSS class based on risk level
-     * @param {String} riskLevel - Risk level descriptor
-     * @return {String} - CSS class name
-     */
-    getRiskLevelClass(riskLevel) {
-        if (!riskLevel) return '';
-        
-        const lowerRisk = riskLevel.toLowerCase();
-        
-        if (lowerRisk.includes('critical') || lowerRisk.includes('very high')) {
-            return 'risk-critical';
-        } else if (lowerRisk.includes('high')) {
-            return 'risk-high';
-        } else if (lowerRisk.includes('moderate')) {
-            return 'risk-moderate';
-        } else if (lowerRisk.includes('low')) {
-            return 'risk-low';
-        }
-        
-        return '';
     }
     
     /**
@@ -504,13 +267,54 @@ export class ServicesStep extends StepBase {
      * @param {Event} event - Click event
      */
     handleNext(event) {
-        if (this.validate()) {
-            // Trigger onNext callback
-            this.onNext();
-            
-            // Navigate to next step
-            this.assessment.nextStep();
+        event.preventDefault();
+        
+        // Get the current selected services and revenue allocations
+        const selectedServices = this.assessment.state.selectedServices || [];
+        const serviceRevenue = this.assessment.state.serviceRevenue || {};
+        
+        // Validate that at least one service is selected
+        if (selectedServices.length === 0) {
+            const errorElement = document.getElementById('services-error');
+            if (errorElement) {
+                errorElement.style.display = 'block';
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
         }
+        
+        // Validate that revenue allocations exist for all selected services
+        const missingRevenue = selectedServices.some(serviceId => {
+            return serviceRevenue[serviceId] === undefined || serviceRevenue[serviceId] === null;
+        });
+        
+        if (missingRevenue) {
+            const errorElement = document.getElementById('revenue-error');
+            if (errorElement) {
+                errorElement.style.display = 'block';
+                errorElement.textContent = 'Please allocate revenue for all selected services.';
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+        
+        // Validate that revenue allocations add up to 100%
+        const totalRevenue = Object.values(serviceRevenue).reduce((sum, val) => sum + Number(val), 0);
+        if (Math.abs(totalRevenue - 100) > 0.1) { // Allow a small margin of error for floating point
+            const errorElement = document.getElementById('revenue-error');
+            if (errorElement) {
+                errorElement.style.display = 'block';
+                errorElement.textContent = `Total revenue must equal 100%. Current total: ${totalRevenue.toFixed(1)}%`;
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return false;
+        }
+        
+        // Save the state and proceed to the next step
+        this.assessment.state.totalRevenue = 100; // Set to exactly 100 to avoid precision issues
+        this.assessment.stateManager.saveState();
+        this.assessment.nextStep();
+        return true;
     }
     
     /**
@@ -518,10 +322,7 @@ export class ServicesStep extends StepBase {
      * @param {Event} event - Click event
      */
     handlePrev(event) {
-        // Trigger onPrevious callback
-        this.onPrevious();
-        
-        // Navigate to previous step
+        event.preventDefault();
         this.assessment.previousStep();
     }
     
@@ -530,49 +331,76 @@ export class ServicesStep extends StepBase {
      * @return {Boolean} - True if the step is valid
      */
     validate() {
-        const { selectedServices } = this.assessment.state;
-        let isValid = true;
+        console.log('[ServicesStep] Validating step');
+        const selectedServices = this.assessment.state.selectedServices || [];
+        
+        console.log('[ServicesStep] Selected services:', selectedServices);
         
         // Check if at least one service is selected
         if (selectedServices.length === 0) {
-            // Show error message
+            console.log('[ServicesStep] Validation failed: No services selected');
             const errorElement = document.getElementById('services-error');
             if (errorElement) {
                 errorElement.style.display = 'block';
             }
-            isValid = false;
+            return false;
+        }
+        
+        // Calculate total revenue
+        const serviceRevenue = this.assessment.state.serviceRevenue || {};
+        console.log('[ServicesStep] Service revenue:', serviceRevenue);
+        
+        const totalRevenue = Object.values(serviceRevenue).reduce((sum, val) => sum + Number(val), 0);
+        console.log('[ServicesStep] Total revenue:', totalRevenue);
+        
+        // If services are selected but no revenue is allocated, auto-allocate equally
+        if (totalRevenue === 0 && selectedServices.length > 0) {
+            console.log('[ServicesStep] Auto-allocating revenue equally');
+            const equalShare = Math.floor(100 / selectedServices.length);
+            const remainder = 100 - (equalShare * selectedServices.length);
+            
+            selectedServices.forEach((serviceId, index) => {
+                // Add the remainder to the first service to ensure total is 100%
+                serviceRevenue[serviceId] = equalShare + (index === 0 ? remainder : 0);
+            });
+            
+            // Update state
+            this.assessment.state.serviceRevenue = serviceRevenue;
+            this.assessment.state.totalRevenue = 100;
+            this.assessment.stateManager.saveState();
+            
+            console.log('[ServicesStep] Auto-allocated revenue:', serviceRevenue);
+            return true;
         }
         
         // Check if total revenue equals 100%
-        if (this.calculateTotalRevenue() !== 100) {
-            // Show error message
-            const errorElement = document.getElementById('total-revenue-error');
+        if (Math.abs(totalRevenue - 100) > 0.1) {
+            console.log('[ServicesStep] Validation failed: Total revenue not 100%');
+            const errorElement = document.getElementById('revenue-error');
             if (errorElement) {
                 errorElement.style.display = 'block';
+                errorElement.textContent = `Total revenue must equal 100%. Current total: ${totalRevenue.toFixed(1)}%`;
             }
-            isValid = false;
+            return false;
         }
         
-        return isValid;
+        console.log('[ServicesStep] Validation passed');
+        return true;
     }
     
     /**
      * Actions to perform when moving to the next step
-     * @return {Boolean} - True if the navigation should proceed
      */
     onNext() {
         // Clean up event listeners
         this.cleanupEventListeners();
-        return true;
     }
     
     /**
      * Actions to perform when moving to the previous step
-     * @return {Boolean} - True if the navigation should proceed
      */
     onPrevious() {
         // Clean up event listeners
         this.cleanupEventListeners();
-        return true;
     }
 }

@@ -37,8 +37,8 @@ export class RevenueStep extends StepBase {
      */
     render() {
         const { state } = this.assessment;
-        const revenue = state.revenue || '';
-        const revenueFormatted = revenue ? formatCurrency(revenue) : '';
+        const revenue = state.revenue || 0;
+        const revenueFormatted = revenue ? formatCurrency(revenue) : '$0';
         
         // Get agency type name for personalized message
         const agencyTypeName = this.assessment.getAgencyTypeName();
@@ -53,30 +53,39 @@ export class RevenueStep extends StepBase {
                 </p>
                 
                 <div class="revenue-input-container">
-                    <div class="input-group">
-                        <label for="revenue-input">Annual Revenue</label>
-                        <div class="currency-input-wrapper">
-                            <span class="currency-symbol">$</span>
-                            <input 
-                                type="number" 
-                                id="revenue-input" 
-                                class="revenue-input" 
-                                placeholder="Enter annual revenue" 
-                                value="${revenue}"
-                                min="1"
-                                step="10000"
-                            >
-                        </div>
-                        <div class="formatted-revenue" id="formatted-revenue">${revenueFormatted}</div>
+                    <div class="current-revenue-display">
+                        <span id="revenue-display">${revenueFormatted}</span>
                     </div>
                     
-                    <div class="revenue-ranges">
-                        <div class="revenue-range-option" data-revenue="100000">$100K</div>
-                        <div class="revenue-range-option" data-revenue="500000">$500K</div>
-                        <div class="revenue-range-option" data-revenue="1000000">$1M</div>
-                        <div class="revenue-range-option" data-revenue="5000000">$5M</div>
-                        <div class="revenue-range-option" data-revenue="10000000">$10M</div>
-                        <div class="revenue-range-option" data-revenue="25000000">$25M+</div>
+                    <div class="revenue-slider-container">
+                        <div class="slider-labels">
+                            <span class="min-label">$0</span>
+                            <span class="mid-label">$5M</span>
+                            <span class="max-label">$10M+</span>
+                        </div>
+                        
+                        <input 
+                            type="range" 
+                            id="revenue-slider" 
+                            class="revenue-slider" 
+                            min="0" 
+                            max="10000000" 
+                            step="100000" 
+                            value="${revenue}"
+                        >
+                        
+                        <div class="revenue-marker" id="revenue-marker">
+                            <div class="marker-dot"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="revenue-presets">
+                        <button class="revenue-preset-btn" data-revenue="100000">$100K</button>
+                        <button class="revenue-preset-btn" data-revenue="500000">$500K</button>
+                        <button class="revenue-preset-btn" data-revenue="1000000">$1M</button>
+                        <button class="revenue-preset-btn" data-revenue="5000000">$5M</button>
+                        <button class="revenue-preset-btn" data-revenue="10000000">$10M</button>
+                        <button class="revenue-preset-btn" data-revenue="25000000">$25M+</button>
                     </div>
                 </div>
                 
@@ -112,33 +121,63 @@ export class RevenueStep extends StepBase {
      * @param {Element} container - The step container element
      */
     setupEventListeners(container) {
-        // Revenue input handler
-        const revenueInput = container.querySelector('#revenue-input');
-        if (revenueInput) {
-            const inputCleanup = addEvent(revenueInput, 'input', this.handleRevenueInput.bind(this));
-            const blurCleanup = addEvent(revenueInput, 'blur', this.handleRevenueBlur.bind(this));
-            this.cleanupListeners.push(inputCleanup, blurCleanup);
+        // Revenue slider
+        const revenueSlider = container.querySelector('#revenue-slider');
+        if (revenueSlider) {
+            const inputListener = this.handleSliderInput.bind(this);
+            const changeListener = this.handleSliderChange.bind(this);
+            
+            revenueSlider.addEventListener('input', inputListener);
+            revenueSlider.addEventListener('change', changeListener);
+            
+            this.cleanupListeners.push(
+                () => revenueSlider.removeEventListener('input', inputListener),
+                () => revenueSlider.removeEventListener('change', changeListener)
+            );
+            
+            // Initialize marker position
+            this.updateSliderMarker(revenueSlider.value, revenueSlider.min, revenueSlider.max);
         }
         
-        // Revenue range option handlers
-        const rangeOptions = container.querySelectorAll('.revenue-range-option');
-        rangeOptions.forEach(option => {
-            const cleanup = addEvent(option, 'click', this.handleRangeOptionClick.bind(this));
-            this.cleanupListeners.push(cleanup);
-        });
+        // Revenue preset buttons
+        const presetButtons = container.querySelectorAll('.revenue-preset-btn');
+        if (presetButtons.length > 0) {
+            presetButtons.forEach(button => {
+                const clickListener = this.handlePresetClick.bind(this);
+                
+                button.addEventListener('click', clickListener);
+                
+                this.cleanupListeners.push(
+                    () => button.removeEventListener('click', clickListener)
+                );
+            });
+        }
         
         // Navigation button handlers
         const nextButton = container.querySelector('.btn-next');
         if (nextButton) {
-            const cleanup = addEvent(nextButton, 'click', this.handleNext.bind(this));
-            this.cleanupListeners.push(cleanup);
+            const nextClickListener = this.handleNext.bind(this);
+            
+            nextButton.addEventListener('click', nextClickListener);
+            
+            this.cleanupListeners.push(
+                () => nextButton.removeEventListener('click', nextClickListener)
+            );
         }
         
         const prevButton = container.querySelector('.btn-prev');
         if (prevButton) {
-            const cleanup = addEvent(prevButton, 'click', this.handlePrev.bind(this));
-            this.cleanupListeners.push(cleanup);
+            const prevClickListener = this.handlePrev.bind(this);
+            
+            prevButton.addEventListener('click', prevClickListener);
+            
+            this.cleanupListeners.push(
+                () => prevButton.removeEventListener('click', prevClickListener)
+            );
         }
+        
+        // Add CSS for the slider
+        this.addSliderStyles(container);
     }
     
     /**
@@ -147,6 +186,180 @@ export class RevenueStep extends StepBase {
     cleanupEventListeners() {
         this.cleanupListeners.forEach(cleanup => cleanup());
         this.cleanupListeners = [];
+    }
+    
+    /**
+     * Handle slider input (live updates while dragging)
+     * @param {Event} event - Input event
+     */
+    handleSliderInput(event) {
+        const slider = event.target;
+        const value = Number(slider.value);
+        
+        // Update display value
+        const displayElement = document.getElementById('revenue-display');
+        if (displayElement) {
+            displayElement.textContent = formatCurrency(value);
+        }
+        
+        // Update marker position
+        this.updateSliderMarker(value, slider.min, slider.max);
+        
+        // Hide error message if visible
+        const errorElement = document.getElementById('revenue-error');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Handle slider change (when user releases slider)
+     * @param {Event} event - Change event
+     */
+    handleSliderChange(event) {
+        const slider = event.target;
+        const value = Number(slider.value);
+        
+        // Update state
+        this.assessment.state.revenue = value;
+        this.assessment.stateManager.updateState('revenue', value);
+    }
+    
+    /**
+     * Handle preset button click
+     * @param {Event} event - Click event
+     */
+    handlePresetClick(event) {
+        const button = event.currentTarget;
+        const value = Number(button.dataset.revenue);
+        
+        // Update slider value
+        const slider = document.getElementById('revenue-slider');
+        if (slider) {
+            slider.value = value;
+            
+            // Trigger input and change events
+            const inputEvent = new Event('input', { bubbles: true });
+            const changeEvent = new Event('change', { bubbles: true });
+            
+            slider.dispatchEvent(inputEvent);
+            slider.dispatchEvent(changeEvent);
+        }
+    }
+    
+    /**
+     * Update the slider marker position based on the current value
+     * @param {Number} value - Current slider value
+     * @param {Number} min - Minimum slider value
+     * @param {Number} max - Maximum slider value
+     */
+    updateSliderMarker(value, min, max) {
+        const marker = document.getElementById('revenue-marker');
+        if (marker) {
+            // Calculate percentage position
+            const percentage = ((value - min) / (max - min)) * 100;
+            marker.style.left = `${percentage}%`;
+        }
+    }
+    
+    /**
+     * Add custom CSS styles for the slider
+     * @param {Element} container - The container element
+     */
+    addSliderStyles(container) {
+        // Create a style element
+        const style = document.createElement('style');
+        style.textContent = `
+            .revenue-step .current-revenue-display {
+                font-size: 28px;
+                font-weight: bold;
+                color: #ffff66;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            
+            .revenue-step .revenue-slider-container {
+                position: relative;
+                margin: 30px 0;
+            }
+            
+            .revenue-step .slider-labels {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                color: #aaa;
+                font-size: 14px;
+            }
+            
+            .revenue-step .revenue-slider {
+                width: 100%;
+                height: 4px;
+                background-color: #333;
+                -webkit-appearance: none;
+                appearance: none;
+                outline: none;
+                border-radius: 2px;
+            }
+            
+            .revenue-step .revenue-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #ffff66;
+                cursor: pointer;
+                border: none;
+            }
+            
+            .revenue-step .revenue-slider::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #ffff66;
+                cursor: pointer;
+                border: none;
+            }
+            
+            .revenue-step .revenue-marker {
+                position: absolute;
+                top: -10px;
+                transform: translateX(-50%);
+            }
+            
+            .revenue-step .marker-dot {
+                width: 8px;
+                height: 8px;
+                background-color: #ffff66;
+                border-radius: 50%;
+            }
+            
+            .revenue-step .revenue-presets {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 20px;
+            }
+            
+            .revenue-step .revenue-preset-btn {
+                background-color: #222;
+                color: #fff;
+                border: 1px solid #444;
+                border-radius: 4px;
+                padding: 8px 12px;
+                cursor: pointer;
+                transition: background-color 0.3s, border-color 0.3s;
+            }
+            
+            .revenue-step .revenue-preset-btn:hover {
+                background-color: #333;
+                border-color: #ffff66;
+            }
+        `;
+        
+        // Add the style to the container
+        container.appendChild(style);
     }
     
     /**

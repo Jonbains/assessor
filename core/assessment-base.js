@@ -4,6 +4,10 @@
  * This serves as the foundation for all assessment types in the modular structure
  */
 
+// Import required controllers
+import { NavigationController } from './navigation-controller.js';
+import { StateManager } from './state-manager.js';
+
 export class AssessmentBase {
     /**
      * Constructor for the base assessment

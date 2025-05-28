@@ -1,0 +1,161 @@
+/* Service Selection with Revenue Allocation Styling */
+.assessment-option {
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.assessment-option.selected {
+    border-color: #ffff66;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Revenue Allocation Note */
+.revenue-allocation-note {
+    background: #000000;
+    border-left: 4px solid #ffff66;
+    padding: 10px 15px;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #fff;
+    border-radius: 3px;
+}
+
+/* Total Revenue Display */
+.revenue-total-display {
+    display: none; /* Hide this completely */
+}
+
+.revenue-total-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#revenue-total-value {
+    font-size: 18px;
+    font-weight: 700;
+    transition: color 0.3s ease;
+}
+
+#revenue-total-value.success {
+    color: #4CAF50;
+}
+
+#revenue-total-value.warning {
+    color: #FF9800;
+}
+
+.assessment-option-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.assessment-option-label {
+    font-weight: 600;
+    font-size: 18px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.assessment-option-description {
+    color: #666;
+    margin-left: 30px;
+    margin-top: 5px;
+}
+
+.service-revenue-slider {
+    margin-top: 10px;
+    width: 100%;
+    padding: 12px 0;
+    border-top: 0px dashed #e5e5e5;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.slider-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.slider-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 15px;
+}
+
+.revenue-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e5e5e5;
+    outline: none;
+    border-radius: 3px;
+}
+
+.revenue-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffff66;
+    cursor: pointer;
+    border: none;
+}
+
+.revenue-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffff66;
+    cursor: pointer;
+    border: none;
+}
+
+.slider-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: #ffff66;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: #000;
+    transition: all 0.2s;
+}
+
+.slider-button:hover {
+    background: #ffffaa;
+    color: #000;
+}
+
+.slider-value {
+    display: none; /* Hide percentages completely */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .slider-controls {
+        flex-wrap: wrap;
+    }
+    
+    .revenue-slider {
+        min-width: 100%;
+        margin: 10px 0;
+    }
+}

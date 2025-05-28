@@ -3,14 +3,17 @@
  * Generates M&A valuation and EBITDA-focused dashboard components
  */
 
-var ValuationDashboard = {
+// Import valuation calculations if needed
+import { ValuationCalculations } from '../scoring/valuation-calculations.js';
+
+export class ValuationDashboard {
     /**
      * Generate the complete valuation dashboard
      * @param {Object} assessmentData - The assessment data including scores
      * @param {Object} config - Configuration options
      * @returns {Object} - Dashboard data and HTML
      */
-    generateDashboard: function(assessmentData, config) {
+    generateDashboard(assessmentData, config) {
         try {
             // Calculate valuation metrics
             const valuationData = this.calculateValuationMetrics(assessmentData);
@@ -54,14 +57,14 @@ var ValuationDashboard = {
                 html: '<div class="error-message">Error generating valuation dashboard</div>'
             };
         }
-    },
+    }
     
     /**
      * Calculate valuation metrics based on assessment data
      * @param {Object} assessmentData - The assessment data
      * @returns {Object} - Calculated valuation metrics
      */
-    calculateValuationMetrics: function(assessmentData) {
+    calculateValuationMetrics(assessmentData) {
         const scores = assessmentData.scores || {};
         const services = assessmentData.serviceScores || {};
         
@@ -217,14 +220,14 @@ var ValuationDashboard = {
             },
             serviceAnalysis: serviceAnalysis
         };
-    },
+    }
     
     /**
      * Generate HTML for the executive summary section
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the executive summary
      */
-    generateExecutiveSummaryHTML: function(valuationData) {
+    generateExecutiveSummaryHTML(valuationData) {
         const scores = valuationData.scores;
         const valuation = valuationData.valuation;
         
@@ -255,14 +258,14 @@ var ValuationDashboard = {
         html += '</div>'; // End valuation-hero
         
         return html;
-    },
+    }
     
     /**
      * Generate HTML for the valuation breakdown section
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the valuation breakdown
      */
-    generateValuationBreakdownHTML: function(valuationData) {
+    generateValuationBreakdownHTML(valuationData) {
         const scores = valuationData.scores;
         const driverImpacts = valuationData.driverImpacts;
         const keyRisk = valuationData.keyRisk;
@@ -309,7 +312,7 @@ var ValuationDashboard = {
         html += '</div>'; // End valuation-breakdown
         
         return html;
-    },
+    }
     
     /**
      * Generate HTML for the service portfolio section
@@ -317,7 +320,7 @@ var ValuationDashboard = {
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the service portfolio
      */
-    generateServicePortfolioHTML: function(assessmentData, valuationData) {
+    generateServicePortfolioHTML(assessmentData, valuationData) {
         const serviceAnalysis = valuationData.serviceAnalysis;
         
         if (!serviceAnalysis || serviceAnalysis.length === 0) {
@@ -375,14 +378,14 @@ var ValuationDashboard = {
         html += '</div>'; // End service-portfolio
         
         return html;
-    },
+    }
     
     /**
      * Get the CSS class for a risk level
      * @param {String} riskLevel - The risk level (Critical, High, Medium, Low)
      * @returns {String} - The CSS class (high, medium, low)
      */
-    getRiskClass: function(riskLevel) {
+    getRiskClass(riskLevel) {
         switch (riskLevel) {
             case 'Critical':
             case 'High':
@@ -393,16 +396,16 @@ var ValuationDashboard = {
             default:
                 return 'low';
         }
-    },
+    }
     
     /**
      * Capitalize the first letter of a string
      * @param {String} string - The string to capitalize
      * @returns {String} - The capitalized string
      */
-    capitalizeFirstLetter: function(string) {
+    capitalizeFirstLetter(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
-    },
+    }
     
     /**
      * Generate HTML for the valuation improvement roadmap section
@@ -410,7 +413,7 @@ var ValuationDashboard = {
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the valuation roadmap
      */
-    generateValuationRoadmapHTML: function(assessmentData, valuationData) {
+    generateValuationRoadmapHTML(assessmentData, valuationData) {
         const serviceAnalysis = valuationData.serviceAnalysis || [];
         
         // Define action items based on service analysis and scores
@@ -552,7 +555,7 @@ var ValuationDashboard = {
         html += '</div>'; // End valuation-roadmap
         
         return html;
-    },
+    }
     
     /**
      * Generate HTML for the financial impact calculator section
@@ -560,7 +563,7 @@ var ValuationDashboard = {
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the financial calculator
      */
-    generateFinancialCalculatorHTML: function(assessmentData, valuationData) {
+    generateFinancialCalculatorHTML(assessmentData, valuationData) {
         // Use actual assessment data when available
         const defaultRevenue = assessmentData.revenue || 1500000;
         const defaultEBITDAMargin = assessmentData.ebitdaMargin || 15;
@@ -652,22 +655,22 @@ var ValuationDashboard = {
         html += '</div>'; // End financial-calculator
         
         return html;
-    },
+    }
     
     /**
      * Format a number as currency
      * @param {number} value - The number to format
      * @returns {string} - Formatted currency string
      */
-    formatCurrency: function(value) {
+    formatCurrency(value) {
         return Math.round(value).toLocaleString();
-    },
+    }
     
     /**
      * Initialize the calculator functionality
      * @param {Object} valuationData - The valuation metrics
      */
-    initializeCalculator: function(valuationData) {
+    initializeCalculator(valuationData) {
         // Find calculator button
         const calculateBtn = document.getElementById('calculate-impact-button');
         if (!calculateBtn) return;
@@ -735,7 +738,7 @@ var ValuationDashboard = {
                 console.error('Error calculating valuation impact:', error);
             }
         });
-    },
+    }
     
     /**
      * Generate HTML for the acquisition readiness checklist section
@@ -743,7 +746,7 @@ var ValuationDashboard = {
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the acquisition readiness checklist
      */
-    generateAcquisitionChecklistHTML: function(assessmentData, valuationData) {
+    generateAcquisitionChecklistHTML(assessmentData, valuationData) {
         // Calculate readiness score based on assessment data
         const scores = valuationData.scores || {};
         const overallScore = scores.overall || 0;
@@ -859,7 +862,7 @@ var ValuationDashboard = {
         html += '</div>'; // End acquisition-checklist
         
         return html;
-    },
+    }
     
     /**
      * Generate HTML for the peer benchmarking section
@@ -867,7 +870,7 @@ var ValuationDashboard = {
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the peer benchmarking section
      */
-    generatePeerBenchmarkingHTML: function(assessmentData, valuationData) {
+    generatePeerBenchmarkingHTML(assessmentData, valuationData) {
         // Get scores from assessment data
         const scores = valuationData.scores || {};
         
@@ -879,28 +882,28 @@ var ValuationDashboard = {
                 topPerformers: "8.0-12.0",
                 industryAverage: "3.5-5.5",
                 percentage: Math.min(100, ((valuationData.valuation.multipleLow / 8.0) * 100))
-            },
+            }
             {
                 name: "AI Readiness",
                 yourValue: scores.ai + "%",
                 topPerformers: "85%+",
                 industryAverage: "45%",
                 percentage: scores.ai
-            },
+            }
             {
                 name: "Operational Efficiency",
                 yourValue: scores.operational + "%",
                 topPerformers: "80%+",
                 industryAverage: "55%",
                 percentage: scores.operational
-            },
+            }
             {
                 name: "Financial Resilience",
                 yourValue: scores.financial + "%",
                 topPerformers: "75%+",
                 industryAverage: "50%",
                 percentage: scores.financial
-            },
+            }
             {
                 name: "Service Future-Proofing",
                 yourValue: Math.min(85, Math.max(45, Math.round((100 - ((valuationData.serviceAnalysis || []).filter(s => s.riskLevel === 'Critical' || s.riskLevel === 'High').length * 15))))) + "%",
@@ -990,7 +993,7 @@ var ValuationDashboard = {
         html += '</div>'; // End peer-benchmarking
         
         return html;
-    },
+    }
     
     /**
      * Generate HTML for the service recommendations section
@@ -998,7 +1001,7 @@ var ValuationDashboard = {
      * @param {Object} valuationData - The calculated valuation metrics
      * @returns {String} - HTML for the service recommendations
      */
-    generateServiceRecommendationsHTML: function(assessmentData, valuationData) {
+    generateServiceRecommendationsHTML(assessmentData, valuationData) {
         const serviceAnalysis = valuationData.serviceAnalysis || [];
         
         // Define recommendations based on service analysis
@@ -1038,7 +1041,7 @@ var ValuationDashboard = {
                     impact: '+0.5x EBITDA',
                     difficulty: 1,
                     timeframe: '14-30 days'
-                },
+                }
                 {
                     service: 'seo',
                     title: 'Launch AI-powered SEO service tier',
@@ -1046,7 +1049,7 @@ var ValuationDashboard = {
                     impact: '+0.3x EBITDA',
                     difficulty: 2,
                     timeframe: '30-45 days'
-                },
+                }
                 {
                     service: 'web design',
                     title: 'Develop AI design-assist workflow',
@@ -1054,7 +1057,7 @@ var ValuationDashboard = {
                     impact: '+0.4x EBITDA',
                     difficulty: 2,
                     timeframe: '45-60 days'
-                },
+                }
                 {
                     service: 'marketing',
                     title: 'Create predictive marketing analytics service',
@@ -1145,4 +1148,7 @@ var ValuationDashboard = {
         
         return html;
     }
-};
+}
+
+// Export default
+export default ValuationDashboard;

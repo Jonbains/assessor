@@ -41,26 +41,35 @@ export class NavigationController {
      * @return {Boolean} - True if navigation was successful
      */
     nextStep() {
+        console.log('[NavigationController] nextStep called');
+        console.log('[NavigationController] Current step:', this.assessment.state.currentStep);
+        
         // Validate the current step before proceeding
         if (!this.assessment.validateCurrentStep()) {
+            console.log('[NavigationController] Current step validation failed, not proceeding');
             return false;
         }
         
         const currentStepIndex = this.assessment.config.steps.indexOf(this.assessment.state.currentStep);
+        console.log('[NavigationController] Current step index:', currentStepIndex);
+        console.log('[NavigationController] Available steps:', this.assessment.config.steps);
         
         if (currentStepIndex < this.assessment.config.steps.length - 1) {
             // Get the next step
             const nextStep = this.assessment.config.steps[currentStepIndex + 1];
+            console.log('[NavigationController] Next step will be:', nextStep);
             
             // Update the current step in the state
             this.assessment.state.currentStep = nextStep;
             
             // Render the new current step
+            console.log('[NavigationController] Rendering next step:', nextStep);
             this.assessment.renderCurrentStep();
             
             return true;
         }
         
+        console.log('[NavigationController] No next step available');
         return false;
     }
     
