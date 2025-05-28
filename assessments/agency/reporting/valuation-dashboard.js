@@ -65,14 +65,24 @@ export class ValuationDashboard {
      * @returns {Object} - Calculated valuation metrics
      */
     calculateValuationMetrics(assessmentData) {
+        console.log('[ValuationDashboard] Calculating metrics with assessment data:', assessmentData);
+        
         const scores = assessmentData.scores || {};
         const services = assessmentData.serviceScores || {};
         
-        // Calculate key scores
-        const operationalScore = scores.operational || 72.5;
-        const financialScore = scores.financial || 65.8;
-        const aiScore = scores.ai || 67.1;
-        const overallScore = scores.overall || 68.2;
+        // Use actual scores without overriding with hardcoded fallbacks
+        // Only use fallbacks if the scores are completely missing
+        const operationalScore = scores.operational !== undefined ? scores.operational : 0;
+        const financialScore = scores.financial !== undefined ? scores.financial : 0;
+        const aiScore = scores.ai !== undefined ? scores.ai : 0;
+        const overallScore = scores.overall !== undefined ? scores.overall : 0;
+        
+        console.log('[ValuationDashboard] Using actual scores:', {
+            operational: operationalScore,
+            financial: financialScore,
+            ai: aiScore,
+            overall: overallScore
+        });
         
         // Calculate base EBITDA multiple with proper gradations for very low scores
         let multipleLow = 1.0; // Absolute floor for terrible performers
@@ -1002,16 +1012,17 @@ export class ValuationDashboard {
      * @returns {String} - HTML for the service recommendations
      */
     generateServiceRecommendationsHTML(assessmentData, valuationData) {
-        const serviceAnalysis = valuationData.serviceAnalysis || [];
+        // Import service recommendations dynamically
+        const ServiceRecommendations = window.ServiceRecommendations; // Assuming this is globally available
         
-        // Define recommendations based on service analysis
-        const recommendations = [];
+        console.log('[ValuationDashboard] Generating service recommendations');  
+        console.log('[ValuationDashboard] Assessment data:', assessmentData);
         
-        // Process high and critical risk services for specific recommendations
-        serviceAnalysis.forEach(service => {
-            if (service.riskLevel === 'Critical') {
-                recommendations.push({
-                    service: service.name,
+        // Get scores and services
+        const scores = valuationData.scores || {};
+        const overallScore = scores.overall || 0;
+        const selectedServices = assessmentData.selectedServices || [];
+        const agencyType = assessmentData.agencyType || '';
                     title: 'Replace manual ' + this.capitalizeFirstLetter(service.name) + ' processes',
                     description: 'Current ' + service.name + ' processes are at critical risk due to AI disruption. Implement automated workflows and AI-assisted tools to maintain competitiveness.',
                     impact: '+0.6x EBITDA',
