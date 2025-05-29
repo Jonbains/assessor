@@ -10,7 +10,7 @@
  * @param {any} value - The data to store
  * @param {Number} expiryMs - Milliseconds until expiry (optional)
  */
-export function saveToLocalStorage(key, value, expiryMs = null) {
+function saveToLocalStorage(key, value, expiryMs = null) {
     try {
         const item = {
             value: value
@@ -34,7 +34,7 @@ export function saveToLocalStorage(key, value, expiryMs = null) {
  * @param {any} defaultValue - Default value to return if key not found
  * @return {any} - The stored data or defaultValue if not found or expired
  */
-export function loadFromLocalStorage(key, defaultValue = null) {
+function loadFromLocalStorage(key, defaultValue = null) {
     try {
         const itemStr = localStorage.getItem(key);
         
@@ -62,7 +62,7 @@ export function loadFromLocalStorage(key, defaultValue = null) {
  * Remove data from localStorage
  * @param {String} key - The key to remove
  */
-export function removeFromLocalStorage(key) {
+function removeFromLocalStorage(key) {
     try {
         localStorage.removeItem(key);
         return true;
@@ -77,7 +77,7 @@ export function removeFromLocalStorage(key) {
  * @param {String} key - The key to check
  * @return {Boolean} - True if the key exists and is not expired
  */
-export function existsInLocalStorage(key) {
+function existsInLocalStorage(key) {
     try {
         const itemStr = localStorage.getItem(key);
         
@@ -104,7 +104,7 @@ export function existsInLocalStorage(key) {
  * @param {String} key - The key to store the data under
  * @param {any} value - The data to store
  */
-export function saveToSessionStorage(key, value) {
+function saveToSessionStorage(key, value) {
     try {
         sessionStorage.setItem(key, JSON.stringify(value));
         return true;
@@ -120,7 +120,7 @@ export function saveToSessionStorage(key, value) {
  * @param {any} defaultValue - Default value to return if key not found
  * @return {any} - The stored data or defaultValue if not found
  */
-export function loadFromSessionStorage(key, defaultValue = null) {
+function loadFromSessionStorage(key, defaultValue = null) {
     try {
         const itemStr = sessionStorage.getItem(key);
         
@@ -139,7 +139,7 @@ export function loadFromSessionStorage(key, defaultValue = null) {
  * Remove data from sessionStorage
  * @param {String} key - The key to remove
  */
-export function removeFromSessionStorage(key) {
+function removeFromSessionStorage(key) {
     try {
         sessionStorage.removeItem(key);
         return true;
@@ -148,3 +148,12 @@ export function removeFromSessionStorage(key) {
         return false;
     }
 }
+
+// Make storage utility functions available as browser globals
+window.saveToLocalStorage = saveToLocalStorage;
+window.loadFromLocalStorage = loadFromLocalStorage;
+window.removeFromLocalStorage = removeFromLocalStorage;
+window.existsInLocalStorage = existsInLocalStorage;
+window.saveToSessionStorage = saveToSessionStorage;
+window.loadFromSessionStorage = loadFromSessionStorage;
+window.removeFromSessionStorage = removeFromSessionStorage;

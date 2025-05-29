@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Readiness Assessment</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/assessment.css">
+    <link rel="stylesheet" href="styles/inhouse-assessment.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background-color: #2c3e50;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+        
+        .assessment-selector {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .assessment-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            width: 350px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .assessment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            padding: 20px;
+            color: white;
+        }
+        
+        .agency-header {
+            background-color: #3498db;
+        }
+        
+        .inhouse-header {
+            background-color: #2ecc71;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        
+        .card-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .card-description {
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .feature-list {
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-list li {
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .feature-list li::before {
+            content: "✓";
+            color: #27ae60;
+            position: absolute;
+            left: -20px;
+            font-weight: bold;
+        }
+        
+        .card-footer {
+            padding: 15px 20px;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-agency {
+            background-color: #3498db;
+        }
+        
+        .btn-agency:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-inhouse {
+            background-color: #2ecc71;
+        }
+        
+        .btn-inhouse:hover {
+            background-color: #27ae60;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        #assessment-container {
+            display: none;
+            margin-top: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            min-height: 500px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #f1f1f1;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .back-button:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AI Readiness Assessment</h1>
+            <p class="subtitle">Evaluate your organization's AI capabilities and get personalized recommendations</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div id="selection-screen">
+            <div class="assessment-selector">
+                <div class="assessment-card" id="agency-card">
+                    <div class="card-header agency-header">
+                        <h2 class="card-title">Agency Assessment</h2>
+                        <p class="card-subtitle">For marketing and digital agencies</p>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-description">Evaluate your agency's AI readiness and unlock new revenue opportunities with AI-powered services.</p>
+                        <ul class="feature-list">
+                            <li>Detailed valuation impact analysis</li>
+                            <li>Service-specific AI readiness scores</li>
+                            <li>Client-facing recommendations</li>
+                            <li>Path to premium revenue strategies</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-agency" data-type="agency">Start Agency Assessment</button>
+                    </div>
+                </div>
+                
+                <div class="assessment-card" id="inhouse-card">
+                    <div class="card-header inhouse-header">
+                        <h2 class="card-title">In-House Assessment</h2>
+                        <p class="card-subtitle">For internal marketing teams</p>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-description">Evaluate your marketing team's AI capabilities and get a customized roadmap for implementation.</p>
+                        <ul class="feature-list">
+                            <li>Industry-specific benchmarking</li>
+                            <li>Marketing activity AI potential analysis</li>
+                            <li>Internal skills assessment</li>
+                            <li>Prioritized implementation plan</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-inhouse" data-type="inhouse-marketing">Start In-House Assessment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="assessment-container" style="display: none;">
+            <a href="#" class="back-button" id="back-to-selection">&larr; Back to Selection</a>
+            <div id="assessment-content"></div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 AI Readiness Assessment Tool. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <!-- Load core framework -->
+    <script src="core/assessment-base.js"></script>
+    <script src="core/state-manager.js"></script>
+    <script src="core/navigation-controller.js"></script>
+    <script src="core/scoring-base.js"></script>
+    <script src="core/step-base.js"></script>
+    <script src="core/assessment-factory.js"></script>
+    
+    <!-- Load shared utilities -->
+    <script src="shared/utils/event-manager.js"></script>
+    <script src="shared/utils/validation-utils.js"></script>
+    <script src="shared/utils/storage-utils.js"></script>
+    <script src="shared/utils/formatting-utils.js"></script>
+    
+    <!-- Load agency assessment -->
+    <script src="assessments/agency/agency-assessment.js"></script>
+    <script src="assessments/agency/config/questions-config.js"></script>
+    <script src="assessments/agency/config/recommendations-config.js"></script>
+    <script src="assessments/agency/config/valuation-config.js"></script>
+    <script src="assessments/agency/scoring/agency-scoring-engine.js"></script>
+    <script src="assessments/agency/recommendations/recommendations-engine.js"></script>
+    <script src="assessments/agency/recommendations/service-recommendations.js"></script>
+    
+    <!-- Load agency step files -->
+    <script src="assessments/agency/steps/email-step.js"></script>
+    
+    <!-- Load inhouse assessment -->
+    <script src="assessments/inhouse/config/inhouse_questions.js"></script>
+    <script src="assessments/inhouse/config/inhouse_scoring.js"></script>
+    <script src="assessments/inhouse/config/inhouse-marketing-recommendations-config.js"></script>
+    <script src="assessments/inhouse/recommendations/inhouse-recommendations-engine.js"></script>
+    <script src="assessments/inhouse/reporting/inhouse-marketing-dashboard.js"></script>
+    
+    <!-- Load inhouse step files -->
+    <script src="assessments/inhouse/steps/setup-step.js"></script>
+    <script src="assessments/inhouse/steps/questions-step.js"></script>
+    <script src="assessments/inhouse/steps/contact-step.js"></script>
+    <script src="assessments/inhouse/steps/results-step.js"></script>
+    
+    <!-- Load inhouse assessment main class (after all step files) -->
+    <script src="assessments/inhouse/inhouse-assessment.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const selectionScreen = document.getElementById('selection-screen');
+            const assessmentContainer = document.getElementById('assessment-container');
+            const assessmentContent = document.getElementById('assessment-content');
+            const backButton = document.getElementById('back-to-selection');
+            
+            // Get all assessment buttons
+            const assessmentButtons = document.querySelectorAll('.btn[data-type]');
+            
+            // Import and register assessments with factory
+            const factory = window.assessmentFactory;
+            
+            // Register agency assessment
+            if (window.AgencyAssessment) {
+                factory.registerType('agency', window.AgencyAssessment);
+            }
+            
+            // Register inhouse assessment
+            if (window.InhouseAssessment) {
+                factory.registerType('inhouse-marketing', window.InhouseAssessment);
+            }
+            
+            // Create assessment instance
+            let currentAssessment = null;
+            
+            // Handle assessment button clicks
+            assessmentButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const assessmentType = this.getAttribute('data-type');
+                    
+                    try {
+                        // Create appropriate config
+                        let config = {};
+                        
+                        if (assessmentType === 'agency') {
+                            config = {
+                                ...window.AgencyQuestionsConfig,
+                                recommendationsConfig: window.AgencyRecommendationsConfig,
+                                valuationConfig: window.AgencyValuationConfig
+                            };
+                        } else if (assessmentType === 'inhouse-marketing') {
+                            console.log('Creating In-House Marketing Assessment config');
+                            // Verify the config object exists and log its availability
+                            if (window.InHouseMarketingQuestionsConfig) {
+                                console.log('InHouseMarketingQuestionsConfig is available');
+                            } else {
+                                console.error('InHouseMarketingQuestionsConfig is not defined!');
+                            }
+                            
+                            // Same for recommendations config
+                            if (window.InHouseMarketingRecommendationsConfig) {
+                                console.log('InHouseMarketingRecommendationsConfig is available');
+                            } else {
+                                console.error('InHouseMarketingRecommendationsConfig is not defined!');
+                            }
+                            
+                            config = {
+                                ...window.InHouseMarketingQuestionsConfig,
+                                recommendationsConfig: window.InHouseMarketingRecommendationsConfig
+                            };
+                        }
+                        
+                        // Create assessment
+                        currentAssessment = factory.createAssessment(assessmentType, config, assessmentContent);
+                        
+                        // Hide selection screen, show assessment
+                        selectionScreen.style.display = 'none';
+                        assessmentContainer.style.display = 'block';
+                        
+                        // Start assessment
+                        currentAssessment.start();
+                        
+                        console.log(`Started assessment: ${assessmentType}`);
+                        
+                    } catch (error) {
+                        console.error('Error creating assessment:', error);
+                        alert(`Error: ${error.message}`);
+                    }
+                });
+            });
+            
+            // Handle back button
+            backButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Clean up current assessment
+                if (currentAssessment) {
+                    // Optional: Add cleanup method to assessment classes
+                    assessmentContent.innerHTML = '';
+                    currentAssessment = null;
+                }
+                
+                // Show selection screen, hide assessment
+                selectionScreen.style.display = 'block';
+                assessmentContainer.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

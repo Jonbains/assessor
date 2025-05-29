@@ -1786,7 +1786,6 @@ const ServiceRecommendations = {
 };
 
 // Export as ES6 module
-export default ServiceRecommendations;
-
-// Also make available as a named export
-export { ServiceRecommendations };
+// No longer using ES6 exports
+// Make ServiceRecommendations available as a browser global
+window.ServiceRecommendations = ServiceRecommendations;

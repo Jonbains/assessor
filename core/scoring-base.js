@@ -4,7 +4,7 @@
  * Provides core scoring functionality that can be extended by specific assessment types
  */
 
-export class ScoringBase {
+class ScoringBase {
     /**
      * Constructor for the scoring engine
      * @param {Object} config - Scoring configuration
@@ -106,3 +106,6 @@ export class ScoringBase {
         return 1;
     }
 }
+
+// Make the class available as a browser global
+window.ScoringEngineBase = ScoringBase;

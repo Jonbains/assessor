@@ -5,25 +5,13 @@
  * Extends the base assessment class with agency-specific functionality
  */
 
-import { AssessmentBase } from '../../core/assessment-base.js';
-import { ProgressBar } from '../../shared/components/progress-bar.js';
-
-// Import agency steps
-import { AgencyTypeStep } from './steps/agency-type-step.js';
-import { ServicesStep } from './steps/services-step.js';
-import { QuestionsStep } from './steps/questions-step.js';
-import { EmailStep } from './steps/email-step.js';
-import { ResultsStep } from './steps/results-step.js';
-
-// Import scoring and reporting components
-import { AgencyScoringEngine } from './scoring/scoring-engine.js';
-import { ValuationDashboard } from './reporting/valuation-dashboard.js';
+// All dependencies will be accessed as browser globals
 
 /**
  * AgencyAssessment class 
  * Agency-specific implementation of the assessment framework
  */
-export class AgencyAssessment extends AssessmentBase {
+class AgencyAssessment extends AssessmentBase {
     /**
      * Constructor for agency assessment
      * @param {Object} config - Assessment configuration
@@ -412,8 +400,27 @@ export class AgencyAssessment extends AssessmentBase {
      * Set up event listeners for the assessment
      */
     setupEventListeners() {
-        // Global event listeners will be set up here if needed
-        // Most event handling is done at the step level
+        // Global event listeners for the assessment
+        // Each step will set up its own event listeners when rendered
+        
+        // Example: Global navigation buttons
+        const backBtn = document.getElementById('back-to-selection');
+        if (backBtn) {
+            backBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (confirm('Are you sure you want to exit this assessment?')) {
+                    // Navigate back to selection screen
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Handle browser back button
+        window.addEventListener('popstate', (e) => {
+            e.preventDefault();
+            // Go to previous step if possible
+            this.previousStep();
+        });
     }
     
     /**
@@ -481,3 +488,6 @@ export class AgencyAssessment extends AssessmentBase {
         document.body.removeChild(downloadLink);
     }
 }
+
+// Make the class available as a browser global
+window.AgencyAssessment = AgencyAssessment;

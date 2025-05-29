@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-House Marketing Assessment Test</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/assessment.css">
+    <link rel="stylesheet" href="styles/inhouse-assessment.css">
+    <style>
+        /* Temporary styles for testing */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .test-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #assessment-container {
+            min-height: 500px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        
+        /* Inhouse assessment specific styles */
+        .inhouse-assessment .step-container {
+            padding: 20px;
+        }
+        
+        .inhouse-assessment .industry-options,
+        .inhouse-assessment .activities-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .inhouse-assessment .industry-option,
+        .inhouse-assessment .activity-option {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .inhouse-assessment .industry-option:hover,
+        .inhouse-assessment .activity-option:hover {
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .inhouse-assessment .industry-option.selected,
+        .inhouse-assessment .activity-option.selected {
+            border-color: #4CAF50;
+            background-color: #f0fff0;
+        }
+        
+        .inhouse-assessment .option {
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .inhouse-assessment .option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .inhouse-assessment .option.selected {
+            border-color: #4CAF50;
+            background-color: #f0fff0;
+        }
+        
+        .inhouse-assessment .step-navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .inhouse-assessment .dimension-bar {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .inhouse-assessment .dimension-label {
+            width: 150px;
+        }
+        
+        .inhouse-assessment .bar-container {
+            flex-grow: 1;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 15px;
+        }
+        
+        .inhouse-assessment .bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.5s ease;
+        }
+        
+        .inhouse-assessment .bar-fill.leader { background-color: #4CAF50; }
+        .inhouse-assessment .bar-fill.advanced { background-color: #8BC34A; }
+        .inhouse-assessment .bar-fill.advancing { background-color: #CDDC39; }
+        .inhouse-assessment .bar-fill.developing { background-color: #FFC107; }
+        .inhouse-assessment .bar-fill.beginning { background-color: #FF9800; }
+        
+        .inhouse-assessment .dimension-value {
+            width: 40px;
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .inhouse-assessment .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            margin: 0 auto 20px;
+        }
+        
+        .inhouse-assessment .score-value {
+            font-size: 36px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .inhouse-assessment .score-label {
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .inhouse-assessment .recommendation-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .inhouse-assessment .recommendation-title {
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .inhouse-assessment .recommendation-description {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .inhouse-assessment .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 0.85em;
+        }
+        
+        .inhouse-assessment .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .inhouse-assessment .progress-steps {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .inhouse-assessment .progress-step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+            position: relative;
+        }
+        
+        .inhouse-assessment .progress-step.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .inhouse-assessment .progress-step.completed {
+            background-color: #8BC34A;
+            color: white;
+        }
+        
+        .inhouse-assessment .progress-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -10px;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background-color: inherit;
+            clip-path: polygon(0 0, 50% 50%, 0 100%);
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>In-House Marketing Assessment Test</h1>
+        
+        <div class="test-controls">
+            <button id="init-assessment">Initialize Assessment</button>
+            <button id="reset-assessment">Reset Assessment</button>
+        </div>
+        
+        <div id="assessment-container"></div>
+    </div>
+    
+    <!-- Load core framework -->
+    <script src="core/assessment-base.js"></script>
+    <script src="core/state-manager.js"></script>
+    <script src="core/navigation-controller.js"></script>
+    <script src="core/scoring-base.js"></script>
+    <script src="core/step-base.js"></script>
+    
+    <!-- Load inhouse assessment configuration -->
+    <script src="assessments/inhouse/config/inhouse_questions.js"></script>
+    <script src="assessments/inhouse/config/inhouse_scoring.js"></script>
+    <script src="assessments/inhouse/config/inhouse-marketing-recommendations-config.js"></script>
+    
+    <!-- Load inhouse assessment components -->
+    <script src="assessments/inhouse/steps/setup-step.js"></script>
+    <script src="assessments/inhouse/steps/questions-step.js"></script>
+    <script src="assessments/inhouse/steps/contact-step.js"></script>
+    <script src="assessments/inhouse/steps/results-step.js"></script>
+    <script src="assessments/inhouse/scoring/inhouse-scoring-engine.js"></script>
+    <script src="assessments/inhouse/recommendations/inhouse-recommendations-engine.js"></script>
+    <script src="assessments/inhouse/reporting/inhouse-marketing-dashboard.js"></script>
+    <script src="assessments/inhouse/inhouse-assessment.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('assessment-container');
+            let inhouseAssessment = null;
+            
+            // Initialize assessment button
+            document.getElementById('init-assessment').addEventListener('click', function() {
+                // Create config object
+                const config = {
+                    ...window.InHouseMarketingQuestionsConfig,
+                    // Additional config if needed
+                };
+                
+                // Initialize assessment
+                inhouseAssessment = new InhouseAssessment(config, container);
+                
+                // Start assessment
+                inhouseAssessment.start();
+                
+                console.log('In-House Marketing Assessment initialized');
+            });
+            
+            // Reset assessment button
+            document.getElementById('reset-assessment').addEventListener('click', function() {
+                if (inhouseAssessment) {
+                    // Clear localStorage for this assessment
+                    localStorage.removeItem('inhouse-marketing-assessment-state');
+                    
+                    // Reset container
+                    container.innerHTML = '';
+                    
+                    // Re-initialize
+                    const config = {
+                        ...window.InHouseMarketingQuestionsConfig,
+                        // Additional config if needed
+                    };
+                    
+                    inhouseAssessment = new InhouseAssessment(config, container);
+                    inhouseAssessment.start();
+                    
+                    console.log('In-House Marketing Assessment reset');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

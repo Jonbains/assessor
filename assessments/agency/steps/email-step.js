@@ -4,15 +4,14 @@
  * Implements the email collection step for the agency assessment
  */
 
-import { StepBase } from '../../../core/step-base.js';
-import { addEvent } from '../../../shared/utils/event-manager.js';
-import { validateEmail } from '../../../shared/utils/validation-utils.js';
+// Dependencies will be accessed as browser globals
+// StepBase, addEvent and validateEmail should be available as browser globals
 
 /**
  * EmailStep class
  * Collects the user's email address for results delivery
  */
-export class EmailStep extends StepBase {
+class EmailStep extends StepBase {
     /**
      * Constructor for email step
      * @param {AgencyAssessment} assessment - The parent assessment
@@ -327,3 +326,6 @@ export class EmailStep extends StepBase {
         return true;
     }
 }
+
+// Make the class available as a browser global
+window.EmailStep = EmailStep;

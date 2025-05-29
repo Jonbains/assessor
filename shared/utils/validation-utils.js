@@ -9,7 +9,7 @@
  * @param {String} email - The email address to validate
  * @return {Boolean} - True if the email is valid
  */
-export function validateEmail(email) {
+function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }
@@ -19,7 +19,7 @@ export function validateEmail(email) {
  * @param {String} value - The string to validate
  * @return {Boolean} - True if the string is not empty
  */
-export function validateRequired(value) {
+function validateRequired(value) {
     return typeof value === 'string' && value.trim().length > 0;
 }
 
@@ -30,7 +30,7 @@ export function validateRequired(value) {
  * @param {Number} max - Maximum allowed value (inclusive)
  * @return {Boolean} - True if the number is within range
  */
-export function validateNumberRange(value, min, max) {
+function validateNumberRange(value, min, max) {
     const num = Number(value);
     return !isNaN(num) && num >= min && num <= max;
 }
@@ -40,7 +40,7 @@ export function validateNumberRange(value, min, max) {
  * @param {Array} array - The array to validate
  * @return {Boolean} - True if the array has at least one item
  */
-export function validateNonEmptyArray(array) {
+function validateNonEmptyArray(array) {
     return Array.isArray(array) && array.length > 0;
 }
 
@@ -50,7 +50,7 @@ export function validateNonEmptyArray(array) {
  * @param {Object} rules - Object containing validation rules for each field
  * @return {Object} - Object with validation results {isValid, errors}
  */
-export function validateFields(data, rules) {
+function validateFields(data, rules) {
     const errors = {};
     let isValid = true;
     
@@ -87,3 +87,10 @@ export function validateFields(data, rules) {
         errors
     };
 }
+
+// Make validation functions available as browser globals
+window.validateEmail = validateEmail;
+window.validateRequired = validateRequired;
+window.validateNumberRange = validateNumberRange;
+window.validateNonEmptyArray = validateNonEmptyArray;
+window.validateFields = validateFields;

@@ -4,7 +4,7 @@
  * This serves as the foundation for all step components in the modular structure
  */
 
-export class StepBase {
+class StepBase {
     /**
      * Constructor for the base step
      * @param {Object} assessment - Reference to the parent assessment
@@ -58,6 +58,9 @@ export class StepBase {
      * Clean up event listeners when leaving this step
      */
     cleanupEventListeners() {
-        // Optional method to be implemented by step classes
+        // To be implemented by derived classes
     }
 }
+
+// Make the class available as a browser global
+window.StepBase = StepBase;

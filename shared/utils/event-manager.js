@@ -4,7 +4,7 @@
  * Provides utilities for event handling and management
  */
 
-export class EventManager {
+class EventManager {
     /**
      * Constructor for the event manager
      */
@@ -91,8 +91,6 @@ export class EventManager {
 // Create a singleton instance for global event management
 const eventManager = new EventManager();
 
-export default eventManager;
-
 /**
  * Helper function to add event listener with automatic cleanup
  * @param {Element} element - DOM element to attach listener to
@@ -101,7 +99,7 @@ export default eventManager;
  * @param {Object} options - Event listener options
  * @return {Function} - Function to remove the event listener
  */
-export function addEvent(element, event, handler, options = {}) {
+function addEvent(element, event, handler, options = {}) {
     if (!element) {
         console.error('[EventManager] Cannot add event to null element');
         return () => {};
@@ -121,7 +119,7 @@ export function addEvent(element, event, handler, options = {}) {
  * @param {Object} options - Event listener options
  * @return {Function} - Function to remove all event listeners
  */
-export function addEvents(element, events, options = {}) {
+function addEvents(element, events, options = {}) {
     if (!element) {
         console.error('[EventManager] Cannot add events to null element');
         return () => {};
@@ -140,3 +138,8 @@ export function addEvents(element, events, options = {}) {
         removeHandlers.forEach(remove => remove());
     };
 }
+
+// Make event utilities available as browser globals
+window.eventManager = eventManager;
+window.addEvent = addEvent;
+window.addEvents = addEvents;

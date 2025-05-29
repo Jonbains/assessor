@@ -1,0 +1,556 @@
+/**
+ * In-House Marketing Assessment - Results Step
+ * 
+ * Displays comprehensive assessment results including:
+ * - Overall AI readiness score
+ * - Dimension scores (People & Skills, Process & Infrastructure, Strategy & Leadership)
+ * - Industry comparison
+ * - Activity-specific insights
+ * - Recommendations and action plan
+ * - ROI projections and Next Steps
+ */
+
+import { StepBase } from '../../../core/step-base.js';
+
+export class ResultsStep extends StepBase {
+    // Method to render next steps section with top recommendations
+    // Follows the implementation plan specification
+    renderNextSteps(results) {
+        // Get top 3 prioritized recommendations
+        const topRecommendations = results.recommendations?.prioritizedRecommendations?.slice(0, 3) || [];
+        
+        return `
+            <div class="next-steps card">
+                <h2>Your Next Steps</h2>
+                <div class="quick-wins">
+                    ${topRecommendations.map((rec, index) => `
+                        <div class="recommendation-item">
+                            <span class="number">${index + 1}</span>
+                            <div class="content">
+                                <h3>${rec.title}</h3>
+                                <p>${rec.description}</p>
+                                <div class="meta">
+                                    <span class="timeline">${rec.timeline || 'Short-term'}</span>
+                                    <span class="roi">${rec.expectedROI || 'Productivity improvement'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="window.print()">Download Results</button>
+                    <button class="btn btn-secondary" onclick="location.href='mailto:?subject=AI Readiness Assessment Results'">Share Results</button>
+                </div>
+            </div>
+        `;
+    }
+    constructor(assessment) {
+        super(assessment);
+        this.cleanupListeners = [];
+        this.activeTab = 'overview'; // 'overview', 'dimensions', 'activities', 'recommendations'
+    }
+    
+    onEnter() {
+        // Make sure we have results
+        if (!this.assessment.state.results) {
+            const results = this.assessment.calculateResults();
+            this.assessment.state.results = results;
+        }
+    }
+    
+    render() {
+        const results = this.assessment.state.results;
+        
+        if (!results) {
+            return `
+                <div class="step-container error-container">
+                    <h2>Error Loading Results</h2>
+                    <p>We encountered an error while calculating your results. Please try again.</p>
+                    <button id="restart-btn" class="btn btn-primary">Restart Assessment</button>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="step-container results-container">
+                <div class="results-header">
+                    <h1>In-House Marketing AI Readiness Assessment</h1>
+                    <p class="results-subtitle">Results for ${this.assessment.state.companyName || 'Your Organization'}</p>
+                </div>
+                
+                ${this.renderTabNavigation()}
+                
+                <div class="results-content">
+                    ${this.renderActiveTabContent(results)}
+                </div>
+                
+                <div class="results-actions">
+                    <button id="download-results" class="btn btn-secondary">Download Results (PDF)</button>
+                    <button id="restart-assessment" class="btn btn-primary">Start New Assessment</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    renderTabNavigation() {
+        return `
+            <div class="results-tabs">
+                <div class="tab ${this.activeTab === 'overview' ? 'active' : ''}" data-tab="overview">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Overview</span>
+                </div>
+                <div class="tab ${this.activeTab === 'dimensions' ? 'active' : ''}" data-tab="dimensions">
+                    <span class="tab-icon">🔍</span>
+                    <span class="tab-label">Dimensions</span>
+                </div>
+                <div class="tab ${this.activeTab === 'activities' ? 'active' : ''}" data-tab="activities">
+                    <span class="tab-icon">📝</span>
+                    <span class="tab-label">Activities</span>
+                </div>
+                <div class="tab ${this.activeTab === 'recommendations' ? 'active' : ''}" data-tab="recommendations">
+                    <span class="tab-icon">💡</span>
+                    <span class="tab-label">Recommendations</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    renderActiveTabContent(results) {
+        switch (this.activeTab) {
+            case 'overview':
+                return this.renderOverviewTab(results);
+            case 'dimensions':
+                return this.renderDimensionsTab(results);
+            case 'activities':
+                return this.renderActivitiesTab(results);
+            case 'recommendations':
+                return this.renderRecommendationsTab(results);
+            default:
+                return this.renderOverviewTab(results);
+        }
+    }
+    
+    renderOverviewTab(results) {
+        const scores = results.scores || {};
+        const industry = this.getSelectedIndustry();
+        const overallScore = Math.round(scores.overall || 0);
+        const readinessCategory = this.getReadinessCategory(overallScore);
+        
+        return `
+            <div class="tab-content overview-tab">
+                <div class="overview-header">
+                    <div class="overall-score">
+                        <div class="score-circle ${readinessCategory.className}">
+                            <span class="score-value">${overallScore}</span>
+                            <span class="score-label">AI Readiness</span>
+                        </div>
+                    </div>
+                    
+                    <div class="readiness-summary">
+                        <h2 class="readiness-category ${readinessCategory.className}">${readinessCategory.label}</h2>
+                        <p class="readiness-description">${readinessCategory.description}</p>
+                    </div>
+                </div>
+                
+                <div class="industry-comparison">
+                    <h3>How You Compare to ${industry ? industry.name : 'Your Industry'}</h3>
+                    ${this.renderIndustryComparison(results, industry)}
+                </div>
+                
+                <div class="dimension-scores-summary">
+                    <h3>Core Dimension Scores</h3>
+                    <div class="dimension-bars">
+                        ${this.renderDimensionBar('People & Skills', scores.people_skills)}
+                        ${this.renderDimensionBar('Process & Infrastructure', scores.process_infrastructure)}
+                        ${this.renderDimensionBar('Strategy & Leadership', scores.strategy_leadership)}
+                    </div>
+                </div>
+                
+                <div class="key-insights">
+                    <h3>Key Insights</h3>
+                    <div class="insights-list">
+                        ${this.renderKeyInsights(results)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    renderDimensionsTab(results) {
+        const scores = results.scores || {};
+        
+        return `
+            <div class="tab-content dimensions-tab">
+                <div class="dimension-section">
+                    <div class="dimension-header people-skills">
+                        <h2>People & Skills</h2>
+                        <div class="dimension-score">${Math.round(scores.people_skills || 0)}</div>
+                    </div>
+                    <div class="dimension-content">
+                        <p>This dimension evaluates your team's AI capabilities, training level, and adaptability to new AI tools and processes.</p>
+                        ${this.renderDimensionDetails('people_skills', results)}
+                    </div>
+                </div>
+                
+                <div class="dimension-section">
+                    <div class="dimension-header process-infrastructure">
+                        <h2>Process & Infrastructure</h2>
+                        <div class="dimension-score">${Math.round(scores.process_infrastructure || 0)}</div>
+                    </div>
+                    <div class="dimension-content">
+                        <p>This dimension assesses your marketing systems, workflows, data infrastructure, and operational AI maturity.</p>
+                        ${this.renderDimensionDetails('process_infrastructure', results)}
+                    </div>
+                </div>
+                
+                <div class="dimension-section">
+                    <div class="dimension-header strategy-leadership">
+                        <h2>Strategy & Leadership</h2>
+                        <div class="dimension-score">${Math.round(scores.strategy_leadership || 0)}</div>
+                    </div>
+                    <div class="dimension-content">
+                        <p>This dimension examines your strategic vision, leadership support, budgeting, and organizational AI alignment.</p>
+                        ${this.renderDimensionDetails('strategy_leadership', results)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    renderActivitiesTab(results) {
+        const selectedActivities = this.assessment.state.selectedActivities || [];
+        
+        if (selectedActivities.length === 0) {
+            return `
+                <div class="tab-content activities-tab">
+                    <div class="no-activities">
+                        <p>No marketing activities were selected for this assessment.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        let activitiesHtml = '';
+        selectedActivities.forEach(activityId => {
+            const activity = this.getActivityById(activityId);
+            const activityScore = results.activityScores?.[activityId]?.score || 0;
+            
+            if (activity) {
+                activitiesHtml += `
+                    <div class="activity-section">
+                        <div class="activity-header">
+                            <h3>${activity.name}</h3>
+                            <div class="activity-score">${Math.round(activityScore)}</div>
+                        </div>
+                        <div class="activity-details">
+                            <p><strong>AI Impact:</strong> ${activity.aiImpact || 'Moderate'}</p>
+                            <p>${activity.description}</p>
+                            ${this.renderActivityInsights(activityId, results)}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        return `
+            <div class="tab-content activities-tab">
+                <h2>Marketing Activities AI Readiness</h2>
+                <p>Detailed assessment of your selected marketing activities and their AI potential.</p>
+                <div class="activities-container">
+                    ${activitiesHtml}
+                </div>
+            </div>
+        `;
+    }
+    
+    renderRecommendationsTab(results) {
+        const recommendations = results.recommendations || {};
+        const prioritizedRecommendations = recommendations.prioritizedRecommendations || [];
+        
+        if (prioritizedRecommendations.length === 0) {
+            return `
+                <div class="tab-content">
+                    <div class="message-container">
+                        <h2>No Recommendations Available</h2>
+                        <p>We couldn't generate recommendations based on your assessment responses.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="tab-content recommendations-tab">
+                <div class="recommendations-overview">
+                    <h2>AI Readiness Recommendations</h2>
+                    <p>Based on your assessment results, we've prioritized the following recommendations to improve your marketing team's AI readiness.</p>
+                </div>
+                
+                <div class="recommendations-container">
+                    <div class="recommendations-list">
+                        <h3>Prioritized Recommendations</h3>
+                        ${this.renderRecommendationsList(prioritizedRecommendations)}
+                    </div>
+                    
+                    <div class="roi-projection">
+                        <h3>ROI Projection</h3>
+                        ${this.renderROIProjection(results)}
+                    </div>
+                </div>
+                
+                ${this.renderNextSteps(results)}
+                
+                <div class="recommendations-note">
+                    <p><strong>Note:</strong> These recommendations are based on your assessment responses and industry benchmarks. Actual results may vary based on implementation quality, team adoption, and market conditions.</p>
+                </div>
+            </div>
+        `;
+    }
+    renderRecommendationsList(recommendations) {
+        if (!recommendations || !recommendations.length) {
+            return `<p class="no-recommendations">No recommendations in this category.</p>`;
+        }
+        
+        let html = '<ul class="recommendations-list">';
+        recommendations.forEach(rec => {
+            html += `
+                <li class="recommendation-item">
+                    <div class="recommendation-header">
+                        <span class="recommendation-title">${rec.title || 'Recommendation'}</span>
+                        ${rec.priority ? `<span class="priority ${rec.priority}">${rec.priority}</span>` : ''}
+                    </div>
+                    <p class="recommendation-description">${rec.description || ''}</p>
+                    <div class="recommendation-meta">
+                        <span class="timeline">${rec.timeline || 'Short-term'}</span>
+                        <span class="complexity">${rec.complexity || 'Medium'}</span>
+                    </div>
+                </li>
+            `;
+        });
+        html += '</ul>';
+        return html;
+    }
+    
+    renderROIProjection(results) {
+        // Get ROI projections from recommendations config if available
+        const recommendationsConfig = this.assessment.recommendationsEngine?.recommendationsConfig;
+        const toolDatabase = recommendationsConfig?.toolDatabase || {};
+        const implementationTimelines = recommendationsConfig?.implementationTimelines || {};
+        
+        // Simple ROI projection
+        const overallScore = results.scores?.overall || 0;
+        const selectedActivities = results.selectedActivities || [];
+        
+        // Calculate average ROI based on selected activities
+        let avgROI = '15-25%';
+        let avgPaybackPeriod = '6-12 months';
+        
+        if (toolDatabase) {
+            // Get ROI metrics from selected activities
+            const activityROIs = [];
+            const activityPaybacks = [];
+            
+            selectedActivities.forEach(activityId => {
+                if (toolDatabase[activityId]) {
+                    activityROIs.push(toolDatabase[activityId].avgROI || '');
+                    activityPaybacks.push(toolDatabase[activityId].paybackPeriod || '');
+                }
+            });
+            
+            // Use actual values if available
+            if (activityROIs.length > 0) {
+                avgROI = activityROIs[0]; // Simplified - ideally would calculate a weighted average
+            }
+            
+            if (activityPaybacks.length > 0) {
+                avgPaybackPeriod = activityPaybacks[0]; // Simplified
+            }
+        }
+        
+        // Determine implementation timeframe based on score
+        let implementationTimeframe, investment, confidenceLevel;
+        
+        if (overallScore >= 70) {
+            const transformationData = implementationTimelines?.transformation || {};
+            implementationTimeframe = transformationData.description || 'Advanced AI capabilities';
+            investment = transformationData.investment || '$100,000-500,000+';
+            confidenceLevel = 'High';
+        } else if (overallScore >= 50) {
+            const foundationData = implementationTimelines?.foundationBuilding || {};
+            implementationTimeframe = foundationData.description || 'Core infrastructure development';
+            investment = foundationData.investment || '$25,000-100,000';
+            confidenceLevel = 'Medium';
+        } else {
+            const quickWinsData = implementationTimelines?.quickWins || {};
+            implementationTimeframe = quickWinsData.description || 'Immediate impact initiatives';
+            investment = quickWinsData.investment || '$5,000-20,000';
+            confidenceLevel = 'Moderate';
+        }
+        
+        return `
+            <div class="roi-details">
+                <div class="roi-metric">
+                    <span class="metric-label">Potential ROI:</span>
+                    <span class="metric-value">${avgROI}</span>
+                </div>
+                <div class="roi-metric">
+                    <span class="metric-label">Implementation Approach:</span>
+                    <span class="metric-value">${implementationTimeframe}</span>
+                </div>
+                <div class="roi-metric">
+                    <span class="metric-label">Estimated Investment:</span>
+                    <span class="metric-value">${investment}</span>
+                </div>
+                <div class="roi-metric">
+                    <span class="metric-label">Payback Period:</span>
+                    <span class="metric-value">${avgPaybackPeriod}</span>
+                </div>
+                <div class="roi-metric">
+                    <span class="metric-label">Confidence Level:</span>
+                    <span class="metric-value">${confidenceLevel}</span>
+                </div>
+                <p class="roi-note">These projections are based on industry benchmarks and your selected activities.</p>
+            </div>
+        `;
+    }
+    
+    renderNextSteps(results) {
+        // Get top 3 prioritized recommendations
+        const topRecommendations = results.recommendations?.prioritizedRecommendations?.slice(0, 3) || [];
+        
+        return `
+            <div class="next-steps card">
+                <h2>Your Next Steps</h2>
+                <div class="quick-wins">
+                    ${topRecommendations.map((rec, index) => `
+                        <div class="recommendation-item">
+                            <span class="number">${index + 1}</span>
+                            <div class="content">
+                                <h3>${rec.title}</h3>
+                                <p>${rec.description}</p>
+                                <div class="meta">
+                                    <span class="timeline">${rec.timeline || 'Short-term'}</span>
+                                    <span class="roi">${rec.expectedROI || 'Productivity improvement'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="window.print()">Download Results</button>
+                    <button class="btn btn-secondary" onclick="location.href='mailto:?subject=AI Readiness Assessment Results'">Share Results</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    getReadinessCategory(score) {
+        if (score >= 85) {
+            return {
+                label: 'AI Leader',
+                className: 'leader',
+                description: 'Your marketing team is at the forefront of AI adoption, with advanced capabilities across people, process, and strategy dimensions.'
+            };
+        } else if (score >= 70) {
+            return {
+                label: 'Advanced',
+                className: 'advanced',
+                description: 'Your marketing team has strong AI capabilities and is effectively leveraging AI across multiple functions.'
+            };
+        } else if (score >= 55) {
+            return {
+                label: 'Advancing',
+                className: 'advancing',
+                description: 'Your marketing team is making good progress in AI adoption but has several areas for improvement.'
+            };
+        } else if (score >= 40) {
+            return {
+                label: 'Developing',
+                className: 'developing',
+                description: 'Your marketing team is in the early stages of AI adoption with significant opportunities for growth.'
+            };
+        } else {
+            return {
+                label: 'Beginning',
+                className: 'beginning',
+                description: 'Your marketing team is just starting its AI journey with substantial room for capability development.'
+            };
+        }
+    }
+    
+    getScoreCategoryClass(score) {
+        if (score >= 85) return 'leader';
+        if (score >= 70) return 'advanced';
+        if (score >= 55) return 'advancing';
+        if (score >= 40) return 'developing';
+        return 'beginning';
+    }
+    
+    getSelectedIndustry() {
+        const industryId = this.assessment.state.selectedIndustry;
+        return this.assessment.config.industries.find(i => i.id === industryId);
+    }
+    
+    getActivityById(activityId) {
+        return this.assessment.config.activities.find(a => a.id === activityId);
+    }
+    
+    setupEventListeners(container) {
+        // Clear previous listeners
+        this.cleanupEventListeners();
+        
+        // Tab navigation
+        const tabs = container.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            const listener = this.handleTabClick.bind(this);
+            tab.addEventListener('click', listener);
+            this.cleanupListeners.push(() => tab.removeEventListener('click', listener));
+        });
+        
+        // Download button
+        const downloadButton = container.querySelector('#download-results');
+        if (downloadButton) {
+            const downloadListener = this.handleDownload.bind(this);
+            downloadButton.addEventListener('click', downloadListener);
+            this.cleanupListeners.push(() => downloadButton.removeEventListener('click', downloadListener));
+        }
+        
+        // Restart button
+        const restartButton = container.querySelector('#restart-assessment');
+        if (restartButton) {
+            const restartListener = this.handleRestart.bind(this);
+            restartButton.addEventListener('click', restartListener);
+            this.cleanupListeners.push(() => restartButton.removeEventListener('click', restartListener));
+        }
+    }
+    
+    handleTabClick(event) {
+        const tabId = event.currentTarget.dataset.tab;
+        
+        if (tabId && tabId !== this.activeTab) {
+            this.activeTab = tabId;
+            this.assessment.renderCurrentStep();
+        }
+    }
+    
+    handleDownload() {
+        // In a real implementation, this would generate and download a PDF
+        alert('PDF download functionality will be implemented in a future update.');
+    }
+    
+    handleRestart() {
+        if (confirm('Are you sure you want to start a new assessment? Your current results will be saved.')) {
+            // In a real implementation, this would properly reset the assessment
+            // For now, we'll just reload the page
+            window.location.reload();
+        }
+    }
+    
+    cleanupEventListeners() {
+        this.cleanupListeners.forEach(cleanup => cleanup());
+        this.cleanupListeners = [];
+    }
+}
+
+export default ResultsStep;

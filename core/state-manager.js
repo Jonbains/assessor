@@ -4,7 +4,7 @@
  * Manages the state for an assessment including persistence and updates
  */
 
-export class StateManager {
+class StateManager {
     /**
      * Constructor for the state manager
      * @param {Object} assessment - Reference to the parent assessment
@@ -60,7 +60,7 @@ export class StateManager {
                 if (currentTime - parsedState.savedAt > maxAgeMs) {
                     console.log('[StateManager] Saved state is too old, not loading');
                     this.clearState();
-                    return false;
+                    return true;
                 }
             }
             
@@ -117,3 +117,6 @@ export class StateManager {
         }
     }
 }
+
+// Make the class available as a browser global
+window.StateManager = StateManager;

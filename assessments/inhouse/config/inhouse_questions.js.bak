@@ -2219,7 +2219,7 @@ const InHouseMarketingQuestionsConfig = {
     { text: "Seamless business integration – AI optimizes entire business strategy with PR as integrated component", score: 5 }
   ]
 }
-],
+],  // End of PR Communications questions
 
   // Complete Events & Webinars activity section (10 questions)
   events_webinars: [
@@ -2364,11 +2364,7 @@ const InHouseMarketingQuestionsConfig = {
     ]
   }
   ]
-  } // Close activityQuestions object
-}; // Close InHouseMarketingQuestionsConfig object
-
-// Make the configuration available as a browser global
-window.InHouseMarketingQuestionsConfig = InHouseMarketingQuestionsConfig;
+};
 
 // Scoring configuration
 const scoringConfig = {

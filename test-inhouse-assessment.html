@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-House Marketing Assessment Test</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/assessment.css">
+    <link rel="stylesheet" href="styles/inhouse-assessment.css">
+</head>
+<body>
+    <div class="container">
+        <h1>In-House Marketing Assessment Test</h1>
+        
+        <div class="test-controls">
+            <button id="init-assessment">Initialize Assessment</button>
+            <button id="reset-assessment">Reset Assessment</button>
+        </div>
+        
+        <div id="assessment-container"></div>
+    </div>
+
+    <!-- Load assessment as type="module" -->
+    <script type="module">
+        // Import required modules
+        import { InhouseAssessment } from './assessments/inhouse/inhouse-assessment.js';
+        import InhouseMarketingConfig from './assessments/inhouse/config/inhouse-config.js';
+        
+        // Initialize assessment on button click
+        function initializeAssessment() {
+            const container = document.getElementById('assessment-container');
+            let inhouseAssessment = null;
+            
+            // Initialize assessment button
+            document.getElementById('init-assessment').addEventListener('click', function() {
+                try {
+                    // Initialize assessment with proper configuration
+                    inhouseAssessment = new InhouseAssessment(InhouseMarketingConfig, container);
+                    
+                    // Start assessment
+                    inhouseAssessment.start();
+                    
+                    // Add diagnostic logging to check for known issues
+                    console.log('In-House Marketing Assessment initialized');
+                    
+                    // Verify scoring engine and results step data structure compatibility
+                    console.log('Scoring Engine:', inhouseAssessment.scoringEngine);
+                    console.log('Results Step:', inhouseAssessment.steps.results);
+                    
+                    // Check all components are properly loaded
+                    console.log('All components loaded:', {
+                        'Assessment': !!inhouseAssessment,
+                        'SetupStep': !!inhouseAssessment.steps.setup,
+                        'QuestionsStep': !!inhouseAssessment.steps.questions,
+                        'ContactStep': !!inhouseAssessment.steps.contact,
+                        'ResultsStep': !!inhouseAssessment.steps.results,
+                        'ScoringEngine': !!inhouseAssessment.scoringEngine,
+                        'RecommendationsEngine': !!inhouseAssessment.recommendationsEngine,
+                        'Dashboard': !!inhouseAssessment.dashboard
+                    });
+                } catch (error) {
+                    console.error('Error initializing assessment:', error);
+                    container.innerHTML = `<div class="error-message"><h3>Error</h3><p>${error.message}</p><pre>${error.stack}</pre></div>`;
+                }
+            });
+            
+            // Reset assessment button
+            document.getElementById('reset-assessment').addEventListener('click', function() {
+                if (inhouseAssessment) {
+                    try {
+                        // Clear localStorage for this assessment
+                        localStorage.removeItem('inhouse-marketing-assessment-state');
+                        
+                        // Reset container
+                        container.innerHTML = '';
+                        
+                        // Re-initialize with proper configuration
+                        inhouseAssessment = new InhouseAssessment(InhouseMarketingConfig, container);
+                        inhouseAssessment.start();
+                        
+                        console.log('In-House Marketing Assessment reset');
+                    } catch (error) {
+                        console.error('Error resetting assessment:', error);
+                        container.innerHTML = `<div class="error-message"><h3>Error</h3><p>${error.message}</p><pre>${error.stack}</pre></div>`;
+                    }
+                }
+            });
+        }
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeAssessment);
+    </script>
+</body>
+</html>

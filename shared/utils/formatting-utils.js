@@ -9,7 +9,7 @@
  * @param {Number} num - The number to format
  * @return {String} - The formatted number
  */
-export function formatNumber(num) {
+function formatNumber(num) {
     if (typeof num === 'undefined' || num === null) return '0';
     
     return num.toLocaleString('en-US');
@@ -21,7 +21,7 @@ export function formatNumber(num) {
  * @param {String} currencySymbol - The currency symbol to use (default: $)
  * @return {String} - The formatted currency string
  */
-export function formatCurrency(value, currencySymbol = '$') {
+function formatCurrency(value, currencySymbol = '$') {
     if (value === undefined || value === null) {
         return `${currencySymbol}0`;
     }
@@ -42,7 +42,7 @@ export function formatCurrency(value, currencySymbol = '$') {
  * @param {Boolean} includeSymbol - Whether to include the % symbol (default: true)
  * @return {String} - The formatted percentage string
  */
-export function formatPercentage(value, includeSymbol = true) {
+function formatPercentage(value, includeSymbol = true) {
     if (value === undefined || value === null) {
         return includeSymbol ? '0%' : '0';
     }
@@ -61,7 +61,7 @@ export function formatPercentage(value, includeSymbol = true) {
  * @param {Object} dimensions - Dimensions configuration data
  * @return {String} - The formatted dimension name
  */
-export function formatDimensionName(dimension, dimensions) {
+function formatDimensionName(dimension, dimensions) {
     if (!dimension) return '';
     
     // Check if dimension is in config
@@ -82,7 +82,7 @@ export function formatDimensionName(dimension, dimensions) {
  * @param {String} prefix - Optional prefix for the ID
  * @return {String} - The unique ID
  */
-export function generateUniqueId(prefix = '') {
+function generateUniqueId(prefix = '') {
     return prefix + Math.random().toString(36).substring(2, 15) + 
            Math.random().toString(36).substring(2, 15);
 }
@@ -93,7 +93,7 @@ export function generateUniqueId(prefix = '') {
  * @param {String} format - The format to use (default: simple)
  * @return {String} - The formatted date
  */
-export function formatDate(date, format = 'simple') {
+function formatDate(date, format = 'simple') {
     const dateObj = date instanceof Date ? date : new Date(date);
     
     if (isNaN(dateObj.getTime())) {
@@ -129,3 +129,11 @@ export function formatDate(date, format = 'simple') {
             return dateObj.toLocaleDateString();
     }
 }
+
+// Make formatting utility functions available as browser globals
+window.formatNumber = formatNumber;
+window.formatCurrency = formatCurrency;
+window.formatPercentage = formatPercentage;
+window.formatDimensionName = formatDimensionName;
+window.generateUniqueId = generateUniqueId;
+window.formatDate = formatDate;

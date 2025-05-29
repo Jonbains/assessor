@@ -1106,9 +1106,7 @@ const InHouseMarketingRecommendationsConfig = {
   }
 };
 
-// Export for use in assessment system
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = InHouseMarketingRecommendationsConfig;
-} else {
-  window.InHouseMarketingRecommendationsConfig = InHouseMarketingRecommendationsConfig;
-}
+// Make the configuration available as a browser global
+window.InHouseMarketingRecommendationsConfig = InHouseMarketingRecommendationsConfig;
+
+// Using browser globals instead of Node.js module exports

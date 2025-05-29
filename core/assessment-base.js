@@ -4,11 +4,10 @@
  * This serves as the foundation for all assessment types in the modular structure
  */
 
-// Import required controllers
-import { NavigationController } from './navigation-controller.js';
-import { StateManager } from './state-manager.js';
+// Use global variables instead of import statements
+// NavigationController and StateManager will be available as global variables
 
-export class AssessmentBase {
+class AssessmentBase {
     /**
      * Constructor for the base assessment
      * @param {Object} config - Assessment configuration
@@ -101,6 +100,17 @@ export class AssessmentBase {
         this.renderCurrentStep();
         this.setupEventListeners();
     }
+    
+    /**
+     * Start the assessment - wrapper for init()
+     * Added for compatibility with HTML calling code
+     */
+    start() {
+        return this.init();
+    }
 }
 
 // Import statements will be added at the top when navigation controller and state manager are created
+
+// Make the class available as a browser global
+window.AssessmentBase = AssessmentBase;

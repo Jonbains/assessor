@@ -5,9 +5,9 @@
  * Leverages the service-recommendations.js configuration for detailed recommendation content
  */
 
-import { ServiceRecommendations } from './service-recommendations.js';
+// ServiceRecommendations will be accessed as a browser global
 
-export class AgencyRecommendationsEngine {
+class AgencyRecommendationsEngine {
   /**
    * @param {Object} config - Assessment configuration
    */
@@ -176,5 +176,5 @@ export class AgencyRecommendationsEngine {
   }
 }
 
-// Export default
-export default AgencyRecommendationsEngine;
+// Make the class available as a browser global
+window.AgencyRecommendationsEngine = AgencyRecommendationsEngine;
