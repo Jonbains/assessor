@@ -42,7 +42,7 @@ class InhouseAssessment extends AssessmentBase {
         this.type = 'inhouse-marketing';
         
         // Initialize engines and components
-        this.scoringEngine = new InHouseMarketingScoring(enhancedConfig);
+        this.scoringEngine = new InhouseMarketingScoring(enhancedConfig); // Use proper scoring engine from scoring directory
         this.recommendationsEngine = new InhouseRecommendationsEngine(enhancedConfig);
         this.dashboard = new InhouseMarketingDashboard(enhancedConfig);
         
@@ -114,7 +114,7 @@ class InhouseAssessment extends AssessmentBase {
         }
         
         // Calculate scores using the scoring engine
-        const scores = this.scoringEngine.calculateResults({
+        const scores = this.scoringEngine.calculateScores({
             answers: this.state.answers,
             selectedIndustry: this.state.selectedIndustry,
             selectedActivities: this.state.selectedActivities,

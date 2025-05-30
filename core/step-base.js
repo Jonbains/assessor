@@ -60,6 +60,15 @@ class StepBase {
     cleanupEventListeners() {
         // To be implemented by derived classes
     }
+    
+    /**
+     * Actions to perform when entering this step
+     * Called when the step becomes active
+     */
+    onEnter() {
+        // Default implementation - can be overridden by derived classes
+        console.log(`[StepBase] Entering step`);
+    }
 }
 
 // Make the class available as a browser global
