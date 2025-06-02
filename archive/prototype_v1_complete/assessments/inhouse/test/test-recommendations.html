@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-House Marketing Assessment - Recommendations Engine Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #202124;
+            color: #e8eaed;
+        }
+        h1, h2, h3 {
+            color: #ffd700;
+        }
+        pre {
+            background-color: #303134;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: #81c995;
+        }
+        .error {
+            color: #f28b82;
+        }
+        .result-container {
+            margin-top: 20px;
+            border: 1px solid #5f6368;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        button {
+            background-color: #ffd700;
+            color: #202124;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #e6c200;
+        }
+        .test-log {
+            margin-top: 20px;
+            background-color: #303134;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .check {
+            color: #81c995;
+        }
+    </style>
+</head>
+<body>
+    <h1>In-House Marketing Assessment - Recommendations Engine Test</h1>
+    <p>This test validates the enhanced recommendations engine for the In-House Marketing Assessment.</p>
+    
+    <button id="runTest">Run Test</button>
+    
+    <div class="test-log" id="testLog">
+        <p>Test logs will appear here...</p>
+    </div>
+    
+    <div class="result-container" id="resultContainer" style="display: none;">
+        <h2>Test Results</h2>
+        <pre id="resultOutput"></pre>
+    </div>
+    
+    <script type="module">
+        // Sample test data representing typical assessment results
+        const testResults = {
+            // Test different score structures the engine should handle
+            scores: {
+                overall: 65,
+                dimensions: {
+                    people_skills: 58,
+                    process_infrastructure: 62,
+                    strategy_leadership: 70
+                }
+            },
+            // Direct properties (alternative structure)
+            people_skills: 58,
+            process_infrastructure: 62, 
+            strategy_leadership: 70,
+            overall: 65,
+            
+            // Additional context data
+            industry: 'b2b_saas',
+            companySize: 'mid_market',
+            selectedActivities: ['content_marketing', 'social_media', 'email_marketing'],
+            activityScores: {
+                content_marketing: 75,
+                social_media: 60, 
+                email_marketing: 80
+            }
+        };
+
+        // Sample recommendations configuration
+        const testConfig = {
+            recommendationsConfig: {
+                coreRecommendations: {
+                    people_skills: {
+                        low: [
+                            {
+                                title: "Develop AI Literacy Program",
+                                description: "Create a structured training program to build foundational AI knowledge across the marketing team",
+                                priority: "high",
+                                dimension: "people_skills"
+                            }
+                        ],
+                        medium: [
+                            {
+                                title: "Establish AI Champions Network",
+                                description: "Identify and train internal champions to promote AI adoption and provide peer support",
+                                priority: "medium",
+                                dimension: "people_skills"
+                            }
+                        ],
+                        high: [
+                            {
+                                title: "Advanced AI Skills Development",
+                                description: "Focus on specialized AI skills to enhance existing capabilities",
+                                priority: "low",
+                                dimension: "people_skills"
+                            }
+                        ]
+                    },
+                    process_infrastructure: {
+                        low: [
+                            {
+                                title: "Implement Data Quality Framework",
+                                description: "Establish standardized processes for data collection, cleaning and governance",
+                                priority: "high",
+                                dimension: "process_infrastructure"
+                            }
+                        ],
+                        medium: [
+                            {
+                                title: "Create AI Ethics Guidelines",
+                                description: "Develop clear policies for ethical AI use in marketing",
+                                priority: "medium",
+                                dimension: "process_infrastructure"
+                            }
+                        ],
+                        high: [
+                            {
+                                title: "AI Experimentation Framework",
+                                description: "Develop a structured approach to testing new AI applications",
+                                priority: "medium",
+                                dimension: "process_infrastructure"
+                            }
+                        ]
+                    }
+                },
+                activityRecommendations: {
+                    content_marketing: [
+                        {
+                            title: "AI Content Optimization",
+                            description: "Implement AI tools to analyze content performance and recommend optimizations",
+                            priority: "high",
+                            scoreThreshold: 70
+                        }
+                    ],
+                    social_media: [
+                        {
+                            title: "AI-Powered Social Listening",
+                            description: "Deploy AI tools to monitor brand mentions and analyze sentiment across platforms",
+                            priority: "medium",
+                            scoreThreshold: 65 
+                        }
+                    ]
+                },
+                industryRecommendations: {
+                    b2b_saas: {
+                        lowScore: {
+                            immediate: [
+                                {
+                                    title: "Lead Scoring AI Implementation",
+                                    description: "Deploy AI model to improve lead qualification accuracy",
+                                    priority: "high",
+                                    industry: "b2b_saas"
+                                }
+                            ]
+                        }
+                    }
+                },
+                toolDatabase: {
+                    content_marketing: {
+                        avgROI: "25-35%",
+                        paybackPeriod: "3-6 months"
+                    },
+                    social_media: {
+                        avgROI: "20-30%",
+                        paybackPeriod: "4-8 months"
+                    }
+                },
+                implementationTimelines: {
+                    quickWins: {
+                        description: "Immediate impact initiatives",
+                        investment: "$5,000-20,000"
+                    },
+                    foundationBuilding: {
+                        description: "Core infrastructure development", 
+                        investment: "$25,000-100,000"
+                    },
+                    transformation: {
+                        description: "Advanced AI capabilities",
+                        investment: "$100,000-500,000+"
+                    }
+                }
+            }
+        };
+
+        // Custom logger to output to the test log element
+        const logger = {
+            log: function(message) {
+                const logElement = document.getElementById('testLog');
+                const p = document.createElement('p');
+                p.innerHTML = message;
+                logElement.appendChild(p);
+            },
+            success: function(message) {
+                this.log(`<span class="success">✓ ${message}</span>`);
+            },
+            error: function(message) {
+                this.log(`<span class="error">✗ ${message}</span>`);
+            },
+            check: function(message, condition) {
+                if (condition) {
+                    this.log(`<span class="check">✓ ${message}: ${condition}</span>`);
+                } else {
+                    this.log(`<span class="error">✗ ${message}: ${condition}</span>`);
+                }
+                return condition;
+            }
+        };
+
+        /**
+         * Helper function to validate the recommendations output structure
+         */
+        function validateRecommendationsOutput(recommendations) {
+            logger.log('<br>=== Validating Recommendations Output ===');
+            
+            // Check prioritized recommendations exist
+            const hasPrioritizedRecs = recommendations.prioritizedRecommendations && 
+                Array.isArray(recommendations.prioritizedRecommendations) &&
+                recommendations.prioritizedRecommendations.length > 0;
+                
+            logger.check('Has prioritized recommendations', hasPrioritizedRecs);
+            
+            // Check dimension organization
+            const hasDimensionRecs = recommendations.byDimension && 
+                recommendations.byDimension.people_skills &&
+                recommendations.byDimension.process_infrastructure;
+                
+            logger.check('Has dimension-organized recommendations', hasDimensionRecs);
+            
+            // Check activity organization  
+            const hasActivityRecs = recommendations.byActivity && 
+                Object.keys(recommendations.byActivity).length > 0;
+                
+            logger.check('Has activity-organized recommendations', hasActivityRecs);
+            
+            // Check metadata
+            const hasMetadata = recommendations.metadata &&
+                recommendations.metadata.overallScore !== undefined &&
+                recommendations.metadata.industry !== undefined;
+                
+            logger.check('Has result metadata', hasMetadata);
+            
+            // Check first recommendation for required fields
+            const firstRec = recommendations.prioritizedRecommendations[0];
+            if (firstRec) {
+                logger.log('<br>=== Validating Recommendation Attributes ===');
+                logger.check('Has title', !!firstRec.title);
+                logger.check('Has description', !!firstRec.description);
+                logger.check('Has priority', !!firstRec.priority);
+                logger.check('Has timeline', !!firstRec.timeline);
+                logger.check('Has expectedROI', !!firstRec.expectedROI);
+                logger.check('Has implementation complexity', !!firstRec.implementationComplexity);
+                logger.check('Has relevance score', !!firstRec.relevanceScore);
+            }
+            
+            return hasPrioritizedRecs && hasDimensionRecs && hasActivityRecs && hasMetadata;
+        }
+
+        /**
+         * Run the test when the button is clicked
+         */
+        document.getElementById('runTest').addEventListener('click', async function() {
+            // Clear previous test logs
+            document.getElementById('testLog').innerHTML = '';
+            document.getElementById('resultContainer').style.display = 'none';
+            
+            try {
+                logger.log('=== Starting In-House Recommendations Engine Test ===');
+                
+                // Import the recommendations engine
+                try {
+                    const module = await import('../recommendations/inhouse-recommendations-engine.js');
+                    const InhouseRecommendationsEngine = module.default;
+                    
+                    // Initialize engine with test config
+                    const engine = new InhouseRecommendationsEngine(testConfig);
+                    logger.success('Successfully initialized recommendations engine');
+                    
+                    // Generate recommendations using test results
+                    const recommendations = engine.generateRecommendations(testResults);
+                    logger.success(`Generated ${recommendations.prioritizedRecommendations?.length || 0} recommendations`);
+                    
+                    // Validate output structure
+                    const isValidOutput = validateRecommendationsOutput(recommendations);
+                    
+                    // Display results
+                    document.getElementById('resultContainer').style.display = 'block';
+                    document.getElementById('resultOutput').textContent = JSON.stringify(recommendations, null, 2);
+                    
+                    if (isValidOutput) {
+                        logger.log('<br><span class="success">===== TEST PASSED =====</span>');
+                        logger.log('<span class="success">The recommendations engine is functioning correctly.</span>');
+                    } else {
+                        logger.log('<br><span class="error">===== TEST FAILED =====</span>');
+                        logger.log('<span class="error">The recommendations output structure is invalid.</span>');
+                    }
+                } catch (error) {
+                    logger.error(`Error importing module: ${error.message}`);
+                    console.error('Module import error:', error);
+                }
+            } catch (error) {
+                logger.error(`Test execution error: ${error.message}`);
+                console.error('Test execution error:', error);
+            }
+        });
+
+        // Notify that the page is ready
+        logger.log('Test page loaded. Click "Run Test" to begin.');
+    </script>
+</body>
+</html>

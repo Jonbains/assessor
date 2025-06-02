@@ -1,0 +1,66 @@
+/**
+ * In-House Marketing Assessment - Questions Step
+ * 
+ * Consolidated step that handles all question types:
+ * - Core questions (people, process, strategy)
+ * - Industry-specific questions
+ * - Activity-specific questions
+ * 
+ * Extends the shared BaseQuestionsStep for consistent functionality across assessments
+ */
+
+import { BaseQuestionsStep } from "../../../shared/steps/BaseQuestionsStep.js";
+
+export class QuestionsStep extends BaseQuestionsStep {
+    constructor(assessment) {
+        super(assessment);
+        
+        // Inhouse-specific dimensions
+        this.dimensions = {
+            "people": "People Skills",
+            "process": "Process",
+            "strategy": "Strategy",
+            "technical": "Technical"
+        };
+        
+        // Inhouse assessment has multiple question types
+        this.questionTypes = ["core", "industry", "activity"];
+        this.currentQuestionType = "core";
+    }
+    
+    /**
+     * Initialize questions based on question type
+     * Inhouse-specific implementation handling multiple question types
+     */
+    initializeQuestions() {
+        console.log("[InhouseQuestionsStep] Initializing inhouse-specific questions");
+        
+        // Determine current question type (may come from step ID)
+        this.determineQuestionType();
+        
+        // Get questions for the current type
+        this.questions = this.getQuestionsForType(this.currentQuestionType);
+        this.totalQuestions = this.questions.length;
+        
+        console.log(`[InhouseQuestionsStep] Loaded ${this.questions.length} questions for type "${this.currentQuestionType}"`);
+    }
+    
+    /**
+     * Called after the step is rendered to the DOM
+     * @param {Element} container - The container element where the step was rendered
+     */
+    afterRender(container) {
+        console.log("[QuestionsStep] afterRender called with container");
+        
+        // Set up event listeners now that we have a container
+        if (container) {
+            this.setupEventListeners(container);
+        } else {
+            console.error("[QuestionsStep] No container provided to afterRender");
+        }
+    }
+}
+
+// Export only via ES6 module - no global registration
+console.log("[QuestionsStep] Class exported as ES6 module");
+

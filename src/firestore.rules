@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read their own assessment results
+    match /assessments/{sessionId} {
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userId ||
+        resource.data.email == request.auth.token.email;
+      
+      // Allow anyone to create assessments (for anonymous users)
+      allow create: if true;
+      
+      // Allow updates only to own assessments
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+    }
+    
+    // Lead data - only authenticated admins can read
+    match /leads/{leadId} {
+      allow read: if request.auth != null && 
+        request.auth.token.admin == true;
+      
+      // Anyone can create a lead (through assessment)
+      allow create: if true;
+      
+      // Only admins can update leads
+      allow update: if request.auth != null && 
+        request.auth.token.admin == true;
+    }
+    
+    // Assessment configurations - public read
+    match /configurations/{configId} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+        request.auth.token.admin == true;
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Disallow: /.well-known/
+Allow: /
+
+# Sitemap
+Sitemap: https://assess.obsolete.com/sitemap.xml

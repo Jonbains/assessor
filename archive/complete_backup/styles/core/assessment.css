@@ -1,0 +1,218 @@
+/**
+ * Core Assessment Styles
+ *
+ * This file is intended for truly global, non-component-specific, non-theme-specific
+ * styles that apply to the general structure or behavior of assessments.
+ *
+ * Most base styling should be in styles/core/base.css.
+ * Most typography should be in styles/core/typography.css.
+ * Theme-specific styling (colors, fonts) should be in styles/themes/your-theme.css.
+ * Component-specific styles should be in styles/components/component-name.css.
+ */
+
+
+/* Questions */
+.assessment-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.assessment-question {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+
+.assessment-question-text {
+  font-weight: 500;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+/* Navigation */
+.assessment-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.assessment-button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 16px;
+}
+
+.assessment-button-primary {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.assessment-button-primary:hover {
+  background-color: #3a7bc8;
+}
+
+.assessment-button-secondary {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.assessment-button-secondary:hover {
+  background-color: #dee2e6;
+}
+
+/* Results */
+.assessment-results {
+  padding: 20px;
+}
+
+.assessment-results-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.assessment-results-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+}
+
+.assessment-results-personalized {
+  font-size: 18px;
+  color: #5d6778;
+  margin: 0;
+}
+
+.assessment-results-score-container {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.assessment-results-score-value {
+  font-size: 64px;
+  font-weight: 700;
+  color: #4a90e2;
+  line-height: 1;
+}
+
+.assessment-results-score-label {
+  font-size: 18px;
+  color: #6c757d;
+  margin-top: 5px;
+}
+
+.assessment-results-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 30px 0 15px 0;
+  color: #2c3e50;
+}
+
+.assessment-results-dimensions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.assessment-results-dimension {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.assessment-results-dimension-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.assessment-results-dimension-name {
+  font-weight: 500;
+  color: #495057;
+}
+
+.assessment-results-dimension-score {
+  font-weight: 600;
+  color: #4a90e2;
+}
+
+.assessment-results-dimension-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.assessment-results-dimension-fill {
+  height: 100%;
+  background-color: #4a90e2;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.assessment-results-recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.assessment-results-recommendation {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+
+.assessment-results-recommendation-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+}
+
+.assessment-results-recommendation-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #5d6778;
+  margin: 0;
+}
+
+.assessment-results-insights {
+  padding-left: 20px;
+  margin: 15px 0;
+}
+
+.assessment-results-insight {
+  margin-bottom: 10px;
+  line-height: 1.5;
+  color: #5d6778;
+}
+
+.assessment-results-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+/* Print styles */
+@media print {
+  .assessment-wrapper {
+    box-shadow: none;
+    max-width: 100%;
+  }
+  
+  .assessment-button {
+    display: none;
+  }
+}

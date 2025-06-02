@@ -1,0 +1,49 @@
+                /* Activity Heatmap */
+                .activity-heatmap {
+                    padding: 60px 40px;
+                    background: #fff;
+                }
+                
+                .heatmap-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                    gap: 1rem;
+                    margin-top: 2rem;
+                }
+                
+                .heatmap-cell {
+                    padding: 1.5rem;
+                    border-radius: 8px;
+                    text-align: center;
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                }
+                
+                .heatmap-cell:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                }
+                
+                .heatmap-cell.minimal { background: #ffcccc; }
+                .heatmap-cell.basic { background: #ffe0cc; }
+                .heatmap-cell.moderate { background: #ffffcc; }
+                .heatmap-cell.proficient { background: #e0ffcc; }
+                .heatmap-cell.advanced { background: #ccffcc; }
+                
+                .activity-name {
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                    font-size: 0.95rem;
+                }
+                
+                .activity-score-value {
+                    font-size: 1.8rem;
+                    font-weight: 700;
+                    color: #141414;
+                }
+                
+                .ai-impact {
+                    font-size: 0.8rem;
+                    color: #666;
+                    margin-top: 0.5rem;
+                }

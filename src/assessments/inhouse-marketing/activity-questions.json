@@ -1,0 +1,416 @@
+{
+    "activityQuestions": {
+      "content_marketing": [
+        {
+          "id": "content_volume_struggle",
+          "question": "How do you feel about your content output volume?",
+          "weight": 2.5,
+          "options": [
+            {"value": 0, "label": "We're way behind - can't keep up with demand"},
+            {"value": 2, "label": "Always playing catch-up"},
+            {"value": 3, "label": "Managing but it's stressful"},
+            {"value": 4, "label": "Good volume but quality varies"},
+            {"value": 5, "label": "Happy with volume and quality"}
+          ],
+          "benchmark": "Teams using AI produce 3.5x more content"
+        },
+        {
+          "id": "content_time_breakdown",
+          "question": "Where does most time go in content creation?",
+          "weight": 2,
+          "options": [
+            {"value": 1, "label": "Research and figuring out what to write"},
+            {"value": 2, "label": "Writing the first draft"},
+            {"value": 2, "label": "Endless editing rounds"},
+            {"value": 3, "label": "Getting approvals"},
+            {"value": 4, "label": "Formatting and publishing"}
+          ]
+        },
+        {
+          "id": "content_repurposing",
+          "question": "How much do you repurpose content across channels?",
+          "weight": 2,
+          "options": [
+            {"value": 0, "label": "Never - everything created fresh"},
+            {"value": 1, "label": "Occasionally when we remember"},
+            {"value": 2, "label": "Try to but it's manual work"},
+            {"value": 3, "label": "Regular repurposing process"},
+            {"value": 4, "label": "Systematic multi-channel approach"}
+          ]
+        },
+        {
+          "id": "content_ideation",
+          "question": "How do you come up with content ideas?",
+          "weight": 1.5,
+          "options": [
+            {"value": 1, "label": "Struggle every month for ideas"},
+            {"value": 2, "label": "Reactive to requests and trends"},
+            {"value": 3, "label": "Basic content calendar planning"},
+            {"value": 4, "label": "Data-driven topic selection"},
+            {"value": 5, "label": "Strategic content pipeline"}
+          ]
+        },
+        {
+          "id": "content_ai_openness",
+          "question": "How do you feel about AI writing assistance?",
+          "weight": 3,
+          "options": [
+            {"value": 0, "label": "Worried it will replace writers"},
+            {"value": 1, "label": "Skeptical about quality"},
+            {"value": 3, "label": "Curious but unsure how to start"},
+            {"value": 4, "label": "Excited about the possibilities"},
+            {"value": 5, "label": "Already experimenting with it"}
+          ]
+        }
+      ],
+      "email_marketing": [
+        {
+          "id": "email_personalization",
+          "question": "How personalized are your email campaigns?",
+          "weight": 2.5,
+          "options": [
+            {"value": 0, "label": "Same message to everyone"},
+            {"value": 1, "label": "Basic name personalization"},
+            {"value": 2, "label": "Some segmentation by list"},
+            {"value": 3, "label": "Behavior-based segments"},
+            {"value": 4, "label": "Dynamic content per recipient"}
+          ],
+          "benchmark": "AI-powered emails see 41% higher click rates"
+        },
+        {
+          "id": "email_writing_time",
+          "question": "How long does it take to write a marketing email?",
+          "weight": 2,
+          "options": [
+            {"value": 0, "label": "Hours - agonize over every word"},
+            {"value": 1, "label": "2-3 hours typically"},
+            {"value": 2, "label": "1-2 hours with templates"},
+            {"value": 3, "label": "30-60 minutes"},
+            {"value": 4, "label": "Under 30 minutes"}
+          ]
+        },
+        {
+          "id": "email_subject_lines",
+          "question": "How do you create subject lines?",
+          "weight": 2,
+          "options": [
+            {"value": 0, "label": "Last-minute guess"},
+            {"value": 1, "label": "One option and hope"},
+          {"value": 2, "label": "Try 2-3 variants"},
+          {"value": 3, "label": "A/B test regularly"},
+          {"value": 4, "label": "Data-driven optimization"}
+        ]
+      },
+      {
+        "id": "email_automation",
+        "question": "How automated are your email workflows?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Everything manual"},
+          {"value": 1, "label": "Basic welcome email"},
+          {"value": 2, "label": "Few simple automations"},
+          {"value": 3, "label": "Key journeys automated"},
+          {"value": 4, "label": "Sophisticated automation"}
+        ]
+      },
+      {
+        "id": "email_performance_analysis",
+        "question": "How do you improve email performance?",
+        "weight": 1.5,
+        "options": [
+          {"value": 0, "label": "We don't really analyze"},
+          {"value": 1, "label": "Check opens sometimes"},
+          {"value": 2, "label": "Review basic metrics"},
+          {"value": 3, "label": "Test and iterate"},
+          {"value": 4, "label": "Continuous optimization"}
+        ]
+      }
+    ],
+    "social_media": [
+      {
+        "id": "social_overwhelm",
+        "question": "How manageable is your social media workload?",
+        "weight": 2.5,
+        "options": [
+          {"value": 0, "label": "Drowning - can't keep up with all platforms"},
+          {"value": 1, "label": "Constantly stressed about posting"},
+          {"value": 2, "label": "Managing but no time for engagement"},
+          {"value": 3, "label": "Okay but wish we could do more"},
+          {"value": 4, "label": "Comfortable with current approach"}
+        ]
+      },
+      {
+        "id": "social_time_spent",
+        "question": "How much time does social media take weekly?",
+        "weight": 2,
+        "options": [
+          {"value": 1, "label": "20+ hours - it's a full-time job"},
+          {"value": 2, "label": "15-20 hours - major time sink"},
+          {"value": 3, "label": "10-15 hours - significant chunk"},
+          {"value": 4, "label": "5-10 hours - manageable"},
+          {"value": 5, "label": "Under 5 hours - well optimized"}
+        ],
+        "benchmark": "AI users spend 60% less time on social media management"
+      },
+      {
+        "id": "social_content_creation",
+        "question": "How do you create social media visuals?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Struggle with every post"},
+          {"value": 1, "label": "Basic templates when we can"},
+          {"value": 2, "label": "Designer creates when available"},
+          {"value": 3, "label": "Mix of templates and custom"},
+          {"value": 4, "label": "Efficient design process"}
+        ]
+      },
+      {
+        "id": "social_scheduling",
+        "question": "How do you handle posting schedules?",
+        "weight": 1.5,
+        "options": [
+          {"value": 0, "label": "Manual posting when we remember"},
+          {"value": 1, "label": "Basic scheduling tool"},
+          {"value": 2, "label": "Schedule week by week"},
+          {"value": 3, "label": "Month planned in advance"},
+          {"value": 4, "label": "Automated with optimization"}
+        ]
+      },
+      {
+        "id": "reporting_time",
+        "question": "How long does monthly reporting take?",
+        "weight": 2.5,
+        "options": [
+          {"value": 0, "label": "Days of painful spreadsheet work"},
+          {"value": 1, "label": "Full day minimum"},
+          {"value": 2, "label": "Half day with templates"},
+          {"value": 3, "label": "Few hours"},
+          {"value": 4, "label": "Under an hour - automated"}
+        ],
+        "benchmark": "AI-powered reporting saves 85% of time"
+      },
+      {
+        "id": "insight_generation",
+        "question": "How often do you find actionable insights in your data?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Data dump with no insights"},
+          {"value": 1, "label": "Rarely spot patterns"},
+          {"value": 2, "label": "Sometimes find useful things"},
+          {"value": 3, "label": "Regular insights emerge"},
+          {"value": 4, "label": "Data drives all decisions"}
+        ]
+      },
+      {
+        "id": "predictive_capability",
+        "question": "Can you predict what will work before launching?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Pure guesswork"},
+          {"value": 1, "label": "Gut feeling based on experience"},
+          {"value": 2, "label": "Some historical patterns help"},
+          {"value": 3, "label": "Good success prediction"},
+          {"value": 4, "label": "Data models guide decisions"}
+        ]
+      },
+      {
+        "id": "dashboard_usefulness",
+        "question": "How useful are your current dashboards?",
+        "weight": 1.5,
+        "options": [
+          {"value": 0, "label": "What dashboards?"},
+          {"value": 1, "label": "Exist but rarely used"},
+          {"value": 2, "label": "Check them sometimes"},
+          {"value": 3, "label": "Regular reference point"},
+          {"value": 4, "label": "Drive daily decisions"}
+        ]
+      }
+    ],
+    "paid_advertising": [
+      {
+        "id": "ad_creative_production",
+        "question": "How do you create ad variations?",
+        "weight": 2.5,
+        "options": [
+          {"value": 0, "label": "One ad and pray"},
+          {"value": 1, "label": "Few variations manually"},
+          {"value": 2, "label": "Designer creates options"},
+          {"value": 3, "label": "Test multiple variants"},
+          {"value": 4, "label": "Dynamic creative optimization"}
+        ]
+      },
+      {
+        "id": "campaign_optimization",
+        "question": "How do you optimize campaigns?",
+        "weight": 2.5,
+        "options": [
+          {"value": 0, "label": "Set and forget"},
+          {"value": 1, "label": "Check when remember"},
+          {"value": 2, "label": "Weekly reviews"},
+          {"value": 3, "label": "Regular optimization"},
+          {"value": 4, "label": "AI-powered optimization"}
+        ]
+      },
+      {
+        "id": "audience_targeting",
+        "question": "How sophisticated is your targeting?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Basic demographics only"},
+          {"value": 1, "label": "Some interest targeting"},
+          {"value": 2, "label": "Detailed audience segments"},
+          {"value": 3, "label": "Behavioral targeting"},
+          {"value": 4, "label": "AI-powered audiences"}
+        ]
+      },
+      {
+        "id": "creative_testing",
+        "question": "How do you test what works?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Don't really test"},
+          {"value": 1, "label": "Change things randomly"},
+          {"value": 2, "label": "Basic A/B tests"},
+          {"value": 3, "label": "Systematic testing"},
+          {"value": 4, "label": "Multivariate with AI"}
+        ]
+      },
+      {
+        "id": "cross_platform",
+        "question": "How well do you manage across ad platforms?",
+        "weight": 1.5,
+        "options": [
+          {"value": 0, "label": "Each platform is separate chaos"},
+          {"value": 1, "label": "Manually check each one"},
+          {"value": 2, "label": "Some coordination"},
+          {"value": 3, "label": "Unified strategy"},
+          {"value": 4, "label": "Integrated optimization"}
+        ]
+      }
+    ],
+    "creative_design": [
+      {
+        "id": "design_bottleneck",
+        "question": "How often is design a bottleneck?",
+        "weight": 2.5,
+        "options": [
+          {"value": 0, "label": "Always - everything waits for design"},
+          {"value": 1, "label": "Frequently causes delays"},
+          {"value": 2, "label": "Sometimes slows things down"},
+          {"value": 3, "label": "Rarely an issue"},
+          {"value": 4, "label": "Never - very efficient"}
+        ]
+      },
+      {
+        "id": "design_requests",
+        "question": "How do you handle design requests?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Chaos - no system"},
+          {"value": 1, "label": "Email and hope"},
+          {"value": 2, "label": "Basic request process"},
+          {"value": 3, "label": "Organized queue system"},
+          {"value": 4, "label": "Self-service templates"}
+        ]
+      },
+      {
+        "id": "visual_consistency",
+        "question": "How consistent is your visual brand?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "All over the place"},
+          {"value": 1, "label": "Try but often varies"},
+          {"value": 2, "label": "Mostly consistent"},
+          {"value": 3, "label": "Strong guidelines followed"},
+          {"value": 4, "label": "Perfect brand consistency"}
+        ]
+      },
+      {
+        "id": "design_tools",
+        "question": "What design tools does your team use?",
+        "weight": 1.5,
+        "options": [
+          {"value": 0, "label": "PowerPoint and prayers"},
+          {"value": 1, "label": "Basic free tools"},
+          {"value": 2, "label": "Mix of tools"},
+          {"value": 3, "label": "Professional tools"},
+          {"value": 4, "label": "Advanced design stack"}
+        ]
+      },
+      {
+        "id": "design_ai_interest",
+        "question": "How interested are you in AI design tools?",
+        "weight": 3,
+        "options": [
+          {"value": 0, "label": "Worried about quality"},
+          {"value": 1, "label": "Skeptical but curious"},
+          {"value": 3, "label": "Very interested"},
+          {"value": 4, "label": "Already experimenting"},
+          {"value": 5, "label": "Using AI design daily"}
+        ]
+      }
+    ],
+    "marketing_automation": [
+      {
+        "id": "automation_maturity",
+        "question": "How automated are your marketing workflows?",
+        "weight": 3,
+        "options": [
+          {"value": 0, "label": "Everything is manual"},
+          {"value": 1, "label": "Very basic automation"},
+          {"value": 2, "label": "Key workflows automated"},
+          {"value": 3, "label": "Most processes automated"},
+          {"value": 4, "label": "Sophisticated automation"}
+        ]
+      },
+      {
+        "id": "lead_nurturing",
+        "question": "How do you nurture leads?",
+        "weight": 2.5,
+        "options": [
+          {"value": 0, "label": "We don't really"},
+          {"value": 1, "label": "Occasional manual emails"},
+          {"value": 2, "label": "Basic drip campaign"},
+          {"value": 3, "label": "Segmented nurture flows"},
+          {"value": 4, "label": "AI-powered nurturing"}
+        ]
+      },
+      {
+        "id": "personalization_level",
+        "question": "How personalized are your automated messages?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "Same for everyone"},
+          {"value": 1, "label": "Name only"},
+          {"value": 2, "label": "Basic segments"},
+          {"value": 3, "label": "Behavior-based"},
+          {"value": 4, "label": "Individual level"}
+        ]
+      },
+      {
+        "id": "workflow_complexity",
+        "question": "How complex can your workflows get?",
+        "weight": 1.5,
+        "options": [
+          {"value": 0, "label": "Linear only"},
+          {"value": 1, "label": "Simple branches"},
+          {"value": 2, "label": "Multiple paths"},
+          {"value": 3, "label": "Complex logic"},
+          {"value": 4, "label": "AI-driven flows"}
+        ]
+      },
+      {
+        "id": "automation_roi",
+        "question": "Can you measure automation impact?",
+        "weight": 2,
+        "options": [
+          {"value": 0, "label": "No idea"},
+          {"value": 1, "label": "Assume it helps"},
+          {"value": 2, "label": "Some metrics"},
+          {"value": 3, "label": "Clear ROI"},
+          {"value": 4, "label": "Detailed attribution"}
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+/* Overall score display */
+.inhouse-dashboard .overall-score-container {
+    text-align: center;
+}
+
+.inhouse-dashboard .score-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    margin: 0 auto 10px;
+}
+
+.inhouse-dashboard .score-value {
+    font-size: 32px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.inhouse-dashboard .score-label {
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.inhouse-dashboard .readiness-category {
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 15px;
+    display: inline-block;
+    color: white;
+}

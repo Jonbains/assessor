@@ -1,0 +1,51 @@
+                /* Executive Summary */
+                .executive-summary {
+                    background: #f5f5f5;
+                    padding: 60px 40px;
+                }
+                
+                .section-title {
+                    font-size: 2.5rem;
+                    font-weight: 300;
+                    margin: 0 0 2rem 0;
+                    color: #141414;
+                }
+                
+                .summary-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 2rem;
+                    margin-bottom: 2rem;
+                }
+                
+                .summary-card {
+                    background: #fff;
+                    padding: 2rem;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    text-align: center;
+                }
+                
+                .summary-metric {
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    color: #141414;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .summary-label {
+                    color: #666;
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                
+                .key-insight {
+                    background: #ffff66;
+                    color: #141414;
+                    padding: 2rem;
+                    border-radius: 8px;
+                    margin-top: 2rem;
+                    font-size: 1.1rem;
+                    line-height: 1.8;
+                }

@@ -1,0 +1,57 @@
+{
+    "indexes": [
+      {
+        "collectionGroup": "assessments",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "email",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "completedAt",
+            "order": "DESCENDING"
+          }
+        ]
+      },
+      {
+        "collectionGroup": "assessments",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "type",
+            "order": "ASCENDING"
+          },
+          {
+            "fieldPath": "completedAt",
+            "order": "DESCENDING"
+          }
+        ]
+      },
+      {
+        "collectionGroup": "leads",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "tags",
+            "arrayConfig": "CONTAINS"
+          },
+          {
+            "fieldPath": "lastActive",
+            "order": "DESCENDING"
+          }
+        ]
+      },
+      {
+        "collectionGroup": "leads",
+        "queryScope": "COLLECTION",
+        "fields": [
+          {
+            "fieldPath": "email",
+            "order": "ASCENDING"
+          }
+        ]
+      }
+    ],
+    "fieldOverrides": []
+  }

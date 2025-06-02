@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assessment Framework Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #assessment-container {
+      border: 1px solid #ddd;
+      padding: 20px;
+      margin-bottom: 20px;
+      min-height: 400px;
+    }
+    .button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    .button:hover {
+      background-color: #2980b9;
+    }
+    .status-bar {
+      margin: 20px 0;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+    }
+    .log-container {
+      margin: 20px 0;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .log-entry {
+      margin-bottom: 5px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .log-entry.error {
+      color: #e74c3c;
+    }
+    .log-entry.warn {
+      color: #f39c12;
+    }
+    .log-entry.info {
+      color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Assessment Framework Demo</h1>
+    <p>This demo shows the refactored assessment framework with the fixed component registry.</p>
+    
+    <div class="status-bar">
+      Status: <span id="status">Loading components...</span>
+    </div>
+    
+    <div id="assessment-container">
+      <!-- Assessment will be rendered here -->
+    </div>
+    
+    <div>
+      <button class="button" id="startAgency">Start Agency Assessment</button>
+      <button class="button" id="startInhouse">Start Inhouse Assessment</button>
+    </div>
+    
+    <h3>Console Log</h3>
+    <div class="log-container" id="log-container"></div>
+  </div>
+  
+  <!-- Load framework scripts -->
+  <script src="assets/js/core/component-registry.js"></script>
+  <script src="assets/js/core/event-bus.js"></script>
+  <script src="assets/js/core/plugin-system.js"></script>
+  <script src="assets/js/core/assessment-engine.js"></script>
+  
+  <!-- Load configurations -->
+  <script src="assets/js/config/agency-assessment-config.js"></script>
+  <script src="assets/js/config/inhouse-assessment-config.js"></script>
+  
+  <!-- Load components -->
+  <script src="assets/js/components/agency/type-selector.js"></script>
+  <script src="assets/js/components/agency/services-selector.js"></script>
+  <script src="assets/js/components/agency/questions-renderer.js"></script>
+  <script src="assets/js/components/inhouse/type-selector.js"></script>
+  <script src="assets/js/components/common/email-collector.js"></script>
+  
+  <!-- Scoring system -->
+  <script src="assets/js/scoring/enhanced-weighted-scoring.js"></script>
+  
+  <!-- Demo script -->
+  <script>
+    // Set up console log override
+    const logContainer = document.getElementById('log-container');
+    const originalConsole = {
+      log: console.log,
+      warn: console.warn,
+      error: console.error,
+      info: console.info
+    };
+    
+    // Redirect console logs to the UI
+    console.log = function() {
+      const args = Array.from(arguments);
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : arg
+      ).join(' ');
+      
+      addLogEntry(message, 'log');
+      originalConsole.log.apply(console, arguments);
+    };
+    
+    console.warn = function() {
+      const args = Array.from(arguments);
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : arg
+      ).join(' ');
+      
+      addLogEntry(message, 'warn');
+      originalConsole.warn.apply(console, arguments);
+    };
+    
+    console.error = function() {
+      const args = Array.from(arguments);
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : arg
+      ).join(' ');
+      
+      addLogEntry(message, 'error');
+      originalConsole.error.apply(console, arguments);
+    };
+    
+    console.info = function() {
+      const args = Array.from(arguments);
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : arg
+      ).join(' ');
+      
+      addLogEntry(message, 'info');
+      originalConsole.info.apply(console, arguments);
+    };
+    
+    function addLogEntry(message, type) {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    // Setup event listeners
+    document.getElementById('startAgency').addEventListener('click', () => {
+      startAssessment('agency');
+    });
+    
+    document.getElementById('startInhouse').addEventListener('click', () => {
+      startAssessment('inhouse');
+    });
+    
+    // Initialize components
+    let registry, eventBus, engine;
+    
+    function initializeFramework() {
+      try {
+        // Create registry
+        registry = new window.AssessmentComponentRegistry();
+        console.log('Component registry created');
+        
+        // Create event bus (simple implementation for demo)
+        eventBus = {
+          handlers: {},
+          on(event, handler) {
+            this.handlers[event] = this.handlers[event] || [];
+            this.handlers[event].push(handler);
+          },
+          emit(event, data) {
+            console.log(`Event emitted: ${event}`, data);
+            if (this.handlers[event]) {
+              this.handlers[event].forEach(handler => handler(data));
+            }
+          }
+        };
+        console.log('Event bus created');
+        
+        // Create plugin system (simple implementation for demo)
+        pluginSystem = {
+          getComponent(assessmentType, componentName) {
+            // For demo, this is just a stub
+            console.log(`Plugin system: requested ${assessmentType}:${componentName}`);
+            return null;
+          }
+        };
+        console.log('Plugin system created');
+        
+        // Create config loader (simple implementation for demo)
+        configLoader = {
+          async loadConfig(assessmentType) {
+            if (assessmentType === 'agency' && window.AgencyAssessmentConfig) {
+              return window.AgencyAssessmentConfig;
+            } else if (assessmentType === 'inhouse' && window.InhouseAssessmentConfig) {
+              return window.InhouseAssessmentConfig;
+            }
+            throw new Error(`No configuration found for ${assessmentType}`);
+          }
+        };
+        console.log('Config loader created');
+        
+        // Register components - this is the most important part to show two-phase init
+        registerComponents();
+        
+        // Complete initialization - the second phase
+        registry.completeInitialization();
+        console.log('Component registry initialization completed');
+        
+        document.getElementById('status').textContent = 'Ready to start assessment';
+      } catch (error) {
+        console.error('Error initializing framework:', error);
+        document.getElementById('status').textContent = 'Error initializing framework';
+      }
+    }
+    
+    function registerComponents() {
+      // Register type selectors
+      if (window.AgencyTypeSelector) {
+        registry.register('agency:type-selector', window.AgencyTypeSelector);
+        console.log('Registered agency:type-selector');
+      }
+      
+      if (window.InhouseTypeSelector) {
+        registry.register('inhouse:type-selector', window.InhouseTypeSelector);
+        console.log('Registered inhouse:type-selector');
+      }
+      
+      // Register other components
+      if (window.ServicesSelector) {
+        registry.register('agency:services', window.ServicesSelector);
+        console.log('Registered agency:services');
+      }
+      
+      if (window.QuestionsRenderer) {
+        registry.register('agency:questions', window.QuestionsRenderer);
+        registry.register('inhouse:questions', window.QuestionsRenderer);
+        console.log('Registered questions renderer');
+      }
+      
+      if (window.EmailCollector) {
+        registry.register('common:email', window.EmailCollector);
+        console.log('Registered email collector');
+      }
+      
+      // Register scoring system
+      if (window.EnhancedWeightedScoring) {
+        registry.register('scoring:agency', window.EnhancedWeightedScoring);
+        registry.register('scoring:inhouse', window.EnhancedWeightedScoring);
+        console.log('Registered scoring system');
+      }
+    }
+    
+    async function startAssessment(type) {
+      try {
+        const container = document.getElementById('assessment-container');
+        container.innerHTML = '';
+        document.getElementById('status').textContent = `Starting ${type} assessment...`;
+        
+        // Create engine
+        engine = new window.AssessmentFramework.Core.AssessmentEngine({
+          container: container,
+          eventBus: eventBus,
+          pluginSystem: pluginSystem,
+          configLoader: configLoader,
+          componentRegistry: registry
+        });
+        
+        console.log(`Assessment engine created for ${type}`);
+        
+        // Initialize engine
+        await engine.initialize({ assessmentType: type });
+        
+        document.getElementById('status').textContent = `${type} assessment started`;
+      } catch (error) {
+        console.error('Error starting assessment:', error);
+        document.getElementById('status').textContent = 'Error starting assessment';
+      }
+    }
+    
+    // Initialize the framework when the page loads
+    window.addEventListener('DOMContentLoaded', initializeFramework);
+  </script>
+</body>
+</html>

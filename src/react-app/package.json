@@ -1,0 +1,41 @@
+{
+    "name": "multi-sector-assessment-platform",
+    "version": "1.0.0",
+    "private": true,
+    "description": "AI readiness assessment platform for agencies and in-house marketing teams",
+    "dependencies": {
+        "firebase": "^10.7.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.8.0"
+    },
+    "devDependencies": {
+        "@babel/preset-react": "^7.27.1",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "react-scripts": "5.0.1"
+    },
+    "scripts": {
+        "start": "REACT_APP_SOURCE_DIR=app react-scripts start",
+        "build": "REACT_APP_SOURCE_DIR=app react-scripts build",
+        "test": "REACT_APP_SOURCE_DIR=app react-scripts test",
+        "eject": "react-scripts eject"
+    },
+    "eslintConfig": {
+        "extends": [
+            "react-app"
+        ]
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    }
+}

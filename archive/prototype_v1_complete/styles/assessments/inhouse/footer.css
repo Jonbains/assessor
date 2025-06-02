@@ -1,0 +1,22 @@
+                /* Footer */
+                .report-footer {
+                    background: #141414;
+                    color: #fff;
+                    padding: 2rem;
+                    text-align: center;
+                }
+                
+                .footer-logo {
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    margin-bottom: 1rem;
+                }
+                
+                .footer-tagline {
+                    opacity: 0.7;
+                    margin-bottom: 1rem;
+                }
+                
+                .footer-contact {
+                    opacity: 0.9;
+                }

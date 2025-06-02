@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agency Assessment | Obsolete</title>
+  
+  <!-- jQuery for DOM manipulation -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  
+  <!-- Assessment Framework CSS -->
+  <link rel="stylesheet" href="../../../styles/core/variables.css">
+  <link rel="stylesheet" href="../../../styles/core/base.css">
+  <link rel="stylesheet" href="../../../styles/core/typography.css">
+  <link rel="stylesheet" href="../../../styles/themes/obsolete-theme.css">
+  <link rel="stylesheet" href="../../../styles/core/assessment.css">
+  <link rel="stylesheet" href="../../../styles/components/question-manager.css">
+  <link rel="stylesheet" href="../../../styles/components/results-visualizer.css">
+
+  <link rel="stylesheet" href="../../../styles/components/service-revenue.css">
+  
+  <!-- Google Font for better typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Direct styles to ensure proper rendering */
+    body {
+      background-color: #121212;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .obsolete-theme {
+      background-color: #121212;
+      color: #FFFFFF;
+    }
+    
+    .assessment-fullscreen-container {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .agency-assessment-wrapper {
+      max-width: 800px;
+      width: 100%;
+      padding: 20px;
+    }
+    
+    .assessment-section {
+      margin-bottom: 30px;
+    }
+    
+    .assessment-step-title {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #FFFFFF;
+    }
+    
+    .assessment-step-description {
+      margin-bottom: 20px;
+      color: #CCCCCC;
+    }
+    
+    .assessment-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .assessment-option {
+      background-color: #1E1E1E;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 20px;
+      flex: 1 1 calc(50% - 15px);
+      min-width: 220px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .assessment-option:hover {
+      background-color: #2A2A2A;
+      border-color: #F8D700;
+    }
+    
+    .assessment-option.selected {
+      border-color: #F8D700;
+      box-shadow: 0 0 0 2px rgba(248, 215, 0, 0.5);
+    }
+    
+    .assessment-option-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #FFFFFF;
+    }
+    
+    .assessment-option-description {
+      font-size: 14px;
+      color: #AAAAAA;
+    }
+    
+    .assessment-note {
+      font-style: italic;
+      color: #999999;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body class="obsolete-theme">
+  <div class="assessment-fullscreen-container obsolete-theme">
+    <div id="agency-assessment-container" class="agency-assessment-wrapper obsolete-theme">
+      <!-- Initial content will be rendered here by JavaScript -->
+    </div>
+  </div>
+  
+  <!-- Core Framework Components -->
+  <script src="assets/js/core/component-registry.js"></script>
+  <script src="assets/js/core/assessment-engine.js"></script>
+  
+  <script>
+    // Agency assessment implementation using the fixed component registry
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM fully loaded - Initializing with fixed component registry');
+      
+      // Create the registry with our two-phase initialization
+      const registry = new window.AssessmentComponentRegistry();
+      console.log('Component registry created');
+      
+      // Configuration
+      const config = {
+        id: "agency-assessment",
+        title: "Agency AI Vulnerability Assessment",
+        description: "This assessment tool evaluates how ready your agency is for AI",
+        steps: ["agency-type", "services", "questions", "email", "results"],
+        agencyTypes: [
+          { id: 'creative', name: 'Creative Agency', description: 'Focuses on design, branding, and content creation' },
+          { id: 'media', name: 'Media Agency', description: 'Focuses on media planning and buying' },
+          { id: 'pr', name: 'PR & Communications Agency', description: 'Focuses on public relations' },
+          { id: 'digital', name: 'Digital Full-Service Agency', description: 'Offers comprehensive digital services' },
+          { id: 'specialized', name: 'Industry-Specialist Agency', description: 'Focuses on a specific industry sector' }
+        ],
+        services: [
+          { id: 'creative', name: 'Creative Services', description: 'Design, branding, content creation' },
+          { id: 'media', name: 'Media Services', description: 'Media planning, buying, optimization' },
+          { id: 'digital', name: 'Digital Marketing', description: 'SEO, PPC, social media' },
+          { id: 'strategy', name: 'Strategy & Consulting', description: 'Business consulting, marketing strategy' },
+          { id: 'technology', name: 'Technology Services', description: 'Web development, app development' }
+        ]
+      };
+      
+      // Register components (PHASE 1)
+      // Questions component
+      registry.register('questions', {
+        render: function(container, state) {
+          renderQuestionsStep(container, state);
+        }
+      });
+      
+      // Agency type component
+      registry.register('agency-type', {
+        render: function(container, state) {
+          renderAgencyTypeStep(container, state);
+        }
+      });
+      
+      // Services component
+      registry.register('services', {
+        render: function(container, state) {
+          renderServicesStep(container, state);
+        }
+      });
+      
+      // Email component
+      registry.register('email', {
+        render: function(container, state) {
+          renderEmailStep(container, state);
+        }
+      });
+      
+      // Results component
+      registry.register('results', {
+        render: function(container, state) {
+          renderResultsStep(container, state);
+        }
+      });
+      
+      console.log('All components registered - completing initialization (PHASE 2)');
+      // Complete initialization (PHASE 2)
+      registry.completeInitialization();
+      console.log('Component registry initialized successfully');
+      
+      // State management
+      const state = {
+        currentStep: 'agency-type',
+        agencyType: null,
+        selectedServices: [],
+        serviceRevenue: {},
+        answers: {},
+        email: '',
+        name: '',
+        totalQuestions: 0,
+        answeredQuestions: 0,
+        results: null,
+        // Reference to our component registry
+        registry: registry
+      };
+      
+      // Main container
+      const container = document.getElementById('agency-assessment-container');
+      
+      // Initial render
+      renderCurrentStep();
+      
+      // Event delegation for all interactions
+      container.addEventListener('click', function(event) {
+        // Agency type selection
+        if (event.target.closest('.assessment-option') && state.currentStep === 'agency-type') {
+          const option = event.target.closest('.assessment-option');
+          const agencyType = option.getAttribute('data-agency-type');
+          
+          state.agencyType = agencyType;
+          nextStep();
+        }
+        
+        // Navigation buttons
+        if (event.target.classList.contains('prev-button')) {
+          prevStep();
+        }
+        
+        if (event.target.classList.contains('next-button')) {
+          nextStep();
+        }
+        
+        if (event.target.classList.contains('submit-button')) {
+          // Collect email first
+          const emailInput = document.getElementById('email-input');
+          if (emailInput && emailInput.value) {
+            state.email = emailInput.value;
+            
+            // Optional fields
+            const nameInput = document.getElementById('name-input');
+            const companyInput = document.getElementById('company-input');
+            
+            if (nameInput) state.name = nameInput.value;
+            if (companyInput) state.company = companyInput.value;
+            
+            // Calculate results
+            calculateResults();
+            nextStep();
+          } else {
+            alert('Please enter your email address to continue.');
+          }
+        }
+        
+        // Question option selection
+        if (event.target.closest('.question-option') && state.currentStep === 'questions') {
+          const option = event.target.closest('.question-option');
+          const questionId = option.getAttribute('data-question-id');
+          const score = parseInt(option.getAttribute('data-score'));
+          
+          // Store answer
+          state.answers[questionId] = {
+            score: score,
+            dimension: 'ai-readiness' // Default dimension
+          };
+          
+          // Update UI
+          document.querySelectorAll(`.question-option[data-question-id="${questionId}"]`).forEach(opt => {
+            opt.classList.remove('selected');
+          });
+          option.classList.add('selected');
+        }
+      });
+      
+      // Handle service checkboxes
+      container.addEventListener('change', function(event) {
+        if (event.target.classList.contains('service-checkbox')) {
+          const serviceId = event.target.value;
+          const isChecked = event.target.checked;
+          
+          if (isChecked && !state.selectedServices.includes(serviceId)) {
+            state.selectedServices.push(serviceId);
+          } else if (!isChecked && state.selectedServices.includes(serviceId)) {
+            const index = state.selectedServices.indexOf(serviceId);
+            state.selectedServices.splice(index, 1);
+          }
+          
+          // Update the UI
+          updateServiceSelection();
+        }
+      });
+      
+      // Handle revenue sliders
+      container.addEventListener('input', function(event) {
+        if (event.target.classList.contains('revenue-slider')) {
+          const serviceId = event.target.getAttribute('data-service');
+          const value = parseInt(event.target.value);
+          
+          // Update state
+          state.serviceRevenue[serviceId] = value;
+          
+          // Update display
+          const valueDisplay = event.target.closest('.slider-controls').querySelector('.slider-value');
+          if (valueDisplay) {
+            valueDisplay.textContent = value + '%';
+          }
+          
+          // Update total
+          updateRevenueTotal();
+        }
+      });
+      
+      // Navigation functions
+      function nextStep() {
+        const currentIndex = config.steps.indexOf(state.currentStep);
+        if (currentIndex < config.steps.length - 1) {
+          state.currentStep = config.steps[currentIndex + 1];
+          renderCurrentStep();
+        }
+      }
+      
+      function prevStep() {
+        const currentIndex = config.steps.indexOf(state.currentStep);
+        if (currentIndex > 0) {
+          state.currentStep = config.steps[currentIndex - 1];
+          renderCurrentStep();
+        }
+      }
+      
+      // Rendering functions
+      function renderCurrentStep() {
+        console.log('Rendering step:', state.currentStep);
+        
+        // Clear the container
+        container.innerHTML = '';
+        
+        // Use our two-phase component registry to render the component
+        const component = state.registry.get(state.currentStep);
+        
+        if (component) {
+          console.log(`Using component registry to render: ${state.currentStep}`);
+          component.render(container, state);
+        } else {
+          console.warn(`Component not found in registry: ${state.currentStep}, falling back to direct rendering`);
+          
+          // Fallback to direct rendering if component not found
+          switch(state.currentStep) {
+            case 'agency-type':
+              renderAgencyTypeStep();
+              break;
+            case 'services':
+              renderServicesStep();
+              break;
+            case 'questions':
+              renderQuestionsStep();
+              break;
+            case 'email':
+              renderEmailStep();
+              break;
+            case 'results':
+              renderResultsStep();
+              break;
+            default:
+              container.innerHTML = '<div class="error-message">Unknown step</div>';
+          }
+        }
+      }
+      
+      function renderAgencyTypeStep() {
+        let html = '<div class="assessment-section agency-type-section">';
+        html += '<h2 class="assessment-step-title">Select Your Agency Type</h2>';
+        html += '<p class="assessment-step-description">Choose the option that best describes your agency:</p>';
+        html += '<div class="assessment-options">';
+        
+        config.agencyTypes.forEach(type => {
+          const isSelected = state.agencyType === type.id;
+          
+          html += `<div class="assessment-option ${isSelected ? 'selected' : ''}" data-agency-type="${type.id}">`;
+          html += `<h3 class="assessment-option-title">${type.name}</h3>`;
+          html += `<p class="assessment-option-description">${type.description}</p>`;
+          html += '</div>';
+        });
+        
+        html += '</div>'; // Close assessment-options
+        html += '<p class="assessment-note">This will help us tailor the assessment to your agency type.</p>';
+        html += '</div>'; // Close assessment-section
+        
+        container.innerHTML = html;
+      }
+      
+      function renderServicesStep() {
+        let html = '<div class="assessment-section service-selection-section">';
+        html += '<h2 class="assessment-step-title">Select Your Services & Allocate Revenue</h2>';
+        html += '<p class="assessment-step-description">Select the services your agency offers and drag sliders to allocate your revenue percentage across services:</p>';
+        
+        html += '<div class="revenue-total-display">';
+        html += '<div class="revenue-total-inner"><span>Total: </span><span id="revenue-total-value">0%</span></div>';
+        html += '</div>';
+        
+        html += '<div class="assessment-options service-options">';
+        
+        config.services.forEach(service => {
+          const isSelected = state.selectedServices.includes(service.id);
+          const serviceRevenuePercentage = state.serviceRevenue[service.id] || 0;
+          
+          html += `<div class="assessment-option service-option ${isSelected ? 'selected' : ''}" data-service-id="${service.id}">`;
+          html += '<div class="assessment-option-header">';
+          html += `<input type="checkbox" id="service-${service.id}" value="${service.id}" ${isSelected ? 'checked' : ''} class="service-checkbox">`;
+          html += `<label for="service-${service.id}" class="assessment-option-label">${service.name}</label>`;
+          
+          if (service.description) {
+            html += `<p class="assessment-option-description">${service.description}</p>`;
+          }
+          
+          html += '</div>'; // Close assessment-option-header
+          
+          // Revenue slider
+          html += `<div class="service-revenue-slider ${isSelected ? '' : 'hidden'}">`;
+          html += '<div class="slider-controls">';
+          html += `<input type="range" min="0" max="100" value="${serviceRevenuePercentage}" class="revenue-slider" data-service="${service.id}">`;
+          html += `<span class="slider-value">${serviceRevenuePercentage}%</span>`;
+          html += '</div>'; // Close slider-controls
+          html += '</div>'; // Close service-revenue-slider
+          
+          html += '</div>'; // Close assessment-option
+        });
+        
+        html += '</div>'; // Close assessment-options
+        
+        // Navigation buttons
+        html += '<div class="assessment-navigation">';
+        html += '<button class="prev-button">Previous</button>';
+        html += '<button class="next-button">Next</button>';
+        html += '</div>';
+        
+        html += '</div>'; // Close assessment-section
+        
+        container.innerHTML = html;
+        
+        // Update revenue total
+        updateRevenueTotal();
+      }
+      
+      function renderQuestionsStep() {
+        // Sample questions
+        const questions = [
+          { id: 'q1', text: 'How much of your agency\'s work could be replaced by AI?', dimension: 'vulnerability' },
+          { id: 'q2', text: 'How prepared is your team to integrate AI into workflows?', dimension: 'readiness' },
+          { id: 'q3', text: 'How much has your agency already invested in AI?', dimension: 'investment' }
+        ];
+        
+        // For this example, just show the first question
+        const currentQuestion = questions[0];
+        const answeredQuestions = Object.keys(state.answers).length;
+        
+        let html = '<div class="assessment-section questions-section">';
+        html += '<h2 class="assessment-step-title">Assessment Questions</h2>';
+        
+        // Progress indicator
+        html += '<div class="questions-progress">';
+        html += '<div class="questions-progress-bar">';
+        html += `<div class="questions-progress-bar-fill" style="width: ${(answeredQuestions / questions.length) * 100}%"></div>`;
+        html += '</div>';
+        html += `<div class="questions-progress-text">Question 1 of ${questions.length}</div>`;
+        html += '</div>';
+        
+        // Question container
+        html += '<div class="question-container">';
+        html += '<div class="question-current">';
+        html += `<h3 class="question-text">${currentQuestion.text}</h3>`;
+        html += '<div class="question-options">';
+        
+        // Answer options
+        const options = [
+          { score: 1, text: 'Not at all' },
+          { score: 2, text: 'Somewhat' },
+          { score: 3, text: 'Moderately' },
+          { score: 4, text: 'Significantly' },
+          { score: 5, text: 'Completely' }
+        ];
+        
+        options.forEach((option, index) => {
+          const isSelected = state.answers[currentQuestion.id] && state.answers[currentQuestion.id].score === option.score;
+          html += `<div class="question-option ${isSelected ? 'selected' : ''}" data-question-id="${currentQuestion.id}" data-option-index="${index}" data-score="${option.score}">`;
+          html += `<span class="option-text">${option.text}</span>`;
+          html += '</div>';
+        });
+        
+        html += '</div>'; // Close question-options
+        html += '</div>'; // Close question-current
+        html += '</div>'; // Close question-container
+        
+        // Navigation
+        html += '<div class="questions-navigation">';
+        html += '<button class="prev-button">Previous</button>';
+        html += `<div class="answered-count">${answeredQuestions} of ${questions.length} questions answered</div>`;
+        html += '<button class="next-button">Next</button>';
+        html += '</div>';
+        
+        html += '</div>'; // Close assessment-section
+        
+        container.innerHTML = html;
+      }
+      
+      function renderEmailStep() {
+        let html = '<div class="assessment-section email-section">';
+        html += '<h2 class="assessment-step-title">Almost Done!</h2>';
+        html += '<p class="assessment-step-description">Enter your email to receive your assessment results:</p>';
+        
+        html += '<div class="email-form">';
+        html += '<div class="form-group">';
+        html += '<label for="email-input">Email Address</label>';
+        html += `<input type="email" id="email-input" class="email-input" placeholder="yourname@company.com" value="${state.email || ''}">`;
+        html += '</div>';
+        
+        html += '<div class="form-group">';
+        html += '<label for="name-input">Your Name (Optional)</label>';
+        html += `<input type="text" id="name-input" class="name-input" placeholder="Your Name" value="${state.name || ''}">`;
+        html += '</div>';
+        
+        html += '<div class="form-group">';
+        html += '<label for="company-input">Company Name (Optional)</label>';
+        html += `<input type="text" id="company-input" class="company-input" placeholder="Your Company" value="${state.company || ''}">`;
+        html += '</div>';
+        
+        html += '<div class="form-group checkbox-group">';
+        html += '<input type="checkbox" id="consent-checkbox" class="consent-checkbox" checked>';
+        html += '<label for="consent-checkbox">I agree to receive my assessment results and related information</label>';
+        html += '</div>';
+        html += '</div>'; // Close email-form
+        
+        // Navigation buttons
+        html += '<div class="assessment-navigation">';
+        html += '<button class="prev-button">Previous</button>';
+        html += '<button class="submit-button">Submit & View Results</button>';
+        html += '</div>';
+        
+        html += '</div>'; // Close assessment-section
+        
+        container.innerHTML = html;
+      }
+      
+      function renderResultsStep() {
+        let html = '<div class="assessment-section results-section">';
+        html += '<h2 class="assessment-step-title">Your Assessment Results</h2>';
+        
+        // Overall score
+        const overallScore = state.results ? state.results.overall : 0;
+        const scorePercentage = Math.round(overallScore / 5 * 100);
+        
+        html += '<div class="overall-score">';
+        html += '<h3>Overall AI Vulnerability Score</h3>';
+        html += '<div class="score-gauge">';
+        html += `<div class="score-gauge-fill" style="width: ${scorePercentage}%"></div>`;
+        html += `<div class="score-gauge-value">${scorePercentage}%</div>`;
+        html += '</div>'; // Close score-gauge
+        html += '</div>'; // Close overall-score
+        
+        // Dimension scores
+        html += '<div class="dimension-scores">';
+        html += '<h3>Scores by Dimension</h3>';
+        
+        if (state.results && state.results.dimensions) {
+          const dimensions = state.results.dimensions;
+          
+          for (const dim in dimensions) {
+            if (dimensions[dim].average) {
+              const dimScore = dimensions[dim].average;
+              const dimPercentage = Math.round(dimScore / 5 * 100);
+              
+              html += '<div class="dimension-score">';
+              html += `<h4>${dim}</h4>`;
+              html += '<div class="score-bar">';
+              html += `<div class="score-bar-fill" style="width: ${dimPercentage}%"></div>`;
+              html += `<div class="score-bar-value">${dimPercentage}%</div>`;
+              html += '</div>'; // Close score-bar
+              html += '</div>'; // Close dimension-score
+            }
+          }
+        } else {
+          html += '<p>No dimension scores available.</p>';
+        }
+        
+        html += '</div>'; // Close dimension-scores
+        
+        // Recommendations
+        html += '<div class="recommendations">';
+        html += '<h3>Recommendations</h3>';
+        html += '<ul class="recommendation-list">';
+        html += '<li>Consider investing in AI training for your team</li>';
+        html += '<li>Evaluate your current technology stack for AI integration</li>';
+        html += '<li>Develop a strategy for implementing AI in your service offerings</li>';
+        html += '</ul>';
+        html += '</div>'; // Close recommendations
+        
+        // Restart button
+        html += '<div class="assessment-navigation">';
+        html += '<button class="prev-button">Back</button>';
+        html += '<button class="restart-button" onclick="location.reload()">Restart Assessment</button>';
+        html += '</div>';
+        
+        html += '</div>'; // Close assessment-section
+        
+        container.innerHTML = html;
+      }
+      
+      // Helper functions
+      function updateServiceSelection() {
+        // Show/hide revenue sliders based on service selection
+        document.querySelectorAll('.service-option').forEach(option => {
+          const serviceId = option.getAttribute('data-service-id');
+          const isSelected = state.selectedServices.includes(serviceId);
+          
+          option.classList.toggle('selected', isSelected);
+          
+          const revenueSlider = option.querySelector('.service-revenue-slider');
+          if (revenueSlider) {
+            revenueSlider.classList.toggle('hidden', !isSelected);
+          }
+        });
+        
+        updateRevenueTotal();
+      }
+      
+      function updateRevenueTotal() {
+        let total = 0;
+        
+        for (const serviceId in state.serviceRevenue) {
+          if (state.selectedServices.includes(serviceId)) {
+            total += state.serviceRevenue[serviceId];
+          }
+        }
+        
+        const totalElement = document.getElementById('revenue-total-value');
+        if (totalElement) {
+          totalElement.textContent = total + '%';
+          
+          // Highlight if not 100%
+          totalElement.classList.toggle('warning', total !== 100);
+        }
+      }
+      
+      function calculateResults() {
+        // Simple scoring system
+        const scores = { overall: 0, dimensions: {} };
+        
+        // Process answers
+        for (const questionId in state.answers) {
+          const answer = state.answers[questionId];
+          
+          // Add to dimension score
+          if (!scores.dimensions[answer.dimension]) {
+            scores.dimensions[answer.dimension] = {
+              score: 0,
+              count: 0
+            };
+          }
+          
+          scores.dimensions[answer.dimension].score += answer.score;
+          scores.dimensions[answer.dimension].count++;
+        }
+        
+        // Calculate average scores
+        for (const dimension in scores.dimensions) {
+          if (scores.dimensions[dimension].count > 0) {
+            scores.dimensions[dimension].average = 
+              scores.dimensions[dimension].score / scores.dimensions[dimension].count;
+          }
+        }
+        
+        // Calculate overall score
+        let overallScore = 0;
+        let dimensionCount = 0;
+        
+        for (const dimension in scores.dimensions) {
+          if (scores.dimensions[dimension].average) {
+            overallScore += scores.dimensions[dimension].average;
+            dimensionCount++;
+          }
+        }
+        
+        if (dimensionCount > 0) {
+          scores.overall = overallScore / dimensionCount;
+        }
+        
+        // Add default dimensions if none were calculated
+        if (Object.keys(scores.dimensions).length === 0) {
+          scores.dimensions = {
+            'Vulnerability': { average: 3.5 },
+            'Readiness': { average: 2.8 },
+            'Investment': { average: 1.5 }
+          };
+          scores.overall = 2.6;
+        }
+        
+        state.results = scores;
+      }
+    });
+  </script>
+</body>
+</html>

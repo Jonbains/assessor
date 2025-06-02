@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assessment Framework Report Accuracy Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .test-scenario {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .test-controls {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #eee;
+      border-radius: 4px;
+    }
+    .results {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f0f8ff;
+      border-radius: 4px;
+    }
+    .recommendation {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    .score-card {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .score-item {
+      flex: 1 0 120px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 5px;
+      text-align: center;
+      border-radius: 4px;
+    }
+    .score-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3498db;
+    }
+    .passed {
+      color: #2ecc71;
+    }
+    .failed {
+      color: #e74c3c;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .status {
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 18px;
+    }
+    #testLog {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      margin-top: 20px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Assessment Framework Report Accuracy Test</h1>
+    <p>This test validates that the refactored assessment framework correctly calculates scores and recommendations for different test scenarios.</p>
+
+    <div class="test-controls">
+      <h2>Test Controls</h2>
+      <button id="runAllTests">Run All Tests</button>
+      <button id="runAgencyTests">Run Agency Tests</button>
+      <button id="runInhouseTests">Run Inhouse Tests</button>
+      <div class="status" id="testStatus">Ready to run tests</div>
+    </div>
+
+    <div class="results" id="testResults">
+      <h2>Test Results</h2>
+      <p>Run tests to see results</p>
+    </div>
+
+    <div id="testLog">
+      <h3>Test Log</h3>
+      <div id="logContent"></div>
+    </div>
+  </div>
+
+  <!-- Load the assessment framework core components -->
+  <script src="../assets/js/core/component-registry.js"></script>
+  <script src="../assets/js/core/event-bus.js"></script>
+  <script src="../assets/js/core/plugin-system.js"></script>
+  <script src="../assets/js/core/config-loader.js"></script>
+  <script src="../assets/js/core/assessment-engine.js"></script>
+
+  <!-- Load the assessment types configurations -->
+  <script src="../assets/js/config/agency-assessment-config.js"></script>
+  <script src="../assets/js/config/inhouse-assessment-config.js"></script>
+
+  <!-- Load the scoring system -->
+  <script src="../assets/js/scoring/enhanced-weighted-scoring.js"></script>
+
+  <!-- Load test suite -->
+  <script>
+    // Initialize logging
+    const logContent = document.getElementById('logContent');
+    const testLog = function(message) {
+      const logEntry = document.createElement('div');
+      logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContent.appendChild(logEntry);
+      console.log(message);
+    };
+
+    // Mock configuration loader for testing
+    class MockConfigLoader {
+      constructor() {
+        this.configs = {
+          'agency': window.AgencyAssessmentConfig || {},
+          'inhouse': window.InhouseAssessmentConfig || {}
+        };
+      }
+
+      async loadConfig(assessmentType) {
+        return this.configs[assessmentType];
+      }
+    }
+
+    // Test case definitions - Agency test scenarios
+    const agencyTestCases = [
+      {
+        name: 'Digital Agency: Full Service, High Revenue',
+        assessmentType: 'agency',
+        selectedType: 'digital',
+        selectedServices: ['web-development', 'seo', 'social-media', 'content-marketing'],
+        revenue: 2500000,
+        answers: {
+          // Sample answers for key agency questions
+          'client-retention': 4,
+          'team-structure': 5,
+          'profitability': 4,
+          'tech-adoption': 5,
+          'pricing-model': 4,
+          'service-delivery': 5
+        },
+        expectations: {
+          scores: {
+            overall: { min: 75, max: 95 },
+            operational: { min: 70, max: 95 },
+            financial: { min: 70, max: 95 },
+            ai: { min: 60, max: 90 },
+            strategic: { min: 70, max: 95 }
+          },
+          recommendationKeywords: [
+            'efficiency', 'growth', 'strategy', 'technology'
+          ]
+        }
+      },
+      {
+        name: 'Marketing Agency: Limited Services, Low Revenue',
+        assessmentType: 'agency',
+        selectedType: 'marketing',
+        selectedServices: ['content-marketing', 'email-marketing'],
+        revenue: 500000,
+        answers: {
+          // Sample answers for key agency questions
+          'client-retention': 2,
+          'team-structure': 3,
+          'profitability': 2,
+          'tech-adoption': 2,
+          'pricing-model': 3,
+          'service-delivery': 2
+        },
+        expectations: {
+          scores: {
+            overall: { min: 30, max: 60 },
+            operational: { min: 30, max: 60 },
+            financial: { min: 25, max: 55 },
+            ai: { min: 20, max: 50 },
+            strategic: { min: 30, max: 60 }
+          },
+          recommendationKeywords: [
+            'process', 'improvement', 'efficiency', 'scaling'
+          ]
+        }
+      }
+    ];
+
+    // Test case definitions - Inhouse test scenarios
+    const inhouseTestCases = [
+      {
+        name: 'Enterprise Marketing Department',
+        assessmentType: 'inhouse',
+        selectedType: 'marketing',
+        selectedServices: ['brand-management', 'content-strategy', 'social-media'],
+        revenue: 5000000, // Budget
+        answers: {
+          // Sample answers for key inhouse questions
+          'team-size': 4,
+          'tooling': 4,
+          'measurement': 5,
+          'collaboration': 4,
+          'budget-allocation': 4,
+          'technology-adoption': 5
+        },
+        expectations: {
+          scores: {
+            overall: { min: 70, max: 95 },
+            operational: { min: 70, max: 95 },
+            financial: { min: 65, max: 90 },
+            ai: { min: 60, max: 90 },
+            strategic: { min: 70, max: 95 }
+          },
+          recommendationKeywords: [
+            'efficiency', 'integration', 'strategy', 'technology'
+          ]
+        }
+      }
+    ];
+
+    // Test runner
+    class TestRunner {
+      constructor() {
+        this.results = [];
+        this.registry = new window.AssessmentComponentRegistry();
+        this.eventBus = {};
+        this.pluginSystem = {};
+        this.configLoader = new MockConfigLoader();
+      }
+
+      async runTests(testCases) {
+        this.results = [];
+        document.getElementById('testStatus').textContent = 'Running tests...';
+        document.getElementById('testResults').innerHTML = '<h2>Test Results</h2><p>Tests in progress...</p>';
+
+        let allPassed = true;
+        let completedTests = 0;
+
+        for (const testCase of testCases) {
+          testLog(`Starting test: ${testCase.name}`);
+          
+          // Initialize the assessment engine for this test
+          const engineOptions = {
+            container: document.createElement('div'),
+            eventBus: this.eventBus,
+            pluginSystem: this.pluginSystem,
+            configLoader: this.configLoader,
+            componentRegistry: this.registry
+          };
+
+          // Create test engine instance
+          const engine = new window.AssessmentFramework.Core.AssessmentEngine(engineOptions);
+          
+          // Set up initial state
+          const initialState = {
+            assessmentType: testCase.assessmentType,
+            selectedType: testCase.selectedType,
+            selectedServices: testCase.selectedServices,
+            revenue: testCase.revenue,
+            answers: testCase.answers
+          };
+
+          // Initialize the engine with our test data
+          await engine.initialize(initialState);
+          
+          // Force calculation of results
+          engine._calculateResults();
+          
+          // Check the results against expectations
+          const testResult = this._validateResults(testCase, engine.state.results);
+          this.results.push(testResult);
+          
+          if (!testResult.passed) {
+            allPassed = false;
+          }
+          
+          completedTests++;
+          testLog(`Completed test: ${testCase.name} - ${testResult.passed ? 'PASSED' : 'FAILED'}`);
+        }
+
+        // Update status
+        document.getElementById('testStatus').textContent = 
+          allPassed ? 'All tests passed ✓' : `${completedTests - this.results.filter(r => !r.passed).length} of ${completedTests} tests passed`;
+        document.getElementById('testStatus').className = 'status ' + (allPassed ? 'passed' : 'failed');
+        
+        // Display results
+        this._renderResults();
+        
+        return allPassed;
+      }
+
+      _validateResults(testCase, results) {
+        const testResult = {
+          testCase: testCase,
+          results: results,
+          scoreValidations: {},
+          recommendationValidations: [],
+          passed: true,
+          failureReasons: []
+        };
+        
+        // Validate scores
+        if (results && results.scores) {
+          for (const scoreKey in testCase.expectations.scores) {
+            if (testCase.expectations.scores.hasOwnProperty(scoreKey)) {
+              const expected = testCase.expectations.scores[scoreKey];
+              const actual = results.scores[scoreKey];
+              
+              const isValid = actual >= expected.min && actual <= expected.max;
+              
+              testResult.scoreValidations[scoreKey] = {
+                expected: expected,
+                actual: actual,
+                passed: isValid
+              };
+              
+              if (!isValid) {
+                testResult.passed = false;
+                testResult.failureReasons.push(`Score for ${scoreKey} (${actual}) is outside expected range (${expected.min}-${expected.max})`);
+              }
+            }
+          }
+        } else {
+          testResult.passed = false;
+          testResult.failureReasons.push('No scores found in results');
+        }
+        
+        // Validate recommendations
+        if (results && results.recommendations && results.recommendations.length > 0) {
+          const recommendationText = results.recommendations.map(r => r.title + ' ' + r.text).join(' ').toLowerCase();
+          
+          for (const keyword of testCase.expectations.recommendationKeywords) {
+            const found = recommendationText.includes(keyword.toLowerCase());
+            
+            testResult.recommendationValidations.push({
+              keyword: keyword,
+              found: found
+            });
+            
+            if (!found) {
+              testResult.passed = false;
+              testResult.failureReasons.push(`Expected keyword "${keyword}" not found in recommendations`);
+            }
+          }
+        } else {
+          testResult.passed = false;
+          testResult.failureReasons.push('No recommendations found in results');
+        }
+        
+        return testResult;
+      }
+
+      _renderResults() {
+        const resultsContainer = document.getElementById('testResults');
+        resultsContainer.innerHTML = '<h2>Test Results</h2>';
+        
+        if (this.results.length === 0) {
+          resultsContainer.innerHTML += '<p>No tests have been run yet</p>';
+          return;
+        }
+        
+        for (const result of this.results) {
+          const testElement = document.createElement('div');
+          testElement.className = 'test-scenario';
+          
+          // Test header
+          const header = document.createElement('h3');
+          header.textContent = result.testCase.name;
+          testElement.appendChild(header);
+          
+          // Test status
+          const status = document.createElement('div');
+          status.className = 'status ' + (result.passed ? 'passed' : 'failed');
+          status.textContent = result.passed ? 'PASSED' : 'FAILED';
+          testElement.appendChild(status);
+          
+          // If failed, show reasons
+          if (!result.passed) {
+            const reasons = document.createElement('ul');
+            for (const reason of result.failureReasons) {
+              const reasonItem = document.createElement('li');
+              reasonItem.textContent = reason;
+              reasonItem.className = 'failed';
+              reasons.appendChild(reasonItem);
+            }
+            testElement.appendChild(reasons);
+          }
+          
+          // Score validations
+          const scoresTitle = document.createElement('h4');
+          scoresTitle.textContent = 'Score Validations';
+          testElement.appendChild(scoresTitle);
+          
+          const scoreCard = document.createElement('div');
+          scoreCard.className = 'score-card';
+          
+          for (const scoreKey in result.scoreValidations) {
+            if (result.scoreValidations.hasOwnProperty(scoreKey)) {
+              const validation = result.scoreValidations[scoreKey];
+              
+              const scoreItem = document.createElement('div');
+              scoreItem.className = 'score-item';
+              
+              const scoreName = document.createElement('div');
+              scoreName.textContent = scoreKey.charAt(0).toUpperCase() + scoreKey.slice(1);
+              scoreItem.appendChild(scoreName);
+              
+              const scoreValue = document.createElement('div');
+              scoreValue.className = 'score-value ' + (validation.passed ? 'passed' : 'failed');
+              scoreValue.textContent = validation.actual;
+              scoreItem.appendChild(scoreValue);
+              
+              const expectedRange = document.createElement('div');
+              expectedRange.textContent = `Expected: ${validation.expected.min}-${validation.expected.max}`;
+              scoreItem.appendChild(expectedRange);
+              
+              scoreCard.appendChild(scoreItem);
+            }
+          }
+          
+          testElement.appendChild(scoreCard);
+          
+          // Recommendation validations
+          const recsTitle = document.createElement('h4');
+          recsTitle.textContent = 'Recommendation Validations';
+          testElement.appendChild(recsTitle);
+          
+          const recsList = document.createElement('ul');
+          
+          for (const validation of result.recommendationValidations) {
+            const recItem = document.createElement('li');
+            recItem.className = validation.found ? 'passed' : 'failed';
+            recItem.textContent = `Keyword "${validation.keyword}": ${validation.found ? 'Found' : 'Not Found'}`;
+            recsList.appendChild(recItem);
+          }
+          
+          testElement.appendChild(recsList);
+          
+          // Add the test element to results container
+          resultsContainer.appendChild(testElement);
+        }
+      }
+    }
+
+    // Initialize the test runner
+    const testRunner = new TestRunner();
+
+    // Set up event listeners for test buttons
+    document.getElementById('runAllTests').addEventListener('click', async () => {
+      const allTests = [...agencyTestCases, ...inhouseTestCases];
+      await testRunner.runTests(allTests);
+    });
+
+    document.getElementById('runAgencyTests').addEventListener('click', async () => {
+      await testRunner.runTests(agencyTestCases);
+    });
+
+    document.getElementById('runInhouseTests').addEventListener('click', async () => {
+      await testRunner.runTests(inhouseTestCases);
+    });
+
+    // Log initialization
+    testLog('Test page initialized and ready');
+  </script>
+</body>
+</html>

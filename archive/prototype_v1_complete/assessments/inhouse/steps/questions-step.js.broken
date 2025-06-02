@@ -1,0 +1,485 @@
+/**
+ * In-House Marketing Assessment - Questions Step
+ * 
+ * Consolidated step that handles all question types:
+ * - Core questions (people, process, strategy)
+ * - Industry-specific questions
+ * - Activity-specific questions
+ * 
+ * Extends the shared BaseQuestionsStep for consistent functionality across assessments
+ */
+
+import { BaseQuestionsStep } from '../../../shared/steps/BaseQuestionsStep.js';
+
+export class QuestionsStep extends BaseQuestionsStep {
+    constructor(assessment) {
+        super(assessment);
+        
+        // Inhouse-specific dimensions
+        this.dimensions = {
+            'people': 'People Skills',
+            'process': 'Process',
+            'strategy': 'Strategy',
+            'technical': 'Technical'
+        };
+        
+        // Inhouse assessment has multiple question types
+        this.questionTypes = ['core', 'industry', 'activity'];
+        this.currentQuestionType = 'core';
+        
+        // Initialize event cleanup array
+        this.cleanupListeners = [];
+    }
+    
+    /**
+     * Initialize questions based on question type
+     * Inhouse-specific implementation handling multiple question types
+     */
+    initializeQuestions() {
+        console.log('[InhouseQuestionsStep] Initializing inhouse-specific questions');
+        
+        // Determine current question type (may come from step ID)
+        this.determineQuestionType();
+        
+        // Get questions for the current type
+        this.questions = this.getQuestionsForType(this.currentQuestionType);
+        this.totalQuestions = this.questions.length;
+        
+        console.log(`[InhouseQuestionsStep] Loaded ${this.questions.length} questions for type '${this.currentQuestionType}'`);
+    }
+    
+    /**
+     * Get questions for a specific type
+     * @param {String} type - Question type to load
+     * @return {Array} - Questions for the specified type
+     */
+    getQuestionsForType(type) {
+        let questions = [];
+        
+        switch(type) {
+            case 'core':
+                questions = this.getCoreQuestions();
+                break;
+            case 'industry':
+                questions = this.getIndustryQuestions();
+                break;
+            case 'activity':
+                questions = this.getActivityQuestions();
+                break;
+            default:
+                questions = this.getCoreQuestions();
+        }
+        
+        return questions;
+    }
+    
+    /**
+     * Get core questions for the assessment
+     * @return {Array} - Core questions
+     */
+    getCoreQuestions() {
+        console.log('[InhouseQuestionsStep] Getting core questions');
+        const config = this.assessment.config;
+        
+        // Get core questions from assessment config
+        return (config.questions && config.questions.core) || [];
+    }
+    
+    /**
+     * Get industry-specific questions for the assessment
+     * @return {Array} - Industry questions
+     */
+    getIndustryQuestions() {
+        console.log('[InhouseQuestionsStep] Getting industry questions');
+        const config = this.assessment.config;
+        const selectedIndustry = this.assessment.state.selectedIndustry;
+        
+        // If no industry is selected, return empty array
+        if (!selectedIndustry) {
+            console.log('[InhouseQuestionsStep] No industry selected, returning empty industry questions array');
+            return [];
+        }
+        
+        // Get industry questions filtered by selected industry
+        const industryQuestions = config.industryQuestions && config.industryQuestions[selectedIndustry];
+        return industryQuestions || [];
+    }
+    
+    /**
+     * Get activity-specific questions for the assessment
+     * @return {Array} - Activity questions
+     */
+    getActivityQuestions() {
+        console.log('[InhouseQuestionsStep] Getting activity questions');
+        const config = this.assessment.config;
+        const selectedActivities = this.assessment.state.selectedActivities || [];
+        
+        // If no activities are selected, return empty array
+        if (selectedActivities.length === 0) {
+            console.log('[InhouseQuestionsStep] No activities selected, returning empty activity questions array');
+            return [];
+        }
+        
+        // Get activity questions for all selected activities
+        let activityQuestions = [];
+        
+        selectedActivities.forEach(activity => {
+            const questions = config.activityQuestions && config.activityQuestions[activity];
+            if (questions && questions.length) {
+                activityQuestions = activityQuestions.concat(questions);
+            }
+        });
+        
+        return activityQuestions;
+    }
+    
+    /**
+     * Determine the current question type based on step ID or state
+     */
+    determineQuestionType() {
+        // Extract step type from the current step ID if needed
+        // This handles 'core-questions', 'industry-questions', etc.
+        const currentStepId = this.assessment.state.currentStep;
+        if (currentStepId && currentStepId.includes('-questions')) {
+            const questionType = currentStepId.split('-')[0];
+            if (this.questionTypes.includes(questionType)) {
+                console.log(`[InhouseQuestionsStep] Setting question type to '${questionType}' based on step ID`);
+                this.assessment.state.currentQuestionType = questionType;
+                this.currentQuestionType = questionType;
+            }
+        }
+        
+        // Make sure we have a question type
+        if (!this.assessment.state.currentQuestionType) {
+            console.log('[InhouseQuestionsStep] Initializing currentQuestionType to "core"');
+            this.assessment.state.currentQuestionType = 'core';
+            this.currentQuestionType = 'core';
+        } else {
+            this.currentQuestionType = this.assessment.state.currentQuestionType;
+        }
+        
+        console.log('[InhouseQuestionsStep] Current question type:', this.currentQuestionType);
+    }
+    
+    /**
+     * Handle entering the step
+     * Inhouse-specific implementation that initializes questions and setup
+     */
+    onEnter() {
+        console.log('[InhouseQuestionsStep] onEnter called for step:', this.assessment.state.currentStep);
+        
+        // Always initialize the current question index if it's undefined or zero
+        if (!this.assessment.state.currentQuestionIndex) {
+            console.log('[InhouseQuestionsStep] Initializing currentQuestionIndex to 0');
+            this.assessment.state.currentQuestionIndex = 0;
+        }
+        
+        // Initialize questions for this step
+        this.initializeQuestions();
+        
+        // Filter questions based on selections
+        this.filterQuestions();
+        
+        // Initialize questions based on the filter
+        this.initializeQuestionSet();
+        
+        // We'll set up event listeners in afterRender when we have a container
+        // Don't call setupEventListeners here as it requires a container
+        
+        // Trigger the initial question render
+        this.renderQuestion();
+    }
+    
+    /**
+     * Filter questions based on selections
+     */
+    filterQuestions() {
+        console.log('[QuestionsStep] Filtering questions based on selections');
+        
+        try {
+            // Get all available questions
+            const allQuestions = {
+                core: this.assessment.getQuestionsByType('core') || [],
+                industry: this.assessment.getQuestionsByType('industry') || [],
+                activity: this.assessment.getQuestionsByType('activity') || []
+            };
+            
+            console.log('[QuestionsStep] Found questions:', allQuestions);
+            
+            // Filter questions based on user selections
+            const filteredQuestions = {};
+            
+            // Add core questions (always included)
+            filteredQuestions.core = allQuestions.core;
+            
+            // Add industry questions if an industry is selected
+            const selectedIndustry = this.assessment.state.selectedIndustry;
+            if (selectedIndustry && allQuestions.industry) {
+                filteredQuestions.industry = allQuestions.industry;
+            } else {
+                filteredQuestions.industry = [];
+            }
+            
+            // Add activity questions for selected activities
+            const selectedActivities = this.assessment.state.selectedActivities || [];
+            if (selectedActivities.length > 0 && allQuestions.activity) {
+                filteredQuestions.activity = allQuestions.activity;
+            } else {
+                filteredQuestions.activity = [];
+            }
+            
+            // Store filtered questions in state
+            this.assessment.state.filteredQuestions = filteredQuestions;
+            
+            console.log('[QuestionsStep] Filtered question IDs:', filteredQuestions);
+        } catch (error) {
+    }
+}
+
+/**
+ * Called after the step is rendered to the DOM
+ * @param {Element} container - The container element where the step was rendered
+ */
+afterRender(container) {
+    console.log('[QuestionsStep] afterRender called with container');
+        
+    // Set up event listeners now that we have a container
+    if (container) {
+        this.setupEventListeners(container);
+    } else {
+        console.error('[QuestionsStep] No container provided to afterRender');
+    }
+}
+
+/**
+ * Render the current question
+ * Inhouse-specific implementation for rendering a question
+ */
+renderQuestion() {
+    console.log('[QuestionsStep] renderQuestion called');
+     */
+    setupEventListeners(container) {
+        // Clean up any previous event listeners
+        this.cleanupEventListeners();
+        
+        // Check if we're showing the completion screen
+        if (container.querySelector('.completion-container')) {
+            this.setupCompletionListeners(container);
+            return;
+        }
+        
+        // Option selection
+        const options = container.querySelectorAll('.question-option');
+        const nextButton = container.querySelector('#question-next');
+        const backButton = container.querySelector('#question-back');
+        
+        // Add click listeners to options
+        options.forEach(option => {
+            const listener = this.handleOptionSelection.bind(this);
+            option.addEventListener('click', listener);
+            this.cleanupListeners.push(() => option.removeEventListener('click', listener));
+        });
+        
+        // Add click listener to next button
+        if (nextButton) {
+            const nextListener = this.handleNext.bind(this);
+            nextButton.addEventListener('click', nextListener);
+            this.cleanupListeners.push(() => nextButton.removeEventListener('click', nextListener));
+        }
+        
+        // Add click listener to back button
+        if (backButton) {
+            const backListener = this.handleBack.bind(this);
+            backButton.addEventListener('click', backListener);
+            this.cleanupListeners.push(() => backButton.removeEventListener('click', backListener));
+        }
+    }
+    
+    /**
+     * Set up event listeners for the completion screen
+     * @param {Element} container - The DOM container
+     */
+    setupCompletionListeners(container) {
+        const continueBtn = container.querySelector('#completion-continue');
+        const editBtn = container.querySelector('#completion-edit');
+        
+        if (continueBtn) {
+            const continueListener = () => {
+                this.assessment.nextStep();
+            };
+            continueBtn.addEventListener('click', continueListener);
+            this.cleanupListeners.push(() => continueBtn.removeEventListener('click', continueListener));
+        }
+        
+        if (editBtn) {
+            const editListener = () => {
+                // Reset to first question of the current type
+                this.assessment.state.currentQuestionIndex = 0;
+                this.assessment.renderCurrentStep();
+            };
+            editBtn.addEventListener('click', editListener);
+            this.cleanupListeners.push(() => editBtn.removeEventListener('click', editListener));
+        }
+    }
+    
+    /**
+     * Handle user selection of an answer option
+     * @param {Event} event - Click event
+     */
+    handleOptionSelection(event) {
+        const option = event.currentTarget;
+        const questionId = option.getAttribute('data-question-id');
+        const optionValue = option.getAttribute('data-value');
+        
+        if (!questionId || !optionValue) {
+            console.error('[QuestionsStep] Missing question ID or option value');
+            return;
+        }
+        
+        // Update selected option in state
+        if (!this.assessment.state.answers) {
+            this.assessment.state.answers = {};
+        }
+        
+        // Store the answer
+        this.assessment.state.answers[questionId] = optionValue;
+        
+        // Update UI to highlight the selected option
+        const allOptions = document.querySelectorAll(`.question-option[data-question-id="${questionId}"]`);
+        allOptions.forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        option.classList.add('selected');
+        
+        // Enable the next button now that we have an answer
+        const nextButton = document.getElementById('question-next');
+        if (nextButton) {
+            nextButton.removeAttribute('disabled');
+        }
+        
+        console.log(`[QuestionsStep] Selected answer for ${questionId}: ${optionValue}`);
+    }
+    
+    /**
+     * Handle next button click
+     */
+    handleNext() {
+        // Get the current question index
+        const currentIndex = this.assessment.state.currentQuestionIndex || 0;
+        const questions = this.questions;
+        
+        // If there are more questions, go to the next one
+        if (currentIndex < questions.length - 1) {
+            // Save current answers
+            this.assessment.stateManager.saveState();
+            
+            // Go to next question
+            this.assessment.state.currentQuestionIndex = currentIndex + 1;
+            this.assessment.renderCurrentStep();
+        } else {
+            // We've reached the end of this question type
+            console.log(`[QuestionsStep] Completed all ${this.currentQuestionType} questions`);
+            
+            // Render completion screen or advance to next step
+            this.assessment.renderCurrentStep();
+        }
+    }
+    
+    /**
+     * Handle back button click
+     */
+    handleBack() {
+        // Decrement question index
+        if (this.assessment.state.currentQuestionIndex > 0) {
+            this.assessment.state.currentQuestionIndex--;
+            this.assessment.renderCurrentStep();
+        } else {
+            // If at the first question of a type, try to go back to previous type
+            if (this.goBackToPreviousQuestionType()) {
+                this.assessment.renderCurrentStep();
+            } else {
+                // If at the very first question, go back to previous step
+                this.assessment.navigationController.previousStep();
+            }
+        }
+    }
+    
+    /**
+     * Advance to the next question type
+     * @return {Boolean} - True if successfully advanced to next type
+     */
+    advanceToNextQuestionType() {
+        const currentTypeIndex = this.questionTypes.indexOf(this.assessment.state.currentQuestionType);
+        console.log(`[QuestionsStep] Looking for next question type after ${this.assessment.state.currentQuestionType} (index ${currentTypeIndex})`);
+        
+        // Try each subsequent type
+        for (let i = currentTypeIndex + 1; i < this.questionTypes.length; i++) {
+            const nextType = this.questionTypes[i];
+            console.log(`[QuestionsStep] Checking question type: ${nextType}`);
+            if ((this.assessment.state.filteredQuestions[nextType] || []).length > 0) {
+                // Found a type with questions, switch to it
+                console.log(`[QuestionsStep] Found next type with questions: ${nextType}`);
+                this.assessment.state.currentQuestionType = nextType;
+                this.assessment.state.currentQuestionIndex = 0;
+                
+                // Update the step ID to match the question type
+                const newStepId = `${nextType}-questions`;
+                console.log(`[QuestionsStep] Updating step ID to: ${newStepId}`);
+                this.assessment.state.currentStep = newStepId;
+                
+                return true;
+            }
+        }
+        
+        // No more question types with questions
+        console.log('[QuestionsStep] No more question types with questions found');
+        return false;
+    }
+    
+    /**
+     * Go back to the previous question type
+     * @return {Boolean} - True if successfully went back to previous type
+     */
+    goBackToPreviousQuestionType() {
+        const currentTypeIndex = this.questionTypes.indexOf(this.assessment.state.currentQuestionType);
+        
+        // Try each previous type
+        for (let i = currentTypeIndex - 1; i >= 0; i--) {
+            const prevType = this.questionTypes[i];
+            const prevTypeQuestions = this.assessment.state.filteredQuestions[prevType] || [];
+            
+            if (prevTypeQuestions.length > 0) {
+                // Found a previous type with questions, switch to it
+                this.assessment.state.currentQuestionType = prevType;
+                this.assessment.state.currentQuestionIndex = prevTypeQuestions.length - 1; // Go to last question
+                return true;
+            }
+        }
+        
+        // No previous question types with questions
+        return false;
+    }
+    
+    /**
+     * Clean up event listeners
+     */
+    cleanupEventListeners() {
+        this.cleanupListeners.forEach(cleanup => cleanup());
+        this.cleanupListeners = [];
+    }
+    
+    /**
+     * Validate the current step
+     * @return {Boolean} - True if step is valid
+     */
+    validate() {
+        const currentQuestion = this.getCurrentQuestion();
+        if (!currentQuestion) return true; // No question to validate
+        
+        return this.assessment.state.answers[currentQuestion.id] !== undefined;
+    }
+}
+
+// Export using ES6 exports only - no global registration
+console.log('[QuestionsStep] Class exported as ES6 module');

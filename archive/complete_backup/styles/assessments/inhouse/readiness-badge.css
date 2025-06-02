@@ -1,0 +1,12 @@
+                .readiness-badge {
+                    background: #ffff66;
+                    color: #141414;
+                    padding: 8px 24px;
+                    border-radius: 30px;
+                    font-weight: 600;
+                    display: inline-block;
+                    margin-top: 1rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    font-size: 0.9rem;
+                }

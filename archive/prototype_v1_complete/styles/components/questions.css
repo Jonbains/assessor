@@ -1,0 +1,175 @@
+/**
+ * Component: Questions UI
+ * Styles for question display, options, navigation, and progress.
+ */
+
+.questions-container {
+    max-width: var(--max-width-content, 800px); /* Fallback if --max-width-content not defined */
+    margin: 0 auto;
+    padding: var(--spacing-large, 20px);
+}
+
+.questions-progress-container {
+    margin-bottom: var(--spacing-xlarge, 30px);
+}
+
+.questions-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-medium, 10px);
+}
+
+.questions-dimension {
+    padding: var(--spacing-small, 6px) var(--spacing-large, 16px);
+    border-radius: var(--border-radius-large, 20px); /* Assuming large for pill shape */
+    color: var(--color-text-inverted, #FFFFFF);
+    background-color: var(--color-primary, #3498db); /* Defaulting to primary, can be overridden */
+    font-weight: var(--font-weight-medium, 500);
+    font-size: var(--font-size-small, 14px);
+    display: inline-block;
+}
+
+.questions-progress-text {
+    color: var(--color-text-secondary, #666);
+    font-size: var(--font-size-small, 14px);
+}
+
+.questions-progress-bar-outer {
+    height: var(--spacing-xs, 8px);
+    background-color: var(--color-background-muted, #eee);
+    border-radius: var(--border-radius-small, 4px);
+    overflow: hidden;
+    margin-bottom: var(--spacing-medium, 12px);
+}
+
+.questions-progress-bar-fill {
+    height: 100%;
+    background-color: var(--color-primary, #3498db);
+    border-radius: var(--border-radius-small, 4px);
+    transition: width var(--transition-duration, 0.3s) ease-in-out;
+}
+
+.questions-progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs, 13px);
+    color: var(--color-text-secondary, #666);
+}
+
+.questions-progress-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-weight: var(--font-weight-medium, 500);
+    margin-bottom: var(--spacing-xs, 4px);
+}
+
+.stat-value {
+    font-weight: var(--font-weight-normal, normal);
+}
+
+.questions-progress-stat.total {
+    font-weight: var(--font-weight-bold, bold);
+}
+
+/* Question box styling */
+.question-box {
+    background-color: var(--color-background, #fff);
+    border-radius: var(--border-radius-medium, 8px);
+    box-shadow: var(--effect-shadow-medium, 0 4px 16px rgba(0, 0, 0, 0.08));
+    padding: var(--spacing-large, 25px);
+    margin-bottom: var(--spacing-xlarge, 30px);
+}
+
+.question-text {
+    font-size: var(--font-size-xlarge, 1.4rem); /* Assuming 1.4rem is XL */
+    margin-top: 0;
+    margin-bottom: var(--spacing-large, 25px);
+    color: var(--color-text-primary, #333);
+    line-height: var(--line-height-base, 1.4);
+}
+
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-medium, 12px);
+}
+
+.question-option {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-medium, 15px) var(--spacing-large, 20px);
+    border-radius: var(--border-radius-small, 6px);
+    border: 1px solid var(--color-border, #ddd);
+    cursor: pointer;
+    transition: all var(--transition-duration-short, 0.2s) ease;
+    position: relative;
+    background-color: var(--color-background-offset, #f9f9f9); /* Assuming f9f9f9 is an offset background */
+}
+
+.question-option:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--effect-shadow-small, 0 4px 8px rgba(0, 0, 0, 0.05));
+    border-color: var(--color-border-hover, #bbb);
+}
+
+.question-option.selected {
+    border: 2px solid var(--color-primary, #3498db);
+    background-color: var(--color-primary-subtle, rgba(52, 152, 219, 0.1));
+    box-shadow: var(--effect-shadow-focus, 0 4px 12px rgba(52, 152, 219, 0.1)); /* Assuming this is a focus shadow */
+}
+
+.option-number {
+    background-color: var(--color-background-muted, #eee);
+    color: var(--color-text-secondary, #666);
+    width: var(--spacing-xlarge, 28px); /* Assuming 28px is XL spacing */
+    height: var(--spacing-xlarge, 28px);
+    border-radius: var(--border-radius-round, 50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: var(--spacing-medium, 15px);
+    font-weight: var(--font-weight-bold, bold);
+    transition: all var(--transition-duration-short, 0.2s) ease;
+}
+
+.question-option.selected .option-number {
+    background-color: var(--color-primary, #3498db);
+    color: var(--color-text-inverted, white);
+}
+
+.option-text {
+    flex: 1;
+    font-size: var(--font-size-base, 16px);
+    color: var(--color-text-primary, #333);
+}
+
+.option-selected-indicator {
+    color: var(--color-primary, #3498db);
+    margin-left: var(--spacing-small, 10px);
+}
+
+.question-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-large, 20px);
+}
+
+.navigation-buttons {
+    display: flex;
+    gap: var(--spacing-small, 10px);
+}
+
+.navigation-info {
+    color: var(--color-text-secondary, #666);
+    font-size: var(--font-size-small, 14px);
+}
+
+.answered-count {
+    font-weight: var(--font-weight-medium, 500);
+}

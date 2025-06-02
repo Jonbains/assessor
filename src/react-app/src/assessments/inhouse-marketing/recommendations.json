@@ -1,0 +1,155 @@
+{
+    "recommendations": {
+      "immediate": {
+        "title": "This Week's Quick Wins",
+        "items": {
+          "content_ai_pilot": {
+            "title": "Start Your Content AI Pilot",
+            "condition": "activityScores.content_marketing < 50",
+            "priority": 1,
+            "description": "Use Claude or ChatGPT to draft your next blog post. Time the process. Edit for brand voice. Calculate time saved.",
+            "effort": "2-3 hours",
+            "impact": "40-60% time savings",
+            "tools": ["Claude", "ChatGPT", "Jasper"],
+            "metric": "Hours saved per piece"
+          },
+          "social_automation": {
+            "title": "Automate Social Media Creation",
+            "condition": "activityScores.social_media < 50",
+            "priority": 2,
+            "description": "Turn one blog post into 10 social posts using AI. Test engagement vs manual posts.",
+            "effort": "1 hour setup",
+            "impact": "10x content output",
+            "tools": ["Buffer AI", "Lately", "Copy.ai"],
+            "metric": "Posts per hour"
+          },
+          "email_subject_testing": {
+            "title": "AI-Powered Subject Lines",
+            "condition": "activityScores.email_marketing < 60",
+            "priority": 3,
+            "description": "Generate 10 subject line variants with AI for your next campaign. A/B test results.",
+            "effort": "30 minutes",
+            "impact": "20-40% open rate improvement",
+            "tools": ["Phrasee", "ChatGPT", "Copy.ai"],
+            "metric": "Open rate increase"
+          },
+          "reporting_automation": {
+            "title": "Automate Your Weekly Report",
+            "condition": "activityScores.analytics_data < 50",
+            "priority": 2,
+            "description": "Set up automated dashboard pulling data from all sources. Save 2-4 hours weekly.",
+            "effort": "Half day setup",
+            "impact": "80% time reduction",
+            "tools": ["Supermetrics", "Whatagraph", "AgencyAnalytics"],
+            "metric": "Hours saved weekly"
+          },
+          "ai_champion": {
+            "title": "Identify Your AI Champion",
+            "condition": "scores.dimensions.humanReadiness < 50",
+            "priority": 1,
+            "description": "Ask 'Who wants to experiment with AI for a week?' Give them 4 hours to explore and report back.",
+            "effort": "1 hour meeting",
+            "impact": "3x faster adoption",
+            "tools": ["Team survey", "Slack poll"],
+            "metric": "Champion identified Y/N"
+          }
+        }
+      },
+      "shortTerm": {
+        "title": "30-90 Day Transformation",
+        "items": {
+          "workflow_documentation": {
+            "title": "Document & Optimize Workflows",
+            "description": "Map your top 3 marketing processes. Identify AI insertion points. Test and refine.",
+            "effort": "2 days",
+            "impact": "Foundation for scaling",
+            "outcome": "AI-ready processes"
+          },
+          "team_training": {
+            "title": "Upskill Your Team",
+            "description": "Weekly 2-hour AI training sessions. Cover prompting, tools, and best practices.",
+            "effort": "2 hours/week",
+            "impact": "Team confidence",
+            "outcome": "AI-literate team"
+          },
+          "tool_consolidation": {
+            "title": "Consolidate Your Tech Stack",
+            "description": "Audit current tools. Replace 5-10 with AI-powered alternatives.",
+            "effort": "1 week audit",
+            "impact": "50% tool reduction",
+            "outcome": "Simplified stack"
+          },
+          "roi_measurement": {
+            "title": "Build ROI Dashboard",
+            "description": "Track time saved, output increased, and cost reduced from AI initiatives.",
+            "effort": "1 day setup",
+            "impact": "Justify expansion",
+            "outcome": "Clear ROI metrics"
+          }
+        }
+      },
+      "strategic": {
+        "title": "Game-Changing Initiatives",
+        "items": {
+          "ai_first_service": {
+            "title": "Launch AI-First Service",
+            "description": "Create new service line built on AI capabilities. Premium pricing for superior results.",
+            "impact": "New revenue stream",
+            "timeline": "3-6 months"
+          },
+          "predictive_marketing": {
+            "title": "Predictive Marketing Platform",
+            "description": "Use AI to predict campaign performance, optimize in real-time.",
+            "impact": "2-3x performance",
+            "timeline": "6 months"
+          },
+          "personalization_engine": {
+            "title": "Hyper-Personalization Engine",
+            "description": "AI-driven content personalization across all channels.",
+            "impact": "40% engagement lift",
+            "timeline": "6-9 months"
+          }
+        }
+      },
+      "byScore": {
+        "low": {
+          "range": "0-30",
+          "focus": "Foundation Building",
+          "priorities": ["ai_champion", "content_ai_pilot", "workflow_documentation"],
+          "message": "Start with quick wins to build momentum and confidence."
+        },
+        "medium": {
+          "range": "31-60",
+          "focus": "Acceleration",
+          "priorities": ["team_training", "tool_consolidation", "reporting_automation"],
+          "message": "You have the basics - time to scale and systematize."
+        },
+        "high": {
+          "range": "61-100",
+          "focus": "Innovation",
+          "priorities": ["ai_first_service", "predictive_marketing", "personalization_engine"],
+          "message": "Lead the market with advanced AI applications."
+        }
+      },
+      "bySize": {
+        "solo": {
+          "focus": "Personal Productivity",
+          "priorities": ["content_ai_pilot", "social_automation", "email_subject_testing"],
+          "budget": "£0-100/month",
+          "message": "Focus on free/low-cost tools that save you hours daily."
+        },
+        "small": {
+          "focus": "Team Efficiency",
+          "priorities": ["team_training", "workflow_documentation", "reporting_automation"],
+          "budget": "£100-500/month",
+          "message": "Build team capabilities while automating repetitive tasks."
+        },
+        "medium": {
+          "focus": "Competitive Advantage",
+          "priorities": ["ai_first_service", "tool_consolidation", "predictive_marketing"],
+          "budget": "£500-2000/month",
+          "message": "Transform your capabilities to outpace competitors."
+        }
+      }
+    }
+  }

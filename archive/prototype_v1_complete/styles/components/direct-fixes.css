@@ -1,0 +1,303 @@
+/**
+ * Direct CSS fixes for the obsolete assessment framework
+ * These styles use !important to ensure they override any other styles
+ */
+
+/* Force recommendation boxes to have black background with yellow accents */
+.assessment-results-recommendation,
+.assessment-recommendation {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-left: 4px solid #ffff66 !important;
+  padding: 20px !important;
+  margin: 10px 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.assessment-results-recommendation-title,
+.assessment-recommendation h4 {
+  color: #ffff66 !important;
+  font-size: 18px !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+}
+
+/* Force action plan items to have correct styling */
+.assessment-results-action-item,
+.assessment-action-plan-item {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-left: 4px solid #ffff66 !important;
+  padding: 20px !important;
+  margin: 15px 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.assessment-results-action-title,
+.assessment-action-plan-title {
+  color: #ffff66 !important;
+  font-size: 18px !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+}
+
+.assessment-results-action-impact strong {
+  color: #ffff66 !important;
+}
+
+/* EBIT and valuation impact section */
+.assessment-results-ebit-section {
+  background-color: #000000 !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  margin: 20px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-left: 4px solid #ffff66 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.assessment-results-ebit-header {
+  color: #ffff66 !important;
+  font-size: 22px !important;
+  margin-bottom: 15px !important;
+  font-weight: bold !important;
+}
+
+.assessment-results-ebit-value {
+  color: #ffff66 !important;
+  font-size: 28px !important;
+  font-weight: bold !important;
+}
+
+/* Section headers */
+.assessment-results-section-title {
+  color: #ffff66 !important;
+  font-size: 22px !important;
+  margin: 30px 0 15px 0 !important;
+  padding-bottom: 8px !important;
+  border-bottom: 2px solid rgba(255, 255, 102, 0.4) !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+/* General colors */
+.assessment-container, body, html {
+  background-color: #0c0c0c !important;
+  color: #f0f0f0 !important;
+}
+
+/* Header styling to match the image */
+.assessment-header {
+  background-color: #141414 !important;
+  padding: 20px !important;
+  border-bottom: 2px solid #ffff66 !important;
+  text-align: center !important;
+  margin-bottom: 30px !important;
+}
+
+.assessment-header h1 {
+  color: #ffff66 !important;
+  font-size: 28px !important;
+  margin: 0 !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+.assessment-header h2 {
+  color: #cccccc !important;
+  font-size: 16px !important;
+  margin: 5px 0 0 0 !important;
+  font-weight: normal !important;
+}
+
+/* Add dark border to sections */
+.assessment-section {
+  border: 1px solid #333333 !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  margin: 20px 0 !important;
+  background-color: #141414 !important;
+}
+
+.assessment-button-primary {
+  background-color: #ffff66 !important;
+  color: #000000 !important;
+}
+
+.assessment-button-secondary {
+  background-color: #222222 !important;
+  color: #ffff66 !important;
+  border: 1px solid #ffff66 !important;
+}
+
+/* Fix for radar chart */
+#radarChart {
+  background-color: #000000 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  padding: 20px !important;
+  margin: 20px 0 !important;
+}
+
+/* Force recommendations to be visible */
+.assessment-recommendations-container {
+  display: block !important;
+}
+
+/* Star rating styling */
+.assessment-results-score-stars {
+  color: #ffff66 !important;
+  font-size: 32px !important;
+  letter-spacing: 5px !important;
+  margin: 10px 0 !important;
+  text-align: center !important;
+}
+
+/* Score category styling */
+.assessment-results-score-category {
+  color: #ffff66 !important;
+  font-size: 18px !important;
+  text-align: center !important;
+  margin-bottom: 15px !important;
+  font-weight: bold !important;
+}
+
+/* Dimension bars and service vulnerability section */
+.assessment-results-dimension-fill {
+  background-color: #ffff66 !important;
+  height: 14px !important;
+  border-radius: 7px !important;
+}
+
+.assessment-results-dimension-bar {
+  background-color: #222222 !important;
+  height: 14px !important;
+  border-radius: 7px !important;
+  margin-top: 5px !important;
+  overflow: hidden !important;
+}
+
+/* Service vulnerability section with dark green background */
+.assessment-vulnerability-container {
+  background-color: #1a3420 !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  margin: 20px 0 !important;
+  border: 1px solid #265535 !important;
+}
+
+.assessment-vulnerability-header {
+  color: #ffff66 !important;
+  font-size: 20px !important;
+  margin-bottom: 15px !important;
+  text-align: center !important;
+}
+
+.assessment-vulnerability-score {
+  color: #ffff66 !important;
+  font-size: 36px !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  margin: 20px 0 !important;
+}
+
+.assessment-vulnerability-description {
+  color: #ffffff !important;
+  text-align: center !important;
+  margin-bottom: 15px !important;
+}
+
+/* Overall score section */
+.assessment-results-overall {
+  padding: 30px !important;
+  text-align: center !important;
+  margin-bottom: 20px !important;
+  background-color: #141414 !important;
+  border-radius: 8px !important;
+  border: 1px solid #333333 !important;
+}
+
+/* Service table styling */
+.assessment-service-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+  margin: 20px 0 !important;
+}
+
+.assessment-service-table th {
+  background-color: #000000 !important;
+  color: #ffff66 !important;
+  text-align: left !important;
+  padding: 12px 15px !important;
+  font-weight: bold !important;
+  border-bottom: 2px solid #333333 !important;
+}
+
+.assessment-service-table td {
+  background-color: #141414 !important;
+  color: #ffffff !important;
+  padding: 12px 15px !important;
+  border-top: 1px solid #333333 !important;
+  border-bottom: 1px solid #333333 !important;
+}
+
+.assessment-service-table tr td:first-child {
+  border-left: 1px solid #333333 !important;
+  border-top-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+}
+
+.assessment-service-table tr td:last-child {
+  border-right: 1px solid #333333 !important;
+  border-top-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+}
+
+.assessment-service-score {
+  color: #ffff66 !important;
+  font-weight: bold !important;
+}
+
+.assessment-service-name {
+  font-weight: bold !important;
+}
+
+/* Two-column layout for dimension scores */
+.assessment-results-dimensions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  margin: 20px 0 !important;
+}
+
+.assessment-results-dimension {
+  flex: 0 0 48% !important;
+  margin-bottom: 15px !important;
+  padding: 10px !important;
+  background-color: #141414 !important;
+  border-radius: 8px !important;
+  border: 1px solid #333333 !important;
+}
+
+.assessment-results-dimension-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 8px !important;
+}
+
+.assessment-results-dimension-name {
+  font-weight: bold !important;
+  color: #ffffff !important;
+}
+
+.assessment-results-dimension-score {
+  color: #ffff66 !important;
+  font-weight: bold !important;
+}
