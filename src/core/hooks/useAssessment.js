@@ -7,11 +7,6 @@ export const useAssessment = (assessmentType) => {
     const [error, setError] = useState(null);
     const [currentStage, setCurrentStage] = useState(null);
     const [progress, setProgress] = useState(0);
-    const [assessmentData, setAssessmentData] = useState({
-        qualifying: {},
-        services: [],
-        responses: {}
-    });
 
     useEffect(() => {
         const initializeAssessment = async () => {
@@ -80,21 +75,8 @@ export const useAssessment = (assessmentType) => {
 
     const getContext = useCallback((key) => {
         if (!engine) return null;
-        return engine.getContext(key);
+        return engine.getContext().key;
     }, [engine]);
-    
-    const updateAssessmentData = useCallback((newData) => {
-        setAssessmentData(prevData => ({
-            ...prevData,
-            ...newData
-        }));
-    }, []);
-    
-    const saveProgress = useCallback(async (stage) => {
-        // This would typically save to localStorage or a backend
-        console.log(`Saving progress for stage: ${stage}`, assessmentData);
-        return Promise.resolve(true);
-    }, [assessmentData]);
 
     const calculateResults = useCallback(() => {
         if (!engine) return null;
@@ -132,10 +114,7 @@ export const useAssessment = (assessmentType) => {
         getContext,
         calculateResults,
         reset,
-        getAssessmentConfig,
-        assessmentData,
-        updateAssessmentData,
-        saveProgress
+        getAssessmentConfig
     };
 };
 

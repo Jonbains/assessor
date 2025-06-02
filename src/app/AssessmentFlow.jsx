@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 import { useAssessment } from '../core/hooks/useAssessment';
-import SectorSelection from '../core/components/SectorSelector';
+import SectorSelector from '../core/components/SectorSelector';
 import QualifyingQuestions from '../core/components/QualifyingQuestions';
-import ServiceSelection from '../core/components/ServiceSelector';
+import ServiceSelector from '../core/components/ServiceSelector';
 import DynamicQuestions from '../core/components/DynamicQuestions';
 import EmailGate from '../core/components/EmailGate';
 import ResultsDashboard from '../core/components/ResultsDashboard';
@@ -42,7 +42,7 @@ function AssessmentFlow() {
             {/* Default route - redirect to sector selection when just /assessment/:type is accessed */}
             <Route index element={<Navigate to="sector" replace />} />
             <Route path="sector" element={
-                <SectorSelection 
+                <SectorSelector 
                     assessmentType={type}
                     onSelect={(sector) => {
                         setContext('sector', sector);
@@ -63,7 +63,7 @@ function AssessmentFlow() {
             } />
             
             <Route path="services" element={
-                <ServiceSelection 
+                <ServiceSelector 
                     assessmentType={type}
                     onSelect={(services) => {
                         setContext('selectedServices', services);

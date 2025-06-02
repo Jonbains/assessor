@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAssessment } from '../hooks/useAssessment';
-import Navigation from './Navigation';
-import ProgressBar from './ProgressBar';
+import { ProgressBar } from './ProgressBar';
 import styles from '../styles/components.module.css';
 
-const QualifyingQuestions = () => {
-  const navigate = useNavigate();
-  const { type } = useParams();
-  const { 
-    assessmentData, 
-    updateAssessmentData, 
-    saveProgress,
-    getAssessmentConfig 
-  } = useAssessment();
+const QualifyingQuestions = ({ 
+  assessmentType, 
+  saveResponse, 
+  getResponse, 
+  onComplete, 
+  onBack 
+}) => {
   
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -23,20 +18,26 @@ const QualifyingQuestions = () => {
 
   useEffect(() => {
     loadQuestions();
-  }, [type]);
+  }, [assessmentType]);
 
   const loadQuestions = async () => {
     try {
       setIsLoading(true);
       // Load qualifying questions for this assessment type
-      const config = await getAssessmentConfig(type);
-      const qualifyingData = await import(`../../assessments/${type}/qualifying.json`);
+      const qualifyingData = await import(`../../assessments/${assessmentType}/qualifying.json`);
       
       setQuestions(qualifyingData.questions || []);
       
-      // Load any previously saved answers
-      if (assessmentData.qualifying) {
-        setAnswers(assessmentData.qualifying);
+      // Initialize answers from previously saved responses
+      const savedAnswers = {};
+      if (qualifyingData.questions) {
+        qualifyingData.questions.forEach(q => {
+          const savedResponse = getResponse(q.id);
+          if (savedResponse !== null && savedResponse !== undefined) {
+            savedAnswers[q.id] = savedResponse;
+          }
+        });
+        setAnswers(savedAnswers);
       }
       
       setIsLoading(false);
@@ -51,6 +52,9 @@ const QualifyingQuestions = () => {
     const newAnswers = { ...answers, [questionId]: value };
     setAnswers(newAnswers);
     
+    // Save the answer using the provided saveResponse callback
+    saveResponse(questionId, value);
+    
     // Auto-advance to next question after a short delay
     setTimeout(() => {
       if (currentQuestionIndex < questions.length - 1) {
@@ -60,8 +64,6 @@ const QualifyingQuestions = () => {
   };
 
   const handleNext = async () => {
-    console.log('handleNext called');
-    
     // Validate all required questions are answered
     const requiredQuestions = questions.filter(q => q.required !== false);
     const missingRequired = requiredQuestions.some(q => !answers[q.id]);
@@ -71,31 +73,33 @@ const QualifyingQuestions = () => {
       return;
     }
     
-    console.log('All required questions answered');
+    // Save derived fields
+    if (answers.agency_size || answers.company_size) {
+      saveResponse('companySize', answers.agency_size || answers.company_size);
+    }
     
-    // Save answers to assessment data
-    await updateAssessmentData({
-      qualifying: answers,
-      companySize: answers.agency_size || answers.company_size,
-      revenue: answers.annual_revenue,
-      budget: answers.budget,
-      aiExperience: answers.ai_experience
-    });
+    if (answers.annual_revenue) {
+      saveResponse('revenue', answers.annual_revenue);
+    }
     
-    console.log('Assessment data updated');
-    await saveProgress('qualifying');
-    console.log('Progress saved');
+    if (answers.budget) {
+      saveResponse('budget', answers.budget);
+    }
     
-    // Navigate to next stage
-    console.log(`Navigating to /assessment/${type}/services`);
-    navigate(`/assessment/${type}/services`);
+    if (answers.ai_experience) {
+      saveResponse('aiExperience', answers.ai_experience);
+    }
+    
+    // Move to the next stage using onComplete callback
+    onComplete();
   };
 
   const handleBack = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     } else {
-      navigate(`/assessment/${type}/sector`);
+      // Go back to the previous stage in the assessment flow
+      onBack();
     }
   };
 
@@ -205,7 +209,7 @@ const QualifyingQuestions = () => {
 
       <Navigation
         onBack={handleBack}
-        onNext={handleNext}
+        onNext={isLastQuestion ? handleNext : null}
         onSkip={currentQuestion?.required === false ? () => {
           if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(currentQuestionIndex + 1);
