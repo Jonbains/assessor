@@ -323,10 +323,14 @@ The application has been successfully configured as a Create React App project. 
 - Assessment JSON data structures for both assessment types
 
 **⏳ Partially Implemented:**
-- Assessment UI components have structure but may need styling refinements
 - Scoring algorithms have implementation but need testing (scoring.js files)
-- Custom React hooks for state management (useAssessment, useProgress)
-- Results visualization components have structure (ResultsView.jsx, ResultsDashboard.jsx)
+- Results visualization components have structure but need testing (ResultsView.jsx, ResultsDashboard.jsx)
+
+**✅ Completed Since Last Update:**
+- Custom React hooks for state management (useAssessment consolidates state management)
+- Assessment UI components refactored to follow centralized pattern
+- Fixed data flow between components with consistent prop passing
+- Removed redundant localStorage manipulation across components
 
 **❌ Stubbed/Placeholder Only:**
 - Firebase integration (firebase.js has config but functions are stubs)
@@ -350,11 +354,16 @@ npm run build
 
 #### Next Development Steps
 
-1. Complete the core UI components implementation
-2. Implement Firebase integration for data storage
-3. Set up email capture functionality
-4. Develop the full assessment logic for both assessment types
-5. Finalize the results dashboard with PDF generation
+1. ✅ Complete the AssessmentFlow component as central coordinator
+2. ✅ Refactor UI components to use centralized state management
+3. ✅ Fix data flow consistency between assessment stages
+4. 🔄 Update EmailGate component to follow AssessmentFlow pattern
+5. 🔄 Test full assessment flow end-to-end
+6. ⏳ Address ESLint warnings about dependencies in useEffect
+7. ⏳ Implement Firebase integration for data storage
+8. ⏳ Set up email capture functionality
+9. ⏳ Finalize the results dashboard with PDF generation
+10. ⏳ Add unit tests for components and assessment logic
 
 ### Remember: This Drives Consulting, Not Software Sales
 
@@ -1217,6 +1226,37 @@ try {
 5. **Image Optimization**: All assets compressed/lazy loaded
 
 ---
+
+## Critical Project Structure Notes
+
+### Path Resolution Issues
+
+**IMPORTANT:** This project has a confusing nested structure that causes import and component resolution issues:
+
+1. **Duplicate Component Locations:**
+   - Active components are in: `/src/core/components/`
+   - Duplicate components exist in: `/src/react-app/src/core/components/`
+   - Always check browser console logs to verify which file is being used
+
+2. **JSON Data Loading:**
+   - Use static imports for JSON files, not dynamic imports
+   - Correct relative paths from ServiceSelector are: `../../assessments/...`
+   - Example: `import agencyServices from '../../assessments/agency-vulnerability/services.json';`
+
+3. **ServiceSelector Component:**
+   - Uses sliders for proportional service allocation (must sum to 100%)
+   - Different services load based on assessment type:
+     - Agency: services.json with "services" array
+     - In-house: activities.json with "activities" array
+   - Selected services determine which questions are shown later
+   - Data is used in final scoring calculations
+
+4. **Testing Component Changes:**
+   - Add unique console.log markers to identify which component version is loading
+   - Check browser console to confirm the right file is being used
+   - Always edit the active `/src/core/components/ServiceSelector.jsx` file
+
+This information is critical for future development to avoid the 12+ hours of debugging experienced in previous work.
 
 ## Testing Strategy
 

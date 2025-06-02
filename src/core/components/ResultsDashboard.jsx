@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAssessment } from '../hooks/useAssessment';
 import styles from '../styles/components.module.css';
 
-const ResultsDashboard = ({ ResultsView }) => {
-  const navigate = useNavigate();
-  const { type } = useParams();
-  const { assessmentData, calculateResults, saveResults } = useAssessment();
+const ResultsDashboard = ({ 
+  assessmentType, 
+  calculateResults, 
+  onRestart,
+  ResultsView 
+}) => {
   
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,9 +24,6 @@ const ResultsDashboard = ({ ResultsView }) => {
       // Calculate scores and generate recommendations
       const calculatedResults = await calculateResults();
       
-      // Save results to Firebase
-      await saveResults(calculatedResults);
-      
       setResults(calculatedResults);
       setIsLoading(false);
     } catch (err) {
@@ -40,14 +37,14 @@ const ResultsDashboard = ({ ResultsView }) => {
     // Track conversion
     if (window.gtag) {
       window.gtag('event', 'consultation_click', {
-        assessment_type: type,
+        assessment_type: assessmentType,
         score: results?.scores?.overall,
         category: results?.scores?.categories?.readiness?.level
       });
     }
     
     // Navigate to booking page with context
-    const bookingUrl = `https://obsolete.com/quickmap?assessment=${type}&score=${results?.scores?.overall}`;
+    const bookingUrl = `https://obsolete.com/quickmap?assessment=${assessmentType}&score=${results?.scores?.overall}`;
     window.open(bookingUrl, '_blank');
   };
 
@@ -55,7 +52,7 @@ const ResultsDashboard = ({ ResultsView }) => {
     // Track download
     if (window.gtag) {
       window.gtag('event', 'report_download', {
-        assessment_type: type,
+        assessment_type: assessmentType,
         score: results?.scores?.overall
       });
     }

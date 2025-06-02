@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProgressBar } from './ProgressBar';
+import Navigation from './Navigation';
 import styles from '../styles/components.module.css';
 
 const QualifyingQuestions = ({ 

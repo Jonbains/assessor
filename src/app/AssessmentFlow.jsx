@@ -23,6 +23,7 @@ function AssessmentFlow() {
         saveResponse,
         getResponse,
         setContext,
+        getContext, // Added missing getContext from hook
         calculateResults,
         reset
     } = useAssessment(type);
@@ -78,6 +79,7 @@ function AssessmentFlow() {
                     assessmentType={type}
                     saveResponse={saveResponse}
                     getResponse={getResponse}
+                    getContext={getContext} 
                     onComplete={nextStage}
                     onBack={previousStage}
                     progress={progress}

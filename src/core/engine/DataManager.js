@@ -27,12 +27,17 @@ export class DataManager {
     }
 
     setContext(key, value) {
+        console.log(`DataManager.setContext('${key}')`, value);
         this.context[key] = value;
+        console.log('DataManager.context after update:', this.context);
     }
 
     getContext(key) {
+        console.log(`DataManager.getContext('${key}')`, this.context);
         if (key) {
-            return this.context[key];
+            const value = this.context[key];
+            console.log(`DataManager.getContext('${key}') returned:`, value);
+            return value;
         }
         return { ...this.context };
     }

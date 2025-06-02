@@ -75,7 +75,10 @@ export const useAssessment = (assessmentType) => {
 
     const getContext = useCallback((key) => {
         if (!engine) return null;
-        return engine.getContext().key;
+        // Fixed critical bug: was using .key instead of [key]
+        // This was causing selectedServices to be undefined
+        console.log(`Getting context for key: ${key}`, engine.getContext());
+        return engine.getContext()[key];
     }, [engine]);
 
     const calculateResults = useCallback(() => {
