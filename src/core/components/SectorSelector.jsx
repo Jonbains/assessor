@@ -43,6 +43,7 @@ const SectorSelector = () => {
             await saveProgress('sector');
             
             // Navigate to qualifying questions
+            console.log(`Navigating to /assessment/${type}/qualify`);
             navigate(`/assessment/${type}/qualify`);
         }
     };
@@ -56,10 +57,10 @@ const SectorSelector = () => {
         "This helps us provide relevant benchmarks and recommendations.";
 
     return (
-        <div className="screen active">
-            <div className="header">
-                <div className="logo">obsolete<span>.</span></div>
-                <ProgressBar progress={15} label="Step 2 of 7" />
+        <div className={styles.screen}>
+            <div className={styles.header}>
+                <div className={styles.logo}>obsolete<span>.</span></div>
+                <ProgressBar progress={25} label="Step 2 of 7" />
             </div>
             
             <h2>{title}</h2>
@@ -68,29 +69,27 @@ const SectorSelector = () => {
             {loading ? (
                 <p style={{ color: '#aaa', fontStyle: 'italic' }}>Loading sectors...</p>
             ) : (
-                <div className="options">
+                <div className={styles.sectorGrid}>
                     {sectors.map((sector) => (
                         <div 
-                            key={sector.id || sector.value}
-                            className={`option ${selectedSector?.id === sector.id ? 'selected' : ''}`}
+                            key={sector.id} 
+                            className={`${styles.sectorCard} ${selectedSector?.id === sector.id ? styles.selected : ''}`}
                             onClick={() => handleSelect(sector)}
                         >
-                            <div className="option-icon">{sector.icon}</div>
-                            <div className="option-content">
-                                <div className="option-title">{sector.name || sector.label}</div>
-                                {sector.description && (
-                                    <div className="option-description">{sector.description}</div>
-                                )}
+                            <div className={styles.sectorIcon}>{sector.icon}</div>
+                            <div className={styles.sectorContent}>
+                                <h3 className={styles.sectorName}>{sector.name}</h3>
+                                <p className={styles.sectorDescription}>{sector.description}</p>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
             
-            <div className="navigation">
-                <button className="btn btn-secondary" onClick={() => navigate('/')}>← Back</button>
+            <div className={styles.navigation}>
+                <button className={styles.navButton} onClick={() => navigate('/')}>← Back</button>
                 <button 
-                    className="btn btn-primary" 
+                    className={`${styles.navButton} ${styles.primary}`} 
                     disabled={!selectedSector}
                     onClick={handleContinue}
                 >

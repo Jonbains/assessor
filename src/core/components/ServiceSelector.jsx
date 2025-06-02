@@ -16,14 +16,8 @@ const ServiceSelector = () => {
     useEffect(() => {
         const loadServices = async () => {
             try {
-                // Use dynamic imports instead of fetch
-                let module;
-                if (type === 'agency-vulnerability') {
-                    module = await import('../../assessments/agency-vulnerability/services.json');
-                } else {
-                    module = await import('../../assessments/inhouse-marketing/activities.json');
-                }
-                
+                // Use dynamic import instead of fetch
+                const module = await import(`../../assessments/${type}/${type === 'agency-vulnerability' ? 'services' : 'activities'}.json`);
                 const data = module.default || module;
                 setServices(data.services || data.activities || []);
             } catch (error) {
@@ -49,14 +43,9 @@ const ServiceSelector = () => {
             .map(([key]) => key);
         
         if (selected.length > 0) {
-            // Save selected services to assessment data
-            await updateAssessmentData({
-                services: selected
-            });
-            
+            await updateAssessmentData({ services: selected });
             await saveProgress('services');
-            
-            // Navigate to questions route
+            console.log(`Navigating to /assessment/${type}/questions`);
             navigate(`/assessment/${type}/questions`);
         }
     };
