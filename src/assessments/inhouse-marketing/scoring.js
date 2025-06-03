@@ -11,9 +11,22 @@ export class InhouseMarketingScoring {
       
       // Dimension weights for overall score
       this.dimensionWeights = {
-        humanReadiness: 0.4,      // Champions, leadership, resources
-        technicalReadiness: 0.3,   // Current capabilities
-        activityAutomation: 0.3    // Potential in their activities
+        // Weights for overall score calculation
+        overall: {
+          humanReadiness: 0.4,      // Champions, leadership
+          technicalReadiness: 0.3,   // Resources, technical readiness
+          activityAutomation: 0.3    // Potential in their activities
+        },
+        // Weights within human readiness dimension
+        humanReadiness: {
+          champions: 0.6,
+          leadership: 0.4
+        },
+        // Weights within technical readiness dimension
+        technicalReadiness: {
+          resources: 0.5,
+          readiness: 0.5
+        }
       };
       
       // Category weights within dimensions
@@ -215,12 +228,18 @@ export class InhouseMarketingScoring {
                    questionId.includes('success_metrics') || questionId.includes('transformation_ownership') || 
                    questionId.includes('risk_tolerance')) {
           categories.leadership.push(score)
-        } else if (questionId.includes('current_ai_usage') || questionId.includes
-          }
+        } else if (questionId.includes('current_ai_usage') || questionId.includes('data_quality')) {
+          categories.readiness.push(score)
         }
       });
       
-      return activityScores;
+      // Calculate category averages
+      return {
+        champions: categories.champions.length > 0 ? categories.champions.reduce((sum, score) => sum + score, 0) / categories.champions.length * 25 : 50,
+        resources: categories.resources.length > 0 ? categories.resources.reduce((sum, score) => sum + score, 0) / categories.resources.length * 25 : 50,
+        leadership: categories.leadership.length > 0 ? categories.leadership.reduce((sum, score) => sum + score, 0) / categories.leadership.length * 25 : 50,
+        readiness: categories.readiness.length > 0 ? categories.readiness.reduce((sum, score) => sum + score, 0) / categories.readiness.length * 25 : 50
+      };
     }
   
     /**
@@ -229,14 +248,14 @@ export class InhouseMarketingScoring {
     calculateOverallScore(dimensionScores, activityScores) {
       // Calculate average activity score
       const activityValues = Object.values(activityScores);
-      const avgActivityScore = activityValues.length > 0;
-        ? activityValues.reduce((sum, activity) => sum + activity.currentCapability, 0) / activityValues.length;
+      const avgActivityScore = activityValues.length > 0
+        ? activityValues.reduce((sum, activity) => sum + activity.currentCapability, 0) / activityValues.length
         : 50;
       
       dimensionScores.activityAutomation = avgActivityScore;
       
       // Weighted combination
-      const overallScore = ;
+      const overallScore = 
         dimensionScores.humanReadiness * this.dimensionWeights.humanReadiness +
         dimensionScores.technicalReadiness * this.dimensionWeights.technicalReadiness +
         avgActivityScore * this.dimensionWeights.activityAutomation;
@@ -287,43 +306,64 @@ export class InhouseMarketingScoring {
      * Get readiness level based on score and company size
      */
     getReadinessLevel(score, companySize) {
+      // Get benchmarks for company size
       const benchmarks = this.sizeModifiers[companySize].benchmarks;
       
+      let level, description, nextSteps;
+      
       if (score >= benchmarks.high) {
-        return {
-          level: 'high',
-          label: 'Transformation Ready',
-          description: 'Your team is ready to accelerate AI adoption',
-          color: '#00ff88'
-        }
+        level = 'high';
+        description = 'Transformation Ready';
+        nextSteps = 'Your team is ready to accelerate AI adoption';
       } else if (score >= benchmarks.average) {
-        return {
-          level: 'medium',
-          label: 'Building Capability',
-          description: 'Good foundation with room for growth',
-          color: '#ffff66'
-        }
+        level = 'medium';
+        description = 'Building Capability';
+        nextSteps = 'Good foundation with room for growth';
       } else if (score >= benchmarks.low) {
-        return {
-          level: 'low',
-          label: 'Early Stage',
-          description: 'Starting the journey with quick wins',
-          color: '#ff8800'
-        }
+        level = 'low';
+        description = 'Early Stage';
+        nextSteps = 'Starting the journey with quick wins';
       } else {
-        return {
-          level: 'critical',
-          label: 'Urgent Action Needed',
-          description: 'Significant gap to close quickly',
-          color: '#ff4444'
-        }
+        level = 'critical';
+        description = 'Urgent Action Needed';
+        nextSteps = 'Significant gap to close quickly';
       }
+      
+      // Calculate percentile based on score and company size benchmarks
+      const calculatePercentile = (score, companySize) => {
+        const benchmarks = this.sizeModifiers[companySize].benchmarks;
+        
+        if (score < benchmarks.low) {
+          // Below low benchmark - map from 0 to low benchmark as 0-25th percentile
+          return Math.round((score / benchmarks.low) * 25);
+        } else if (score < benchmarks.average) {
+          // Between low and average - map to 25-50th percentile
+          return Math.round(25 + ((score - benchmarks.low) / (benchmarks.average - benchmarks.low)) * 25);
+        } else if (score < benchmarks.high) {
+          // Between average and high - map to 50-75th percentile
+          return Math.round(50 + ((score - benchmarks.average) / (benchmarks.high - benchmarks.average)) * 25);
+        } else {
+          // Above high benchmark - map to 75-100th percentile
+          const remaining = 100 - benchmarks.high;
+          const overshoot = score - benchmarks.high;
+          return Math.min(100, Math.round(75 + (overshoot / remaining) * 25));
+        }
+      };
+      
+      return {
+        score: Math.round(score),
+        level,
+        description,
+        nextSteps,
+        percentile: calculatePercentile(score, companySize)
+      };
     }
   
     /**
      * Get market position
      */
     getMarketPosition(score, companySize) {
+      // Get benchmarks for company size
       const benchmarks = this.sizeModifiers[companySize].benchmarks;
       
       let percentile;
@@ -349,39 +389,58 @@ export class InhouseMarketingScoring {
      * Calculate savings potential
      */
     calculateSavingsPotential(activityScores, selectedActivities, companySize) {
+      // Time and cost values based on company size
       const sizeData = this.sizeModifiers[companySize];
-      const hoursPerWeek = companySize === 'solo' ? 50 : companySize === 'small' ? 120 : 320;
+      const timeValue = sizeData.timeValue;
       
+      // Calculate weighted average time savings
       let totalTimeSavings = 0;
-      let totalHoursSaved = 0;
+      let totalWeight = 0;
       
-      selectedActivities.forEach(activity => {
-        const score = activityScores[activity];
-        if (score) {
-          const potentialSavings = score.timesSavingsPotential / 100;
-          const currentEfficiency = score.currentCapability / 100;
-          const additionalSavings = potentialSavings - (currentEfficiency * potentialSavings);
-          
-          // Estimate hours spent on this activity (rough approximation)
-          const activityHours = hoursPerWeek * 0.15; // Assume 15% time per activity;
-          const hoursSaved = activityHours * additionalSavings;
-          
-          totalHoursSaved += hoursSaved;
-          totalTimeSavings += additionalSavings
-        }
+      // Calculate savings for each activity
+      Object.entries(activityScores).forEach(([activity, scores]) => {
+        // Get AI automation potential for this activity
+        const weight = this.activityImpact[activity].timesSavings;
+        const impactPct = scores.timeSavings;
+        
+        totalTimeSavings += impactPct * weight;
+        totalWeight += weight;
       });
       
-      const avgTimeSavings = selectedActivities.length > 0 ;
-        ? totalTimeSavings / selectedActivities.length 
-        : 0;
+      // Calculate average time savings as percentage
+      const avgTimeSavingsPct = totalWeight > 0 ? totalTimeSavings / totalWeight : 30;
+      
+      // Convert to hours per week based on company size
+      let hoursPerWeek;
+      if (companySize === 'solo') {
+        hoursPerWeek = Math.round(40 * (avgTimeSavingsPct / 100));
+      } else if (companySize === 'small') {
+        hoursPerWeek = Math.round(100 * (avgTimeSavingsPct / 100)); // Assumes ~3 people
+      } else {
+        hoursPerWeek = Math.round(240 * (avgTimeSavingsPct / 100)); // Assumes ~8 people
+      }
+      
+      // Calculate annual cost savings
+      const annualHours = hoursPerWeek * 48; // 48 working weeks per year
+      const annualSavings = annualHours * timeValue;
+      
+      // Calculate time to ROI
+      const calculateTimeToROI = (budgetRange, monthlySavings) => {
+        // Parse budget range
+        const [minBudget, maxBudget] = budgetRange.split('-').map(b => parseInt(b, 10));
+        const avgBudget = (minBudget + maxBudget) / 2;
+        
+        // Calculate months to recover investment
+        return Math.ceil(avgBudget / monthlySavings);
+      };
       
       return {
-        weeklyHoursSaved: Math.round(totalHoursSaved),
-        monthlyHoursSaved: Math.round(totalHoursSaved * 4),
-        percentageTimeSaved: Math.round(avgTimeSavings * 100),
-        monetaryValue: Math.round(totalHoursSaved * 4 * sizeData.timeValue),
-        timeToROI: this.calculateTimeToROI(sizeData.budgetRange, totalHoursSaved * 4 * sizeData.timeValue)
-      }
+        percentTime: Math.round(avgTimeSavingsPct),
+        hours: hoursPerWeek,
+        annualHours: annualHours,
+        annualSavings: annualSavings,
+        roi: calculateTimeToROI(sizeData.budgetRange, annualSavings / 12)
+      };
     }
   
     /**
@@ -419,7 +478,7 @@ export class InhouseMarketingScoring {
             area: activity,
             urgency: 'high',
             action: `Transform ${this.formatActivityName(activity)} with AI`,
-            impact: `Save ${score.timesSavingsPotential}% of time spent`
+            impact: `Save ${score.timeSavings}% of time spent`
           })
         }
       });
@@ -450,12 +509,12 @@ export class InhouseMarketingScoring {
       });
       
       // Sort by urgency and limit to top 5
-      return priorities;
+      return priorities
         .sort((a, b) => {
           const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
           return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
         })
-        .slice(0, 5)
+        .slice(0, 5);
     }
   
     /**
@@ -464,51 +523,77 @@ export class InhouseMarketingScoring {
     generateInsights(categoryScores, activityScores, answers) {
       const insights = [];
       
-      // Champion insights
-      if (categoryScores.champions > 70) {
-        insights.push({
-          type: 'strength',
-          message: 'Your team shows exceptional openness to AI - a critical success factor',
-          category: 'human'
-        })
-      } else if (categoryScores.champions < 30) {
-        insights.push({
-          type: 'gap',
-          message: 'Limited AI enthusiasm could slow adoption - identify champions urgently',
-          category: 'human'
-        })
+      // Get top strengths and weaknesses
+      const categories = [
+        { name: 'champions', score: categoryScores.champions },
+        { name: 'resources', score: categoryScores.resources },
+        { name: 'leadership', score: categoryScores.leadership },
+        { name: 'readiness', score: categoryScores.readiness }
+      ];
+      
+      const sortedStrengths = [...categories].sort((a, b) => b.score - a.score);
+      const sortedWeaknesses = [...categories].sort((a, b) => a.score - b.score);
+      
+      // Helper methods for insights
+      const getStrengthInsight = (category, score) => {
+        const insights = {
+          champions: 'Your team has strong AI champions who can accelerate adoption',
+          resources: 'You have allocated good resources for AI adoption',
+          leadership: 'Your leadership has strong commitment to AI transformation',
+          readiness: 'Your technical foundation is solid for AI implementation'
+        };
+        return insights[category] || `Your ${category} score is a strength at ${Math.round(score)}/100`;
+      };
+      
+      const getWeaknessInsight = (category, score) => {
+        const insights = {
+          champions: 'You need to identify and empower AI champions in your team',
+          resources: 'Insufficient resources allocated for AI adoption',
+          leadership: 'Leadership commitment to AI adoption needs improvement',
+          readiness: 'Your technical foundation for AI needs significant improvement'
+        };
+        return insights[category] || `Your ${category} score needs improvement at ${Math.round(score)}/100`;
+      };
+      
+      // Top strength insight
+      insights.push({
+        type: 'strength',
+        category: sortedStrengths[0].name,
+        text: getStrengthInsight(sortedStrengths[0].name, sortedStrengths[0].score)
+      });
+      
+      // Top weakness insight
+      insights.push({
+        type: 'weakness',
+        category: sortedWeaknesses[0].name,
+        text: getWeaknessInsight(sortedWeaknesses[0].name, sortedWeaknesses[0].score)
+      });
+      
+      // Activity-specific insights
+      if (activityScores) {
+        const activities = Object.entries(activityScores)
+          .map(([id, data]) => ({ id, ...data }))
+          .sort((a, b) => b.opportunityGap - a.opportunityGap);
+          
+        // Add insight for activity with highest opportunity gap
+        if (activities.length > 0) {
+          const topActivity = activities[0];
+          insights.push({
+            type: 'opportunity',
+            category: 'activity',
+            activity: topActivity.id,
+            text: `Your ${this.formatActivityName(topActivity.id)} activities have ${topActivity.opportunityGap}% improvement potential with AI adoption`
+          });
+        }
       }
       
-      // Resource insights
-      if (categoryScores.resources < 40 && categoryScores.champions > 60) {
-        insights.push({
-          type: 'opportunity',
-          message: 'Team is ready but lacks resources - perfect case for AI efficiency gains',
-          category: 'strategic'
-        })
-      }
-      
-      // Activity insights
-      const highOpportunityActivities = Object.entries(activityScores);
-        .filter(([_, score]) => score.opportunityGap > 60)
-        .map(([activity]) => activity);
-      
-      if (highOpportunityActivities.length > 0) {
-        insights.push({
-          type: 'opportunity',
-          message: `Major untapped potential in ${this.formatActivityName(highOpportunityActivities[0])}`,
-          category: 'activity'
-        })
-      }
-      
-      // Time pressure insight
-      const timePressure = answers.time_availability?.score || answers.time_availability;
-      if (timePressure <= 2) {
+      // Readiness level insight
+      if (categoryScores.readiness < 30) {
         insights.push({
           type: 'critical',
-          message: 'Severe time constraints make AI automation essential, not optional',
-          category: 'business'
-        })
+          category: 'readiness',
+          text: 'Your team has critical gaps in basic AI capabilities that should be addressed immediately'
+        });
       }
       
       return insights;
@@ -555,7 +640,7 @@ export class InhouseMarketingScoring {
     }
     ;
     calculateTimeToROI(budgetRange, monthlySavings) {
-      const avgBudget = budgetRange === '0-100' ? 50 :;
+      const avgBudget = budgetRange === '0-100' ? 50 :
                         budgetRange === '100-500' ? 300 : 
                         budgetRange === '500-2000' ? 1000 : 500;
       
@@ -568,31 +653,43 @@ export class InhouseMarketingScoring {
     }
     
     /**
-     * Calculate dimension scores from category scores
+     * Calculate dimension scores from categories
      */
     calculateDimensionScores(categoryScores) {
-      // Human readiness dimension (champions, resources, leadership)
+      // Human readiness dimension
       const humanReadiness = (
-        (categoryScores.champions * this.categoryWeights.champions) +
-        (categoryScores.resources * this.categoryWeights.resources) +
-        (categoryScores.leadership * this.categoryWeights.leadership)
-      ) / (this.categoryWeights.champions + this.categoryWeights.resources + this.categoryWeights.leadership);
+        categoryScores.champions * this.dimensionWeights.humanReadiness.champions +
+        categoryScores.leadership * this.dimensionWeights.humanReadiness.leadership
+      ) / (
+        this.dimensionWeights.humanReadiness.champions +
+        this.dimensionWeights.humanReadiness.leadership
+      );
       
-      // Technical readiness dimension (single category)
-      const technicalReadiness = categoryScores.readiness * this.categoryWeights.readiness;
+      // Technical readiness dimension
+      const technicalReadiness = (
+        categoryScores.resources * this.dimensionWeights.technicalReadiness.resources +
+        categoryScores.readiness * this.dimensionWeights.technicalReadiness.readiness
+      ) / (
+        this.dimensionWeights.technicalReadiness.resources +
+        this.dimensionWeights.technicalReadiness.readiness
+      );
       
-      // Calculate overall score
+      // Calculate overall score from dimensions
       const overallScore = (
-        (humanReadiness * this.dimensionWeights.humanReadiness) +
-        (technicalReadiness * this.dimensionWeights.technicalReadiness) +
-        (50 * this.dimensionWeights.activityAutomation) // Placeholder value
+        humanReadiness * this.dimensionWeights.overall.humanReadiness +
+        technicalReadiness * this.dimensionWeights.overall.technicalReadiness +
+        50 * this.dimensionWeights.overall.activityAutomation 
+      ) / (
+        this.dimensionWeights.overall.humanReadiness +
+        this.dimensionWeights.overall.technicalReadiness +
+        this.dimensionWeights.overall.activityAutomation
       );
       
       return {
         humanReadiness: Math.round(humanReadiness),
         technicalReadiness: Math.round(technicalReadiness),
         activityAutomation: 50, // Placeholder, calculated separately
-        overallScore: Math.round(overallScore) // Add this for consistency
+        overallScore: Math.round(overallScore)
       }
     }
     
@@ -618,7 +715,7 @@ export class InhouseMarketingScoring {
         };
         
         // Calculate current capability
-        const activityReadiness = answers[`${activity}_capability`]?.score || ;
+        const activityReadiness = answers[`${activity}_capability`]?.score || 
                                 answers[`${activity}_capability`] || 
                                 baseReadiness;
         
@@ -649,6 +746,7 @@ export class InhouseMarketingScoring {
         }
       });
       
+      // Return the activity scores
       return activityScores;
     }
     
@@ -676,5 +774,5 @@ export class InhouseMarketingScoring {
     }
   }
   
-  // Export for use in assessment system;
+  // Export for use in assessment system
   export default InhouseMarketingScoring;

@@ -10,6 +10,41 @@ import ResultsDashboard from '../core/components/ResultsDashboard';
 import LoadingSpinner from '../core/components/LoadingSpinner';
 import ErrorMessage from '../core/components/ErrorMessage';
 
+// Lazy-load assessment-specific ResultsView components
+const getResultsView = (assessmentType) => {
+  console.log(`Attempting to load ResultsView for assessment type: ${assessmentType}`);
+  
+  try {
+    // Validate assessment type to prevent errors
+    if (!assessmentType) {
+      console.error('Cannot load ResultsView: assessmentType is undefined');
+      return null;
+    }
+    
+    // Log the exact path we're trying to load
+    const viewPath = `../assessments/${assessmentType}/ResultsView.jsx`;
+    console.log(`Attempting to require: ${viewPath}`);
+    
+    // This assumes each assessment type has a corresponding ResultsView.jsx
+    const ResultsViewModule = require(`../assessments/${assessmentType}/ResultsView.jsx`);
+    console.log('ResultsView module loaded:', ResultsViewModule);
+    
+    if (!ResultsViewModule || !ResultsViewModule.default) {
+      console.error(`ResultsView for ${assessmentType} was loaded but no default export found:`, ResultsViewModule);
+      return null;
+    }
+    
+    // Get the default export which should be the component
+    const ResultsView = ResultsViewModule.default;
+    console.log('ResultsView component successfully loaded:', ResultsView ? 'Component Found' : 'Component Not Found');
+    
+    return ResultsView;
+  } catch (error) {
+    console.error(`Failed to load ResultsView for ${assessmentType}:`, error);
+    return null;
+  }
+};
+
 function AssessmentFlow() {
     const { type } = useParams();
     const navigate = useNavigate();
@@ -100,6 +135,9 @@ function AssessmentFlow() {
                     assessmentType={type}
                     calculateResults={calculateResults}
                     onRestart={reset}
+                    getResponse={getResponse}
+                    getContext={getContext}
+                    ResultsView={getResultsView(type)} // Pass the ResultsView component
                 />
             } />
         </Routes>

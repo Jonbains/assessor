@@ -19,7 +19,7 @@ export class AssessmentEngine {
         
         this.flow = new FlowController(this.config);
         this.data = new DataManager();
-        this.scoring = new ScoringEngine(this.config.scoring);
+        this.scoring = new ScoringEngine(this.config.scoring, this.assessmentType);
         
         // Start the flow
         this.flow.start();

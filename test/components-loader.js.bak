@@ -1,0 +1,1339 @@
+// Assessment Report Components Loader
+// This script dynamically loads React components and exposes them to the tester
+
+(async function() {
+  const statusElement = document.getElementById('status');
+  
+  function updateStatus(message, isError = false) {
+    if (statusElement) {
+      statusElement.textContent = message;
+      statusElement.className = isError ? 'status error' : 'status';
+    }
+    console.log(message);
+  }
+  
+  async function loadScript(path) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.type = 'text/babel';
+      script.src = path;
+      script.async = true;
+      
+      script.onload = () => resolve(path);
+      script.onerror = () => reject(new Error(`Failed to load ${path}`));
+      
+      document.body.appendChild(script);
+    });
+  }
+  
+  try {
+    // List of scripts to load in order
+    const scripts = [
+      '../src/core/engine/ReportGenerator.js',
+      '../src/core/engine/ResultsAdapterFactory.js',
+      '../src/assessments/inhouse-marketing/ResultsAdapter.js',
+      '../src/assessments/agency-vulnerability/ResultsAdapter.js'
+    ];
+    
+    updateStatus('Loading adapter scripts...');
+    
+    // Load scripts sequentially
+    for (const scriptPath of scripts) {
+      try {
+        await loadScript(scriptPath);
+        console.log(`Loaded: ${scriptPath}`);
+      } catch (error) {
+        console.error(`Error loading ${scriptPath}:`, error);
+      }
+    }
+    
+    // Create the React component loaders
+    function createBabelComponent(code, name) {
+      try {
+        // Use Babel to transform JSX code
+        const transformedCode = Babel.transform(code, {
+          presets: ['react'],
+          filename: name
+        }).code;
+        
+        // Create a module-like environment
+        const moduleExports = {};
+        const moduleFunction = new Function('React', 'exports', 'require', transformedCode);
+        
+        // Execute the module function with React
+        moduleFunction(React, moduleExports, (dep) => {
+          if (dep === 'react') return React;
+          if (dep === 'react-dom') return ReactDOM;
+          return null;
+        });
+        
+        return moduleExports.default || moduleExports;
+      } catch (error) {
+        console.error(`Error creating component ${name}:`, error);
+        return null;
+      }
+    }
+    
+    // Load the View components content
+    updateStatus('Loading view components...');
+    
+    // Function to fetch and process component files
+    async function fetchComponent(path, name) {
+      try {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${path}: ${response.status} ${response.statusText}`);
+        }
+        
+        const code = await response.text();
+        return { path, code, name };
+      } catch (error) {
+        console.error(`Error fetching ${path}:`, error);
+        return null;
+      }
+    }
+    
+    // Fetch the view components
+    const componentFiles = await Promise.all([
+      fetchComponent('../src/assessments/inhouse-marketing/ResultsView.jsx', 'InhouseResultsView'),
+      fetchComponent('../src/assessments/agency-vulnerability/ResultsView.jsx', 'AgencyResultsView')
+    ]);
+    
+    // Process each component and expose it
+    for (const component of componentFiles) {
+      if (!component) continue;
+      
+      try {
+        // Create a minimal stub component in case we can't load the real one
+        const StubComponent = (props) => {
+          return React.createElement('div', {
+            style: { padding: '20px', textAlign: 'center' }
+          }, [
+            React.createElement('h3', null, `${component.name} (Stub)`),
+            React.createElement('p', null, 'Could not load the actual component'),
+            React.createElement('pre', {
+              style: { 
+                background: '#252525', 
+                padding: '10px', 
+                borderRadius: '4px',
+                maxHeight: '300px',
+                overflow: 'auto',
+                textAlign: 'left'
+              }
+            }, JSON.stringify(props, null, 2))
+          ]);
+        };
+        
+        // Set up window globals
+        window[component.name] = StubComponent;
+        
+        // Try to create the component from source
+        // Note: This is a simplified approach - in a real environment we would need
+        // a proper bundler like webpack to handle imports and dependencies
+        updateStatus(`Processing ${component.name}...`);
+        
+        // For demonstration purposes, we'll expose the adapter classes
+        if (component.name === 'InhouseResultsView') {
+          window.InhouseMarketingResultsAdapter = InhouseMarketingResultsAdapter;
+        } else if (component.name === 'AgencyResultsView') {
+          window.AgencyVulnerabilityResultsAdapter = AgencyVulnerabilityResultsAdapter;
+        }
+      } catch (error) {
+        console.error(`Error processing ${component.name}:`, error);
+      }
+    }
+    
+    // Create a styled InhouseResultsView component
+    window.InhouseResultsView = function InhouseResultsView(props) {
+      return React.createElement('div', { className: 'results-container', style: { maxWidth: '1200px', margin: '0 auto' } }, [
+        // Header with overall score
+        React.createElement('div', { 
+          style: { 
+            padding: '40px 20px', 
+            textAlign: 'center',
+            background: 'linear-gradient(to bottom, #252525, #1a1a1a)',
+            borderRadius: '8px',
+            marginBottom: '30px'
+          }
+        }, [
+          React.createElement('h1', { 
+            style: { 
+              color: '#ffff66', 
+              marginBottom: '30px',
+              fontSize: '32px'
+            } 
+          }, 'Inhouse Marketing Assessment Results'),
+          
+          React.createElement('div', { 
+            style: { 
+              display: 'inline-block',
+              position: 'relative',
+              width: '180px',
+              height: '180px',
+              margin: '0 auto 20px auto'
+            }
+          }, [
+            // Circle background
+            React.createElement('div', {
+              style: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '10px solid rgba(255, 255, 255, 0.1)'
+              }
+            }),
+            
+            // Score value
+            React.createElement('div', {
+              style: {
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: '48px',
+                fontWeight: 'bold',
+                color: getScoreColor(props.results.overallScore)
+              }
+            }, `${props.results.overallScore}%`),
+            
+            // Label
+            React.createElement('div', {
+              style: {
+                position: 'absolute',
+                bottom: '-40px',
+                left: '0',
+                width: '100%',
+                textAlign: 'center',
+                fontSize: '18px',
+                color: '#fff'
+              }
+            }, 'AI Marketing Readiness')
+          ])
+        ]),
+        
+        // Main content
+        React.createElement('div', { style: { padding: '0 20px 40px 20px' } }, [
+          // Executive Summary section
+          React.createElement('div', { 
+            style: { 
+              background: '#252525', 
+              borderRadius: '8px',
+              padding: '25px',
+              marginBottom: '30px'
+            } 
+          }, [
+            React.createElement('h2', { 
+              style: { 
+                color: '#ffff66', 
+                marginTop: 0,
+                marginBottom: '20px',
+                fontSize: '24px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                paddingBottom: '10px'
+              } 
+            }, 'Executive Summary'),
+            
+            React.createElement('p', { 
+              style: { 
+                fontSize: '16px', 
+                lineHeight: '1.6', 
+                color: '#ddd' 
+              } 
+            }, `Your organization scored ${props.results.overallScore}% on our AI Marketing Readiness Assessment. This ${getScoreDescription(props.results.overallScore)} level of readiness indicates ${getScoreExplanation(props.results.overallScore)}`),
+            
+            React.createElement('p', { 
+              style: { 
+                fontSize: '16px', 
+                lineHeight: '1.6', 
+                color: '#ddd',
+                marginTop: '15px'
+              } 
+            }, `By implementing the recommendations in this report, you can expect to significantly enhance your marketing capabilities, increase efficiency, and gain competitive advantage through strategic AI adoption.`)
+          ]),
+          
+          // Dimensions grid
+          React.createElement('h2', { 
+            style: { 
+              color: '#ffff66', 
+              marginBottom: '20px',
+              fontSize: '24px'
+            } 
+          }, 'AI Marketing Maturity Dimensions'),
+          
+          React.createElement('div', { 
+            style: { 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+              gap: '20px',
+              marginBottom: '30px'
+            } 
+          }, 
+            Object.entries(props.results.dimensions || {}).map(([key, dimension]) => 
+              React.createElement('div', { 
+                key,
+                style: {
+                  background: '#252525',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }
+              }, [
+                // Dimension header with score badge
+                React.createElement('div', {
+                  style: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px'
+                  }
+                }, [
+                  React.createElement('h3', { 
+                    style: { 
+                      margin: 0,
+                      fontSize: '18px',
+                      color: '#fff'
+                    } 
+                  }, dimension.title),
+                  
+                  React.createElement('div', {
+                    style: {
+                      background: getScoreBadgeColor(dimension.score),
+                      color: getScoreBadgeTextColor(dimension.score),
+                      padding: '5px 10px',
+                      borderRadius: '20px',
+                      fontSize: '14px',
+                      fontWeight: 'bold'
+                    }
+                  }, `${dimension.score}%`)
+                ]),
+                
+                // Dimension description
+                React.createElement('p', { 
+                  style: { 
+                    color: '#aaa',
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    margin: 0
+                  } 
+                }, dimension.description)
+              ])
+            )
+          ),
+          
+          // Business Impact section
+          React.createElement('h2', { 
+            style: { 
+              color: '#ffff66', 
+              marginBottom: '20px',
+              fontSize: '24px'
+            } 
+          }, 'Expected Business Impact'),
+          
+          renderBusinessImpact(props.results.impact),
+          
+          // Opportunities Section - Quick Wins
+          React.createElement('h2', { 
+            style: { 
+              color: '#ffff66', 
+              marginTop: '40px',
+              marginBottom: '20px',
+              fontSize: '24px'
+            } 
+          }, 'Immediate Quick Wins'),
+          
+          React.createElement('div', {
+            style: {
+              background: '#252525',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '30px'
+            }
+          }, [
+            React.createElement('p', {
+              style: {
+                color: '#ddd',
+                marginTop: 0,
+                marginBottom: '20px'
+              }
+            }, 'These actions can be implemented immediately with minimal effort to start your AI marketing transformation:'),
+            
+            renderOpportunityItems(props.results.opportunities?.immediate?.items)
+          ]),
+          
+          // Short-term Actions
+          React.createElement('h2', { 
+            style: { 
+              color: '#ffff66', 
+              marginTop: '40px',
+              marginBottom: '20px',
+              fontSize: '24px'
+            } 
+          }, 'Short-term Actions (30-90 days)'),
+          
+          React.createElement('div', {
+            style: {
+              background: '#252525',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '30px'
+            }
+          }, [
+            React.createElement('p', {
+              style: {
+                color: '#ddd',
+                marginTop: 0,
+                marginBottom: '20px'
+              }
+            }, 'Focus on these actions in the next 1-3 months to build momentum in your AI marketing capability:'),
+            
+            renderOpportunityItems(props.results.opportunities?.shortTerm?.items)
+          ]),
+          
+          // Strategic Initiatives
+          React.createElement('h2', { 
+            style: { 
+              color: '#ffff66', 
+              marginTop: '40px',
+              marginBottom: '20px',
+              fontSize: '24px'
+            } 
+          }, 'Strategic Initiatives'),
+          
+          React.createElement('div', {
+            style: {
+              background: '#252525',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '30px'
+            }
+          }, [
+            React.createElement('p', {
+              style: {
+                color: '#ddd',
+                marginTop: 0,
+                marginBottom: '20px'
+              }
+            }, 'These long-term initiatives will establish lasting competitive advantage through AI:'),
+            
+            renderOpportunityItems(props.results.opportunities?.strategic?.items)
+          ]),
+          
+          // Next Steps Section
+          React.createElement('h2', { 
+            style: { 
+              color: '#ffff66', 
+              marginTop: '40px',
+              marginBottom: '20px',
+              fontSize: '24px'
+            } 
+          }, 'Next Steps'),
+          
+          renderNextSteps(props.results.nextSteps)
+        ]),
+        
+        // Footer action buttons
+        React.createElement('div', { 
+          style: { 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            padding: '20px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            marginTop: '20px'
+          } 
+        }, [
+          React.createElement('button', { 
+            onClick: props.onBack,
+            style: {
+              background: 'transparent',
+              border: '1px solid #fff',
+              color: '#fff',
+              padding: '12px 24px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              transition: 'all 0.2s ease'
+            }
+          }, 'Back to Settings'),
+          
+          React.createElement('button', { 
+            onClick: props.onComplete,
+            style: {
+              background: '#ffff66',
+              color: '#000',
+              padding: '12px 24px',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              transition: 'all 0.2s ease'
+            }
+          }, 'Download Full Report')
+        ])
+            React.createElement('div', { 
+              style: { 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                padding: '20px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                marginTop: '20px'
+              } 
+            }, [
+              React.createElement('button', { 
+                onClick: props.onBack,
+                style: {
+                  background: 'transparent',
+                  border: '1px solid #fff',
+                  color: '#fff',
+                  padding: '12px 24px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  transition: 'all 0.2s ease'
+                }
+              }, 'Back to Settings'),
+              
+              React.createElement('button', { 
+                onClick: props.onComplete,
+                style: {
+                  background: '#ffff66',
+                  color: '#000',
+                  padding: '12px 24px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '16px',
+                  transition: 'all 0.2s ease'
+                }
+              }, 'Download Full Report')
+            ])
+          ]);
+        };
+        
+        window.AgencyResultsView = function AgencyResultsView(props) {
+          return React.createElement('div', { className: 'results-container' }, [
+            React.createElement('h1', { style: { color: '#ffff66', textAlign: 'center' } }, 'Agency Vulnerability Assessment Results'),
+            React.createElement('div', { style: { padding: '20px' } }, [
+              // Overall Score
+              React.createElement('div', { style: { textAlign: 'center', marginBottom: '30px' } }, [
+                React.createElement('h2', null, 'Overall Score'),
+                React.createElement('div', { 
+                  style: { 
+                    fontSize: '48px', 
+                    color: getScoreColor(props.results.overallScore),
+                    fontWeight: 'bold'
+                  } 
+                }, `${props.results.overallScore}%`)
+              ]),
+              
+              // Dimensions
+              React.createElement('h2', { style: { marginTop: '30px' } }, 'Vulnerability Dimensions'),
+              React.createElement('div', { 
+                style: { 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                  gap: '20px',
+                  marginTop: '20px'
+                } 
+              }, 
+                Object.entries(props.results.dimensions || {}).map(([key, dimension]) => 
+                  React.createElement('div', { 
+                    key,
+                    style: {
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }
+                  }, [
+                    React.createElement('h3', { style: { marginTop: 0 } }, dimension.title),
+                    React.createElement('div', { 
+                      style: { 
+                        fontSize: '36px', 
+                        fontWeight: 'bold',
+                        color: getScoreColor(dimension.score),
+                        textAlign: 'center',
+                        margin: '15px 0'
+                      } 
+                    }, `${dimension.score}%`),
+                    React.createElement('p', { style: { color: '#aaa' } }, dimension.description)
+                  ])
+                )
+              ),
+              
+              // Action Items
+              React.createElement('h2', { style: { marginTop: '30px' } }, 'Recommended Actions'),
+              renderCardItems(props.results.actions?.items)
+            ]),
+            
+            // Action buttons
+            React.createElement('div', { 
+              style: { 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                padding: '20px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                marginTop: '30px'
+              } 
+            }, [
+              React.createElement('button', { 
+                onClick: props.onBack,
+                style: {
+                  background: 'transparent',
+                  border: '1px solid #fff',
+                  color: '#fff',
+                  padding: '10px 20px',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }
+              }, 'Back'),
+              React.createElement('button', { 
+                onClick: props.onComplete,
+                style: {
+                  background: '#ffff66',
+                  color: '#000',
+                  padding: '10px 20px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }
+              }, 'Download Report')
+            ])
+          ]);
+        };
+        
+        function renderCardSection(impact) {
+          if (!impact) return null;
+          
+          return React.createElement('div', { style: { marginTop: '20px' } }, [
+            // Current State
+            impact.currentState && React.createElement('div', { style: { marginBottom: '20px' } }, [
+              React.createElement('h3', null, impact.currentState.title),
+              React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' } },
+                impact.currentState.items.map(item => renderImpactCard(item))
+              )
+            ]),
+            
+            // Future State
+            impact.futureState && React.createElement('div', { style: { marginBottom: '20px' } }, [
+              React.createElement('h3', null, impact.futureState.title),
+              React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' } },
+                impact.futureState.items.map(item => renderImpactCard(item))
+              )
+            ]),
+            
+            // Improvements
+            impact.improvements && React.createElement('div', { style: { marginBottom: '20px' } }, [
+              React.createElement('h3', null, impact.improvements.title),
+              React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' } },
+                impact.improvements.items.map(item => renderImprovementCard(item))
+              )
+            ])
+          ]);
+        }
+        
+        function renderBusinessImpact(impact) {
+          if (!impact) return null;
+          
+          return React.createElement('div', { 
+            style: { 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+              gap: '20px',
+              marginBottom: '30px'
+            } 
+          }, [
+            // Current State
+            impact.currentState && React.createElement('div', { 
+              style: { 
+                background: '#252525',
+                borderRadius: '8px',
+                padding: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              } 
+            }, [
+              React.createElement('h3', { 
+                style: { 
+                  color: '#ff9933', 
+                  marginTop: 0,
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  paddingBottom: '8px'
+                }
+              }, impact.currentState.title),
+              React.createElement('div', { style: { marginTop: '15px' } },
+                impact.currentState.items.map(item => renderBusinessImpactItem(item, 'warning'))
+              )
+            ]),
+            
+            // Future State
+            impact.futureState && React.createElement('div', { 
+              style: { 
+                background: '#252525',
+                borderRadius: '8px',
+                padding: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              } 
+            }, [
+              React.createElement('h3', { 
+                style: { 
+                  color: '#66ff66', 
+                  marginTop: 0,
+                  marginBottom: '15px',
+                  fontSize: '18px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  paddingBottom: '8px'
+                }
+              }, impact.futureState.title),
+              React.createElement('div', { style: { marginTop: '15px' } },
+                impact.futureState.items.map(item => renderBusinessImpactItem(item, 'success'))
+              )
+            ])
+          ]);
+        }
+        
+        function renderBusinessImpactItem(item, type) {
+          return React.createElement('div', { 
+            style: { 
+              marginBottom: '15px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }
+          }, [
+            React.createElement('div', { style: { flex: 1 } }, [
+              React.createElement('div', { 
+                style: { 
+                  fontSize: '16px', 
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  marginBottom: '5px'
+                } 
+              }, item.title),
+              React.createElement('div', { 
+                style: { 
+                  fontSize: '14px',
+                  color: '#aaa'
+                } 
+              }, item.description)
+            ]),
+            React.createElement('div', { 
+              style: { 
+                fontSize: '22px', 
+                fontWeight: 'bold',
+                color: type === 'warning' ? '#ff9933' : '#66ff66',
+                marginLeft: '15px',
+                background: type === 'warning' ? 'rgba(255, 153, 51, 0.1)' : 'rgba(102, 255, 102, 0.1)',
+                padding: '5px 10px',
+                borderRadius: '4px'
+              } 
+            }, item.value)
+          ]);
+        }
+        
+        function renderOpportunityItems(items) {
+          if (!items || !Array.isArray(items) || items.length === 0) {
+            return React.createElement('p', { style: { color: '#aaa', fontStyle: 'italic' } }, 'No items available');
+          }
+          
+          return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '15px' } },
+            items.map((item, index) => 
+              React.createElement('div', { 
+                key: index,
+                style: {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }
+              }, [
+                React.createElement('h4', { 
+                  style: { 
+                    margin: '0 0 10px 0',
+                    color: '#fff'
+                    fontSize: '36px', 
+                    fontWeight: 'bold',
+                    color: getScoreColor(dimension.score),
+                    textAlign: 'center',
+                    margin: '15px 0'
+                  } 
+                }, `${dimension.score}%`),
+                React.createElement('p', { style: { color: '#aaa' } }, dimension.description)
+              ])
+            )
+          ),
+          
+          // Action Items
+          React.createElement('h2', { style: { marginTop: '30px' } }, 'Recommended Actions'),
+          renderCardItems(props.results.actions?.items)
+        ]),
+        
+        // Action buttons
+        React.createElement('div', { 
+          style: { 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            padding: '20px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            marginTop: '30px'
+          } 
+        }, [
+          React.createElement('button', { 
+            onClick: props.onBack,
+            style: {
+              background: 'transparent',
+              border: '1px solid #fff',
+              color: '#fff',
+              padding: '10px 20px',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }
+          }, 'Back'),
+          React.createElement('button', { 
+            onClick: props.onComplete,
+            style: {
+              background: '#ffff66',
+              color: '#000',
+              padding: '10px 20px',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }
+          }, 'Download Report')
+        ])
+      ]);
+    };
+    
+    // Helper functions for components
+    function getScoreColor(score) {
+      if (score < 30) return '#ff4d4d';
+      if (score < 50) return '#ff9933';
+      if (score < 70) return '#ffff66';
+      if (score < 90) return '#66ff66';
+      return '#66ffff';
+    }
+    
+    function getScoreBadgeColor(score) {
+      if (score < 30) return 'rgba(255, 77, 77, 0.2)';
+      if (score < 50) return 'rgba(255, 153, 51, 0.2)';
+      if (score < 70) return 'rgba(255, 255, 102, 0.2)';
+      if (score < 90) return 'rgba(102, 255, 102, 0.2)';
+      return 'rgba(102, 255, 255, 0.2)';
+    }
+    
+    function getScoreBadgeTextColor(score) {
+      if (score < 30) return '#ff4d4d';
+      if (score < 50) return '#ff9933';
+      if (score < 70) return '#ffff66';
+      if (score < 90) return '#66ff66';
+      return '#66ffff';
+    }
+    
+    function getScoreDescription(score) {
+      if (score < 30) return 'low';
+      if (score < 50) return 'developing';
+      if (score < 70) return 'moderate';
+      if (score < 90) return 'advanced';
+      return 'exceptional';
+    }
+    
+    function getScoreExplanation(score) {
+      if (score < 30) {
+        return 'your organization is in the early stages of AI marketing adoption and requires immediate action to avoid falling behind competitors.';
+      }
+      if (score < 50) {
+        return 'your organization has started exploring AI marketing but lacks systematic implementation and needs to accelerate adoption.';
+      }
+      if (score < 70) {
+        return 'your organization has a solid foundation in AI marketing capabilities but has opportunities to expand usage and integration.';
+      }
+      if (score < 90) {
+        return 'your organization is successfully leveraging AI across most marketing functions with room for optimization and innovation.';
+      }
+      return 'your organization is at the forefront of AI marketing adoption with industry-leading practices and continuous innovation.';
+    }
+    
+    function renderCardSection(impact) {
+      if (!impact) return null;
+      
+      return React.createElement('div', { 
+        style: { 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+          gap: '20px',
+          marginTop: '20px'
+        } 
+      }, 
+        Object.entries(impact).map(([key, card]) => 
+          React.createElement('div', { 
+            key,
+            style: {
+              background: '#252525',
+              borderRadius: '8px',
+              padding: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }
+          }, [
+            React.createElement('h3', { 
+              style: { 
+                color: '#ffff66',
+                margin: '0 0 15px 0'
+              } 
+            }, card.title),
+            renderCardItems(card.items)
+          ])
+        )
+      );
+    }
+    
+        style: { 
+          fontSize: '14px',
+          color: '#aaa'
+        } 
+      }, item.description)
+    ]),
+    React.createElement('div', { 
+      style: { 
+        fontSize: '22px', 
+        fontWeight: 'bold',
+        color: type === 'warning' ? '#ff9933' : '#66ff66',
+        marginLeft: '15px',
+        background: type === 'warning' ? 'rgba(255, 153, 51, 0.1)' : 'rgba(102, 255, 102, 0.1)',
+        padding: '5px 10px',
+        borderRadius: '4px'
+      } 
+    }, item.value)
+  ]);
+}
+
+function renderOpportunityItems(items) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return React.createElement('p', { style: { color: '#aaa', fontStyle: 'italic' } }, 'No items available');
+  }
+  
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '15px' } },
+    items.map((item, index) => 
+      React.createElement('div', { 
+        key: index,
+        style: {
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px',
+          padding: '15px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }
+      }, [
+        React.createElement('h4', { 
+          style: { 
+            margin: '0 0 10px 0',
+            color: '#fff'
+            fontSize: '36px', 
+            fontWeight: 'bold',
+            color: getScoreColor(dimension.score),
+            textAlign: 'center',
+            margin: '15px 0'
+          } 
+        }, `${dimension.score}%`),
+        React.createElement('p', { style: { color: '#aaa' } }, dimension.description)
+      ])
+    )
+  ),
+  
+  // Action Items
+  React.createElement('h2', { style: { marginTop: '30px' } }, 'Recommended Actions'),
+  renderCardItems(props.results.actions?.items)
+}),
+  
+// Action buttons
+React.createElement('div', { 
+  style: { 
+    display: 'flex', 
+    justifyContent: 'space-between',
+    padding: '20px',
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+    marginTop: '30px'
+  } 
+}, [
+  React.createElement('button', { 
+    onClick: props.onBack,
+    style: {
+      background: 'transparent',
+      border: '1px solid #fff',
+      color: '#fff',
+      padding: '10px 20px',
+      borderRadius: '4px',
+      cursor: 'pointer'
+    }
+  }, 'Back'),
+  React.createElement('button', { 
+    onClick: props.onComplete,
+    style: {
+      background: '#ffff66',
+      color: '#000',
+      padding: '10px 20px',
+      borderRadius: '4px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 'bold'
+    }
+  }, 'Download Report')
+])
+];
+
+function renderCardItems(items) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return React.createElement('p', { style: { color: '#aaa', fontStyle: 'italic' } }, 'No items available');
+  }
+  
+  return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '15px' } },
+    items.map((item, index) => 
+      React.createElement('div', { 
+        key: index,
+        style: {
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px',
+          padding: '20px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }
+      }, [
+        React.createElement('h4', { style: { margin: '0 0 10px 0', color: '#fff' } }, item.title),
+        React.createElement('p', { style: { color: '#aaa', margin: '0 0 15px 0' } }, item.description),
+        React.createElement('div', { style: { display: 'flex', gap: '10px' } }, [
+          item.impact && React.createElement('div', { 
+            style: { 
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              background: getImpactBackground(item.impact),
+              color: getImpactColor(item.impact),
+              marginRight: '10px'
+            } 
+          }, `Impact: ${item.impact}`),
+          item.effort && React.createElement('div', { 
+            style: { 
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              background: getEffortBackground(item.effort),
+              color: getEffortColor(item.effort)
+            } 
+          }, `Effort: ${item.effort}`)
+        ])
+      ]
+    )
+  );
+}
+
+function renderOpportunityItems(items) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return React.createElement('p', { style: { color: '#aaa', fontStyle: 'italic' } }, 'No items available');
+  }
+  
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '15px' } },
+    items.map((item, index) => 
+      React.createElement('div', { 
+        key: index,
+        style: {
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px',
+          padding: '15px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }
+      }, [
+        React.createElement('h4', { style: { margin: '0 0 10px 0', color: '#fff' } }, item.title),
+        React.createElement('p', { style: { color: '#aaa', margin: '0 0 15px 0' } }, item.description),
+        React.createElement('div', { style: { display: 'flex', gap: '10px' } }, [
+          item.impact && React.createElement('div', { 
+            style: { 
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              background: getImpactBackground(item.impact),
+              color: getImpactColor(item.impact),
+              marginRight: '10px'
+            } 
+          }, `Impact: ${item.impact}`),
+          item.effort && React.createElement('div', { 
+            style: { 
+              display: 'inline-block',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '12px',
+              background: getEffortBackground(item.effort),
+              color: getEffortColor(item.effort)
+            } 
+          }, `Effort: ${item.effort}`)
+        ])
+      ]
+    )
+  );
+}
+
+function renderNextSteps(nextSteps) {
+  if (!nextSteps) return null;
+  
+  return React.createElement('div', { 
+    style: { 
+      background: '#252525',
+      borderRadius: '8px',
+      padding: '20px',
+      marginTop: '20px'
+    } 
+  }, [
+    nextSteps.urgency && React.createElement('div', { 
+      style: { 
+        padding: '10px 15px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        background: getUrgencyBackground(nextSteps.urgency.level),
+        color: getUrgencyColor(nextSteps.urgency.level)
+      } 
+    }, nextSteps.urgency.message),
+    
+    nextSteps.cta && React.createElement('div', { style: { textAlign: 'center', marginTop: '20px' } }, [
+      React.createElement('h3', { style: { color: '#ffff66' } }, nextSteps.cta.title),
+      React.createElement('p', { style: { color: '#aaa' } }, nextSteps.cta.description),
+      React.createElement('button', { 
+        style: {
+          background: '#33cc77',
+          color: '#fff',
+          padding: '10px 25px',
+          borderRadius: '20px',
+          border: 'none',
+          marginTop: '15px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
+        }
+      }, nextSteps.cta.buttonText)
+    ])
+  ]);
+}
+
+function getImpactBackground(impact) {
+  switch(impact.toLowerCase()) {
+    case 'high': return 'rgba(51, 204, 119, 0.2)';
+    case 'medium': return 'rgba(255, 204, 0, 0.2)';
+    case 'low': return 'rgba(255, 255, 255, 0.1)';
+    default: return 'rgba(255, 255, 255, 0.1)';
+  }
+}
+
+function getImpactColor(impact) {
+  switch(impact.toLowerCase()) {
+    case 'high': return '#33cc77';
+    case 'medium': return '#ffcc00';
+    case 'low': return '#ddd';
+    default: return '#ddd';
+  }
+}
+
+function getEffortBackground(effort) {
+  switch(effort.toLowerCase()) {
+    case 'low': return 'rgba(51, 204, 119, 0.2)';
+    case 'medium': return 'rgba(255, 204, 0, 0.2)';
+    case 'high': return 'rgba(255, 102, 102, 0.2)';
+    default: return 'rgba(255, 255, 255, 0.1)';
+  }
+}
+
+function getEffortColor(effort) {
+  switch(effort.toLowerCase()) {
+    case 'low': return '#33cc77';
+    case 'medium': return '#ffcc00';
+    case 'high': return '#ff6666';
+    default: return '#ddd';
+  }
+}
+
+function getUrgencyBackground(level) {
+  switch(level) {
+    case 'critical': return 'rgba(255, 102, 102, 0.2)';
+    case 'high': return 'rgba(255, 153, 51, 0.2)';
+    case 'medium': return 'rgba(255, 204, 0, 0.2)';
+    case 'opportunity': return 'rgba(51, 204, 119, 0.2)';
+    default: return 'rgba(255, 255, 255, 0.1)';
+  }
+}
+
+function getUrgencyColor(level) {
+  switch(level) {
+    case 'critical': return '#ff6666';
+    case 'high': return '#ff9933';
+    case 'medium': return '#ffcc00';
+    case 'opportunity': return '#33cc77';
+    default: return '#ddd';
+  }
+}
+
+function getScoreColor(score) {
+  if (score < 30) return '#ff4d4d';
+  if (score < 50) return '#ff9933';
+  if (score < 70) return '#ffff66';
+  if (score < 90) return '#66ff66';
+  return '#66ffff';
+}
+
+function getScoreBadgeColor(score) {
+  if (score < 30) return 'rgba(255, 77, 77, 0.2)';
+  if (score < 50) return 'rgba(255, 153, 51, 0.2)';
+  if (score < 70) return 'rgba(255, 255, 102, 0.2)';
+  if (score < 90) return 'rgba(102, 255, 102, 0.2)';
+  return 'rgba(102, 255, 255, 0.2)';
+}
+
+function getScoreBadgeTextColor(score) {
+  if (score < 30) return '#ff4d4d';
+  if (score < 50) return '#ff9933';
+  if (score < 70) return '#ffff66';
+  if (score < 90) return '#66ff66';
+  return '#66ffff';
+}
+
+function getScoreDescription(score) {
+  if (score < 30) return 'low';
+  if (score < 50) return 'developing';
+  if (score < 70) return 'moderate';
+  if (score < 90) return 'advanced';
+  return 'exceptional';
+}
+
+function getScoreExplanation(score) {
+  if (score < 30) {
+    return 'your organization is in the early stages of AI marketing adoption and requires immediate action to avoid falling behind competitors.';
+  }
+  if (score < 50) {
+    return 'your organization has started exploring AI marketing but lacks systematic implementation and needs to accelerate adoption.';
+  }
+  if (score < 70) {
+    return 'your organization has a solid foundation in AI marketing capabilities but has opportunities to expand usage and integration.';
+  }
+  if (score < 90) {
+    return 'your organization is successfully leveraging AI across most marketing functions with room for optimization and innovation.';
+  }
+  return 'your organization is at the forefront of AI marketing adoption with industry-leading practices and continuous innovation.';
+}
+
+function renderCardSection(impact) {
+  if (!impact) return null;
+  
+  return React.createElement('div', { 
+    style: { 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+      gap: '20px',
+      marginTop: '20px'
+    } 
+  }, 
+    Object.entries(impact).map(([key, card]) => 
+      React.createElement('div', { 
+        key,
+        style: {
+          background: '#252525',
+          borderRadius: '8px',
+          padding: '20px',
+          marginTop: '20px'
+        } 
+      }, [
+        nextSteps.urgency && React.createElement('div', { 
+          style: { 
+            padding: '10px 15px',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            background: getUrgencyBackground(nextSteps.urgency.level),
+            color: getUrgencyColor(nextSteps.urgency.level)
+          } 
+        }, nextSteps.urgency.message),
+        
+        nextSteps.cta && React.createElement('div', { style: { textAlign: 'center', marginTop: '20px' } }, [
+          React.createElement('h3', { style: { color: '#ffff66' } }, nextSteps.cta.title),
+          React.createElement('p', { style: { color: '#aaa' } }, nextSteps.cta.description),
+          React.createElement('button', { 
+            style: {
+              background: '#33cc77',
+              color: '#fff',
+              padding: '10px 25px',
+              borderRadius: '20px',
+              border: 'none',
+              marginTop: '15px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }
+          }, nextSteps.cta.buttonText)
+        ])
+      ]);
+    }
+    
+    function getImpactBackground(impact) {
+      switch(impact.toLowerCase()) {
+        case 'high': return 'rgba(51, 204, 119, 0.2)';
+        case 'medium': return 'rgba(255, 204, 0, 0.2)';
+        case 'low': return 'rgba(255, 255, 255, 0.1)';
+        default: return 'rgba(255, 255, 255, 0.1)';
+      }
+    }
+    
+    function getImpactColor(impact) {
+      switch(impact.toLowerCase()) {
+        case 'high': return '#33cc77';
+        case 'medium': return '#ffcc00';
+        case 'low': return '#ddd';
+        default: return '#ddd';
+      }
+    }
+    
+    function getEffortBackground(effort) {
+      switch(effort.toLowerCase()) {
+        case 'low': return 'rgba(51, 204, 119, 0.2)';
+        case 'medium': return 'rgba(255, 204, 0, 0.2)';
+        case 'high': return 'rgba(255, 102, 102, 0.2)';
+        default: return 'rgba(255, 255, 255, 0.1)';
+      }
+    }
+    
+    function getEffortColor(effort) {
+      switch(effort.toLowerCase()) {
+        case 'low': return '#33cc77';
+        case 'medium': return '#ffcc00';
+        case 'high': return '#ff6666';
+        default: return '#ddd';
+      }
+    }
+    
+    function getUrgencyBackground(level) {
+      switch(level) {
+        case 'critical': return 'rgba(255, 102, 102, 0.2)';
+        case 'high': return 'rgba(255, 153, 51, 0.2)';
+        case 'medium': return 'rgba(255, 204, 0, 0.2)';
+        case 'opportunity': return 'rgba(51, 204, 119, 0.2)';
+        default: return 'rgba(255, 255, 255, 0.1)';
+      }
+    }
+    
+    function getUrgencyColor(level) {
+      switch(level) {
+        case 'critical': return '#ff6666';
+        case 'high': return '#ff9933';
+        case 'medium': return '#ffcc00';
+        case 'opportunity': return '#33cc77';
+        default: return '#ddd';
+      }
+    }
+    
+    updateStatus('Components ready!', false);
+    console.log('Assessment components loaded successfully');
+    
+  } catch (error) {
+    updateStatus(`Error loading components: ${error.message}`, true);
+    console.error('Error in components loader:', error);
+  }
+})();

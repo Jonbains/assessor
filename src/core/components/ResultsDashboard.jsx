@@ -1,65 +1,140 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../styles/components.module.css';
+import { AssessmentEngine } from '../engine/AssessmentEngine';
+import ResultsAdapterFactory from '../engine/ResultsAdapterFactory';
 
 const ResultsDashboard = ({ 
   assessmentType, 
   calculateResults, 
   onRestart,
-  ResultsView 
+  ResultsView,
+  getResponse, 
+  getContext
 }) => {
-  
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('summary');
 
   useEffect(() => {
+    console.log('ResultsDashboard mounted with assessmentType:', assessmentType);
+    console.log('Custom ResultsView provided:', !!ResultsView);
     generateResults();
   }, []);
+
+  // Transform the scoring engine output to match the expected ResultsView format using the adapter pattern
+  const adaptResultsFormat = (rawResults) => {
+    console.log('Adapting results format for view:', assessmentType);
+    console.log('Raw results structure:', Object.keys(rawResults || {}));
+    
+    if (!rawResults) {
+      console.error('adaptResultsFormat received null/undefined rawResults');
+      return null;
+    }
+    
+    // Use the adapter factory to get the appropriate adapter and transform the results
+    return ResultsAdapterFactory.adaptResults(assessmentType, rawResults, getResponse);
+  };
 
   const generateResults = async () => {
     try {
       setIsLoading(true);
+      console.log('Starting results calculation for assessment type:', assessmentType);
       
       // Calculate scores and generate recommendations
+      console.log('Calling calculateResults...');
       const calculatedResults = await calculateResults();
+      console.log('Raw calculation results:', calculatedResults ? 'Results received' : 'No results');
       
-      setResults(calculatedResults);
+      if (!calculatedResults) {
+        throw new Error('Calculation returned no results');
+      }
+      
+      // Transform the results format to match what ResultsView expects using the adapter pattern
+      console.log(`Using ${assessmentType} adapter to format results`);
+      const adaptedResults = adaptResultsFormat(calculatedResults);
+      console.log('Adapted results for view:', adaptedResults ? 'Successfully adapted' : 'Adaptation failed');
+      
+      if (!adaptedResults) {
+        throw new Error('Failed to adapt results format');
+      }
+      
+      setResults(adaptedResults);
       setIsLoading(false);
+      console.log('Results dashboard data set successfully');
     } catch (err) {
       console.error('Error generating results:', err);
-      setError('Failed to generate results. Please try again.');
+      console.error('Error stack:', err.stack);
+      setError(`Failed to generate results: ${err.message}. Check console for details.`);
       setIsLoading(false);
     }
   };
 
   const handleBookConsultation = () => {
-    // Track conversion
-    if (window.gtag) {
-      window.gtag('event', 'consultation_click', {
-        assessment_type: assessmentType,
-        score: results?.scores?.overall,
-        category: results?.scores?.categories?.readiness?.level
-      });
-    }
-    
-    // Navigate to booking page with context
-    const bookingUrl = `https://obsolete.com/quickmap?assessment=${assessmentType}&score=${results?.scores?.overall}`;
+    console.log('Book consultation clicked');
+    // Implement booking functionality or redirect to booking page
+    const bookingUrl = results?.call_to_action?.booking_url || 'https://calendly.com/your-booking-link';
     window.open(bookingUrl, '_blank');
   };
 
-  const handleDownloadReport = async () => {
-    // Track download
-    if (window.gtag) {
-      window.gtag('event', 'report_download', {
-        assessment_type: assessmentType,
-        score: results?.scores?.overall
-      });
+  const handleDownloadReport = () => {
+    console.log('Download report clicked');
+    // Implementation for downloading PDF report would go here
+    alert('Report download functionality will be implemented in the next phase.');
+  };
+
+  // Function to download complete assessment data as JSON
+  const handleDownloadRawData = () => {
+    try {
+      console.log('Downloading raw JSON data');
+      
+      // Get full assessment data including responses
+      const fullData = getFullAssessmentData();
+      
+      // Create a JSON blob and generate download link
+      const jsonData = JSON.stringify(fullData, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create temporary link element and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `assessment-${assessmentType}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('Download initiated');
+    } catch (err) {
+      console.error('Error downloading data:', err);
+      alert(`Failed to download data: ${err.message}`);
     }
-    
-    // Generate and download PDF
-    // This would typically call a cloud function or API
-    alert('Report download functionality would be implemented here');
+  };
+
+  // Helper function to get all data from the assessment engine
+  const getFullAssessmentData = () => {
+    try {
+      // Combine results with full response data
+      const assessmentData = {
+        assessmentType,
+        timestamp: new Date().toISOString(),
+        results,
+        metadata: getContext ? getContext() : {},
+        // Include any additional data needed for complete export
+      };
+      
+      console.log('Prepared full assessment data for export:', assessmentData);
+      return assessmentData;
+    } catch (err) {
+      console.error('Error preparing assessment data:', err);
+      return {
+        error: err.message,
+        results: results || {}
+      };
+    }
   };
 
   if (isLoading) {
@@ -68,7 +143,7 @@ const ResultsDashboard = ({
         <div className={styles.loadingAnimation}>
           <div className={styles.spinner} />
           <h2>Analyzing your responses...</h2>
-          <p>Generating personalized recommendations</p>
+          <p>This may take a moment as we process your assessment data.</p>
         </div>
       </div>
     );
@@ -77,7 +152,7 @@ const ResultsDashboard = ({
   if (error) {
     return (
       <div className={styles.errorContainer}>
-        <h2>Something went wrong</h2>
+        <h2>Error Generating Results</h2>
         <p>{error}</p>
         <button onClick={generateResults} className={styles.primaryButton}>
           Try Again
@@ -90,11 +165,38 @@ const ResultsDashboard = ({
 
   // Use custom ResultsView if provided, otherwise use default
   if (ResultsView) {
-    return <ResultsView results={results} onBookConsultation={handleBookConsultation} />;
+    console.log('ResultsDashboard: Using custom ResultsView component:', ResultsView.name || 'Anonymous Component');
+    
+    return (
+      <div className={styles.resultsContainer}>
+        <ResultsView 
+          results={results} 
+          onRestart={onRestart}
+          onBookConsultation={handleBookConsultation}
+          onDownloadReport={handleDownloadReport}
+          onDownloadRawData={handleDownloadRawData}
+        />
+        
+        <div className={styles.ctaSection}>
+          <div className={styles.ctaButtons}>
+            <button onClick={handleDownloadRawData} className={styles.secondaryCTA} style={{backgroundColor: '#444'}}>
+              Download Raw JSON Data
+            </button>
+            {onRestart && (
+              <button onClick={onRestart} className={styles.secondaryCTA}>
+                Start Over
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Default results view
-  const { scores, report, recommendations } = results;
+  // Extract scores, report, and recommendations, ensuring we handle any missing properties
+  const { scores = {}, report = {}, insights = [] } = results || {};
+  const recommendations = report?.recommendations || insights || [];
 
   return (
     <div className={styles.resultsContainer}>
@@ -107,24 +209,23 @@ const ResultsDashboard = ({
                 cx="100"
                 cy="100"
                 r="90"
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="12"
                 fill="none"
+                stroke="#e6e6e6"
+                strokeWidth="12"
               />
               <circle
                 cx="100"
                 cy="100"
                 r="90"
-                stroke="#ffff66"
-                strokeWidth="12"
                 fill="none"
-                strokeDasharray={`${2 * Math.PI * 90}`}
-                strokeDashoffset={`${2 * Math.PI * 90 * (1 - (scores.overall || 0) / 100)}`}
+                stroke="#4CAF50"
+                strokeWidth="12"
+                strokeDasharray={`${((scores.overall || 0) / 100) * 565.48} 565.48`}
+                strokeDashoffset="0"
                 transform="rotate(-90 100 100)"
-                style={{ transition: 'stroke-dashoffset 1.5s ease' }}
               />
             </svg>
-            <div className={styles.scoreValue}>
+            <div className={styles.scoreContent}>
               <span className={styles.scoreNumber}>{scores.overall || 0}</span>
               <span className={styles.scoreLabel}>Overall Score</span>
             </div>
@@ -134,12 +235,12 @@ const ResultsDashboard = ({
         <div className={styles.headlineSection}>
           <h1>{report?.executive?.headline || 'Your Assessment Results'}</h1>
           <p className={styles.subheadline}>
-            {report?.executive?.subheadline || 'Detailed analysis and recommendations below'}
+            {report?.executive?.subheadline || 'Based on your responses, here are your key metrics and recommendations.'}
           </p>
           
           <div className={styles.keyMetrics}>
-            {report?.executive?.keyMetrics && Object.entries(report.executive.keyMetrics).map(([key, metric]) => (
-              <div key={key} className={styles.metricCard}>
+            {report?.executive?.keyMetrics?.map((metric, i) => (
+              <div key={i} className={styles.metricItem}>
                 <div className={styles.metricValue}>{metric.value}</div>
                 <div className={styles.metricLabel}>{metric.label}</div>
                 <div className={styles.metricInterpretation}>{metric.interpretation}</div>
@@ -155,27 +256,29 @@ const ResultsDashboard = ({
           className={`${styles.navButton} ${activeSection === 'summary' ? styles.active : ''}`}
           onClick={() => setActiveSection('summary')}
         >
-          Summary
+          Executive Summary
         </button>
         <button
-          className={`${styles.navButton} ${activeSection === 'readiness' ? styles.active : ''}`}
-          onClick={() => setActiveSection('readiness')}
+          className={`${styles.navButton} ${activeSection === 'recommendations' ? styles.active : ''}`}
+          onClick={() => setActiveSection('recommendations')}
         >
-          Readiness
+          Recommendations
         </button>
         <button
-          className={`${styles.navButton} ${activeSection === 'opportunities' ? styles.active : ''}`}
-          onClick={() => setActiveSection('opportunities')}
+          className={`${styles.navButton} ${activeSection === 'details' ? styles.active : ''}`}
+          onClick={() => setActiveSection('details')}
         >
-          Opportunities
+          Detailed Analysis
         </button>
-        <button
-          className={`${styles.navButton} ${activeSection === 'roadmap' ? styles.active : ''}`}
-          onClick={() => setActiveSection('roadmap')}
-        >
-          Roadmap
-        </button>
-        {scores.valuationDimensions && (
+        {report?.roadmap?.phases && (
+          <button
+            className={`${styles.navButton} ${activeSection === 'roadmap' ? styles.active : ''}`}
+            onClick={() => setActiveSection('roadmap')}
+          >
+            Implementation Roadmap
+          </button>
+        )}
+        {report?.valuation && (
           <button
             className={`${styles.navButton} ${activeSection === 'valuation' ? styles.active : ''}`}
             onClick={() => setActiveSection('valuation')}
@@ -189,94 +292,148 @@ const ResultsDashboard = ({
       <div className={styles.sectionContent}>
         {activeSection === 'summary' && (
           <div className={styles.summarySection}>
-            <div className={styles.narrative}>
-              <p>{report?.executive?.narrative}</p>
-            </div>
+            <h2>Executive Summary</h2>
+            <p className={styles.executiveSummary}>
+              {report?.executive?.summary || 'Your assessment provides a comprehensive view of your current capabilities and opportunities for improvement.'}
+            </p>
             
-            <div className={styles.snapshotGrid}>
-              <div className={styles.snapshotCard}>
-                <h3>Strengths</h3>
-                <ul>
-                  {report?.executive?.snapshot?.strengths?.map((strength, i) => (
-                    <li key={i}>{strength}</li>
-                  ))}
-                </ul>
+            {report?.executive?.context && (
+              <div className={styles.contextSection}>
+                <h3>Assessment Context</h3>
+                <p>{report.executive.context}</p>
               </div>
-              
-              <div className={styles.snapshotCard}>
-                <h3>Gaps</h3>
-                <ul>
-                  {report?.executive?.snapshot?.gaps?.map((gap, i) => (
-                    <li key={i}>{gap}</li>
+            )}
+            
+            {scores.dimensions && (
+              <div className={styles.dimensionScores}>
+                <h3>Dimension Scores</h3>
+                <div className={styles.dimensionsGrid}>
+                  {Object.entries(scores.dimensions).map(([key, value]) => (
+                    <div key={key} className={styles.dimensionItem}>
+                      <div className={styles.dimensionName}>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</div>
+                      <div className={styles.dimensionScore}>
+                        <div className={styles.progressBar}>
+                          <div 
+                            className={styles.progressFill} 
+                            style={{width: `${value}%`, backgroundColor: value < 40 ? '#ff6b6b' : value < 70 ? '#feca57' : '#1dd1a1'}}
+                          ></div>
+                        </div>
+                        <div className={styles.scoreValue}>{value}</div>
+                      </div>
+                    </div>
                   ))}
-                </ul>
-              </div>
-              
-              {report?.executive?.snapshot?.quickestWin && (
-                <div className={styles.snapshotCard}>
-                  <h3>Quickest Win</h3>
-                  <h4>{report.executive.snapshot.quickestWin.action}</h4>
-                  <p>Impact: {report.executive.snapshot.quickestWin.impact}</p>
-                  <p>Effort: {report.executive.snapshot.quickestWin.effort}</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {report?.executive?.strengths && (
+              <div className={styles.strengthsWeaknesses}>
+                <div className={styles.strengths}>
+                  <h3>Key Strengths</h3>
+                  <ul>
+                    {report.executive.strengths.map((strength, i) => (
+                      <li key={i}>{strength}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {report?.executive?.weaknesses && (
+                  <div className={styles.weaknesses}>
+                    <h3>Improvement Areas</h3>
+                    <ul>
+                      {report.executive.weaknesses.map((weakness, i) => (
+                        <li key={i}>{weakness}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {activeSection === 'readiness' && (
-          <div className={styles.readinessSection}>
-            <div className={styles.dimensionsGrid}>
-              {report?.readiness?.dimensions?.map((dimension, i) => (
-                <div key={i} className={styles.dimensionCard}>
-                  <div className={styles.dimensionHeader}>
-                    <span className={styles.dimensionIcon}>{dimension.icon}</span>
-                    <h3>{dimension.name}</h3>
-                  </div>
-                  <div className={styles.dimensionScore}>
-                    <div className={styles.scoreBar}>
-                      <div 
-                        className={styles.scoreBarFill} 
-                        style={{ width: `${dimension.score}%` }}
-                      />
+        {activeSection === 'recommendations' && (
+          <div className={styles.recommendationsSection}>
+            <h2>Recommendations</h2>
+            <p>Based on your assessment, here are our recommended actions:</p>
+            
+            <div className={styles.recommendationsList}>
+              {recommendations.map((rec, i) => (
+                <div key={i} className={styles.recommendationCard}>
+                  <h3>{rec.title || `Recommendation ${i+1}`}</h3>
+                  <p className={styles.recommendationDescription}>{rec.description}</p>
+                  {rec.impact && (
+                    <div className={styles.recommendationImpact}>
+                      <span className={styles.impactLabel}>Impact:</span> 
+                      <span className={styles.impactValue}>{rec.impact}</span>
                     </div>
-                    <span>{dimension.score}%</span>
-                  </div>
-                  <p>{dimension.description}</p>
-                  <ul className={styles.insights}>
-                    {dimension.insights?.map((insight, j) => (
-                      <li key={j}>{insight}</li>
-                    ))}
-                  </ul>
+                  )}
+                  {rec.effort && (
+                    <div className={styles.recommendationEffort}>
+                      <span className={styles.effortLabel}>Effort:</span>
+                      <span className={styles.effortValue}>{rec.effort}</span>
+                    </div>
+                  )}
+                  {rec.steps && (
+                    <div className={styles.implementationSteps}>
+                      <h4>Implementation Steps:</h4>
+                      <ol>
+                        {rec.steps.map((step, j) => (
+                          <li key={j}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {activeSection === 'opportunities' && (
-          <div className={styles.opportunitiesSection}>
-            {recommendations?.immediate && (
-              <div className={styles.opportunityGroup}>
-                <h2>{recommendations.immediate.title || "Quick Wins"}</h2>
-                <p>{recommendations.immediate.subtitle}</p>
-                <div className={styles.opportunitiesGrid}>
-                  {recommendations.immediate.items?.map((item, i) => (
-                    <div key={i} className={styles.opportunityCard}>
-                      <h3>{item.title}</h3>
-                      <p>{item.description || item.why}</p>
-                      <div className={styles.opportunityMeta}>
-                        <span className={styles.effort}>Effort: {item.effort}</span>
-                        <span className={styles.impact}>Impact: {item.impact}</span>
+        {activeSection === 'details' && (
+          <div className={styles.detailsSection}>
+            <h2>Detailed Analysis</h2>
+            
+            {scores.categories && (
+              <div className={styles.categoryAnalysis}>
+                <h3>Category Analysis</h3>
+                {Object.entries(scores.categories).map(([category, data]) => (
+                  <div key={category} className={styles.categoryCard}>
+                    <h4>{category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</h4>
+                    <div className={styles.categoryScore}>
+                      <div className={styles.progressBar}>
+                        <div 
+                          className={styles.progressFill} 
+                          style={{width: `${data.score}%`, backgroundColor: data.score < 40 ? '#ff6b6b' : data.score < 70 ? '#feca57' : '#1dd1a1'}}
+                        ></div>
                       </div>
-                      {item.specificAction && (
-                        <div className={styles.actionBox}>
-                          <strong>Action:</strong> {item.specificAction}
-                        </div>
-                      )}
+                      <div className={styles.scoreValue}>{data.score}</div>
                     </div>
-                  ))}
-                </div>
+                    {data.insights && (
+                      <div className={styles.categoryInsights}>
+                        <p>{data.insights}</p>
+                      </div>
+                    )}
+                    {data.items && (
+                      <div className={styles.categoryItems}>
+                        {Object.entries(data.items).map(([item, itemScore]) => (
+                          <div key={item} className={styles.categoryItem}>
+                            <div className={styles.itemName}>{item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+                            <div className={styles.itemScore}>
+                              <div className={styles.progressBar}>
+                                <div 
+                                  className={styles.progressFill} 
+                                  style={{width: `${itemScore}%`, backgroundColor: itemScore < 40 ? '#ff6b6b' : itemScore < 70 ? '#feca57' : '#1dd1a1'}}
+                                ></div>
+                              </div>
+                              <div className={styles.scoreValue}>{itemScore}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -303,7 +460,7 @@ const ResultsDashboard = ({
           </div>
         )}
 
-        {activeSection === 'valuation' && scores.valuationDimensions && (
+        {activeSection === 'valuation' && scores.categories && (
           <div className={styles.valuationSection}>
             <h2>{report?.valuation?.title}</h2>
             <p>{report?.valuation?.subtitle}</p>
@@ -350,6 +507,9 @@ const ResultsDashboard = ({
             </button>
             <button onClick={handleDownloadReport} className={styles.secondaryCTA}>
               Download Full Report
+            </button>
+            <button onClick={handleDownloadRawData} className={styles.secondaryCTA} style={{marginTop: '10px', backgroundColor: '#444'}}>
+              Download Raw JSON Data
             </button>
           </div>
           

@@ -191,7 +191,129 @@ For SME/mid-tier focus:
 
 ---
 
-## Part Four: Content & Messaging Strategy
+## Part Four: Report System Architecture
+
+### Data Flow Pattern
+
+1. **Centralized State Management**: 
+   - Assessment data flows from `AssessmentFlow` to child components via props
+   - Central state persisted through `saveResponse`/`getResponse` functions
+   - Calculation performed in `ResultsDashboard` component via `calculateResults`
+
+2. **Data Transformation Pipeline**:
+   ```
+   Raw Responses → Scoring Engine → Raw Results → adaptResultsFormat → UI-Ready Data
+   ```
+
+3. **Results Adaptation Function**:
+   - Located in `ResultsDashboard.jsx`
+   - Transforms raw calculation data into UI-ready format
+   - Creates nested objects for each report section (executive, readiness, opportunities, etc.)
+   - Provides default values and fallbacks for missing data
+   - Generates derived values (like valuation multipliers) based on scores
+
+4. **Component-Ready Data Structure**:
+   ```jsx
+   results = {
+     executive: { ... },     // Summary section
+     readiness: {           // Readiness analysis
+       dimensions: [ ... ],  // Capability dimensions
+       serviceReadiness: [ ... ], // Service-specific readiness
+       transformationPaths: { ... } // Transformation strategies
+     },
+     opportunities: {       // Transformation opportunities
+       immediate: { ... },   // Priority actions
+       serviceSpecific: [ ... ], // Service-level recommendations
+       strategic: [ ... ],    // Long-term opportunities
+       valuationImpact: [ ... ] // Financial impact items
+     },
+     roadmap: { ... },      // Transformation journey
+     impact: { ... },       // Business value metrics
+     nextSteps: { ... }     // Conversion opportunities
+   }
+   ```
+
+### CSS Architecture
+
+1. **Centralized Modular CSS**:
+   - All styles contained in `/src/core/styles/components.module.css`
+   - CSS modules for component-scoped styling without conflicts
+   - Classes accessed via `import styles from '../styles/components.module.css'`
+
+2. **Semantic Class Naming**:
+   - Report structure: `.reportSection`, `.reportHeader`, etc.
+   - Component types: `.dimensionCard`, `.serviceCard`, etc.
+   - Modifier patterns: `.card.highRisk`, `.recommendation.priority`
+
+3. **Responsive Grid System**:
+   ```css
+   .dimensionsGrid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+     gap: 1.5rem;
+   }
+   ```
+
+4. **Visual Hierarchy with CSS**:
+   - Consistent spacing rhythm (0.5rem, 1rem, 1.5rem, 2rem)
+   - Typography scale with semantic meaning
+   - Color system for status indication (risk levels, scores, etc.)
+   - Card-based layout with consistent padding/borders
+
+5. **Reusable Component Classes**:
+   - Score circles: `.scoreCircle`, `.scoreCircleLarge`
+   - Cards: `.dimensionCard`, `.serviceCard`, `.recommendationCard`
+   - Grids: `.dimensionsGrid`, `.serviceGrid`, `.recommendationsGrid`
+   - Text elements: `.sectionTitle`, `.sectionSubtitle`, `.cardTitle`
+
+### Component Architecture
+
+1. **Report View Components**:
+   - Each assessment type has its own results view (`AgencyResultsView`, `InhouseResultsView`)
+   - Views are stateless, receiving data via props from `ResultsDashboard`
+   - Components organized by semantic sections (`<div className={styles.reportSection}>`)
+
+2. **Conditional Rendering Pattern**:
+   ```jsx
+   {opportunities.strategic && opportunities.strategic.length > 0 && (
+     <div className={styles.opportunitiesSection}>
+       <h3>Strategic Opportunities</h3>
+       {/* Component content */}
+     </div>
+   )}
+   ```
+
+3. **Data Mapping Pattern**:
+   ```jsx
+   <div className={styles.dimensionsGrid}>
+     {readiness.dimensions.map((dimension, idx) => (
+       <div key={idx} className={styles.dimensionCard}>
+         <h4>{dimension.name}</h4>
+         <div className={styles.scoreCircle}>{dimension.score}</div>
+         <p>{dimension.description}</p>
+       </div>
+     ))}
+   </div>
+   ```
+
+4. **Consistent Section Structure**:
+   - Section container with semantic heading
+   - Optional introduction text
+   - Grid of cards or other content components
+   - Appropriate spacing and visual hierarchy
+
+5. **Dynamic Styling**:
+   ```jsx
+   <div className={`${styles.serviceCard} ${styles[`${service.interpretation}Risk`]}`}>
+     {/* Card content */}
+   </div>
+   ```
+
+This architecture ensures consistent, maintainable, and extensible reports across different assessment types while providing rich, visually engaging results for users.
+
+---
+
+## Part Five: Content & Messaging Strategy
 
 ### Voice and Tone
 
@@ -716,63 +838,114 @@ Start with core functionality, layer on advanced features. Every phase should pr
 
 ## User Flow Implementation
 
-### Stage 1: Assessment Selection
+### Stage 1: Homepage
 
 ```jsx
-// Route: / or /?assessment=agency
-// Component: AssessmentSelector.jsx
+// Route: /
+// Component: Landing.jsx
 
-// Direct link skips this stage
-if (urlParams.assessment) {
-  loadAssessment(urlParams.assessment);
-} else {
-  showAssessmentGrid();
-}
-
+const Landing = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className={styles.screen}>
+      <header className={styles.header}>
+        <h1>AI Assessment Tool for Marketing Leaders</h1>
+        <p>Free & confidential. No account required.</p>
+      </header>
+      
+      <div className={styles.heroCta}>
+        <button 
+          className={styles.primaryButton}
+          onClick={() => navigate('/assessment')}
+        >
+          Start Assessment
+        </button>
+      </div>
+    </div>
+  );
+};
 ```
 
-### Stage 2: Sector Selection
+### Stage 2: Assessment Selection
+
+```jsx
+// Route: /assessment
+// Component: AssessmentSelector.jsx
+
+const AssessmentSelector = () => {
+  const navigate = useNavigate();
+
+  const selectAssessment = (type) => {
+    navigate(`/assessment/${type}/sector`);
+  };
+
+  return (
+    <div className={styles.assessmentGrid}>
+      <div 
+        className={styles.assessmentCard}
+        onClick={() => selectAssessment('agency-vulnerability')}
+      >
+        <h2 className={styles.cardTitle}>Agency Vulnerability Assessment</h2>
+        <p className={styles.cardDescription}>
+          For marketing agencies worried about client needs shifting to AI.
+        </p>
+        <span className={styles.time}>⏱ 3-5 mins</span>
+      </div>
+    </div>
+  );
+};
+```
+
+### Stage 3: Sector Selection
 
 ```jsx
 // Route: /assessment/:type/sector
 // Component: SectorSelector.jsx
-// Data source: assessments/[type]/sectors.json
 
-{
-  "sectors": [
-    {
-      "id": "creative",
-      "name": "Creative Agency",
-      "description": "Design, branding, creative campaigns",
-      "icon": "🎨"
-    }
-  ]
-}
-
-```
-
-### Stage 3: Qualifying Questions
-
-```jsx
-// Route: /assessment/:type/qualify
-// Component: QualifyingQuestions.jsx
-// Data source: assessments/[type]/qualifying.json
-
-{
-  "questions": [
-    {
-      "id": "company_size",
-      "question": "How many people work at your agency?",
-      "type": "single-select",
-      "options": [
-        {"value": "1-10", "label": "1-10 people"},
-        {"value": "11-50", "label": "11-50 people"}
-      ],
-      "affects": ["scoring_weight", "question_variants"]
-    }
-  ]
-}
-
+const SectorSelector = ({ assessmentType, onSelect, onBack }) => {
+  const [sectors, setSectors] = useState([]);
+  const [selectedSector, setSelectedSector] = useState(null);
+  
+  useEffect(() => {
+    // Load sectors data from the correct path
+    const loadSectors = async () => {
+      try {
+        const module = await import(`../../assessments/${assessmentType}/sectors.json`);
+        const data = module.default || module;
+        setSectors(data.sectors || []);
+      } catch (error) {
+        console.error('Failed to load sectors:', error);
+      }
+    };
+    
+    loadSectors();
+  }, [assessmentType]);
+  
+  // Called when user clicks a sector
+  const handleSelect = (sector) => {
+    setSelectedSector(sector);
+    // Pass selected sector to parent component
+    onSelect(sector);
+  };
+  
+  return (
+    <div className={styles.sectorsGrid}>
+      {sectors.map(sector => (
+        <div 
+          key={sector.id}
+          className={`${styles.sectorCard} ${selectedSector?.id === sector.id ? styles.selected : ''}`}
+          onClick={() => handleSelect(sector)}
+        >
+          <h3>{sector.name}</h3>
+          <p>{sector.description}</p>
+        </div>
+      ))}
+      
+      <Navigation onBack={onBack} onNext={() => {}} canProgress={false} />
+    </div>
+  );
+};
 ```
 
 ### Stage 4: Service Selection
@@ -780,49 +953,178 @@ if (urlParams.assessment) {
 ```jsx
 // Route: /assessment/:type/services
 // Component: ServiceSelector.jsx
-// Data source: assessments/[type]/services.json
 
-{
-  "services": [
-    {
-      "id": "content",
-      "name": "Content Creation",
-      "description": "Blog posts, articles, social media",
-      "ai_impact": "high",
-      "questions": ["content_1", "content_2", "content_3"]
+const ServiceSelector = ({ assessmentType, onSelect, onBack }) => {
+  const [services, setServices] = useState([]);
+  const [allocations, setAllocations] = useState({});
+  
+  useEffect(() => {
+    // Load services from the correct path
+    const loadServices = () => {
+      try {
+        // Using static imports with proper error handling
+        let servicesData;
+        if (assessmentType === 'agency-vulnerability') {
+          servicesData = agencyServices; // imported at top of file
+        } else if (assessmentType === 'inhouse-marketing') {
+          servicesData = inhouseActivities; // imported at top of file
+        }
+        
+        const serviceArray = servicesData?.services || [];
+        setServices(serviceArray);
+        
+        // Initialize allocations
+        const initialAllocations = {};
+        serviceArray.forEach(service => {
+          initialAllocations[service.id] = 0;
+        });
+        setAllocations(initialAllocations);
+      } catch (error) {
+        console.error('Failed to load services:', error);
+      }
+    };
+    
+    loadServices();
+  }, [assessmentType]);
+  
+  // Handle continue button - pass normalized allocations to parent
+  const handleContinue = () => {
+    const selectedServices = {};
+    let totalAllocation = 0;
+    
+    // Count total allocation
+    Object.entries(allocations).forEach(([serviceId, value]) => {
+      if (value > 0) {
+        totalAllocation += value;
+      }
+    });
+    
+    // Normalize allocations
+    if (totalAllocation > 0) {
+      Object.entries(allocations).forEach(([serviceId, value]) => {
+        if (value > 0) {
+          selectedServices[serviceId] = value / totalAllocation;
+        }
+      });
     }
-  ]
-}
-
+    
+    // Pass to parent component
+    onSelect(selectedServices);
+  };
+  
+  return (
+    <div className={styles.serviceSelector}>
+      {/* Service sliders */}
+      <Navigation 
+        onBack={onBack} 
+        onNext={handleContinue} 
+        canProgress={Object.values(allocations).some(v => v > 0)}
+      />
+    </div>
+  );
+};
 ```
 
 ### Stage 5: Dynamic Questions
 
 ```jsx
 // Route: /assessment/:type/questions
-// Component: QuestionCard.jsx (in sequence)
-// Data source: assessments/[type]/questions.json
+// Component: DynamicQuestions.jsx
 
-{
-  "questions": [
-    {
-      "id": "content_1",
-      "text": "How do you currently produce content?",
-      "services": ["content"],
-      "conditions": {
-        "company_size": ["1-10", "11-50"]  // SME variant
-      },
-      "options": [
-        {
-          "text": "Mostly in-house writing",
-          "score": 2,
-          "insights": ["time_intensive", "quality_variable"]
+const DynamicQuestions = ({ 
+  assessmentType,
+  saveResponse,
+  getResponse,
+  getContext,
+  setContext, 
+  onComplete,
+  onBack,
+  progress
+}) => {
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  
+  useEffect(() => {
+    // Load questions from the correct path
+    const loadQuestions = async () => {
+      try {
+        // Load core questions
+        const coreModule = await import(`../../assessments/${assessmentType}/questions.json`);
+        const coreData = coreModule.default || coreModule;
+        let coreQuestions = coreData.questions || [];
+        
+        // Load service-specific questions
+        const selectedServices = getResponse('selectedServices') || {};
+        if (Object.keys(selectedServices).length > 0) {
+          // Try to load from service-questions.json
+          try {
+            const serviceModule = await import(`../../assessments/${assessmentType}/service-questions.json`);
+            const serviceData = serviceModule.default || serviceModule;
+            // Add service questions
+          } catch (error) {
+            // If that fails, try activity-questions.json
+            // ...
+          }
         }
-      ]
+        
+        setQuestions(coreQuestions);
+      } catch (error) {
+        console.error('Error loading questions:', error);
+      }
+    };
+    
+    loadQuestions();
+  }, [assessmentType, getResponse]);
+  
+  // Handle an answer
+  const handleAnswer = (questionId, value) => {
+    // Save the answer using the centralized saveResponse
+    saveResponse(questionId, value);
+    
+    // Auto-advance
+    setTimeout(() => {
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }
+    }, 300);
+  };
+  
+  // Handle next button
+  const handleNext = () => {
+    if (currentQuestionIndex >= questions.length - 1) {
+      // Move to next stage
+      onComplete();
+    } else {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
-  ]
-}
-
+  };
+  
+  // Current question
+  const currentQuestion = questions[currentQuestionIndex] || {};
+  
+  return (
+    <div className={styles.questionsContainer}>
+      <ProgressBar progress={progress} />
+      
+      <QuestionCard
+        question={currentQuestion}
+        questionNumber={currentQuestionIndex + 1}
+        totalQuestions={questions.length}
+        selectedValue={getResponse(currentQuestion.id)}
+        onSelect={value => handleAnswer(currentQuestion.id, value)}
+      />
+      
+      <Navigation
+        onNext={handleNext}
+        onBack={() => currentQuestionIndex > 0 
+          ? setCurrentQuestionIndex(prev => prev - 1) 
+          : onBack()
+        }
+        canProgress={getResponse(currentQuestion.id) !== undefined}
+      />
+    </div>
+  );
+};
 ```
 
 ### Stage 6: Email Gate
@@ -831,54 +1133,208 @@ if (urlParams.assessment) {
 // Route: /assessment/:type/email
 // Component: EmailGate.jsx
 
-// Captures:
-- Email (required)
-- Name (optional)
-- Company (optional)
-- Phone (optional)
-- Marketing consent (GDPR)
-
+const EmailGate = ({ 
+  assessmentType,
+  saveResponse,
+  getResponse,
+  onComplete,
+  onBack,
+  progress
+}) => {
+  // Form state initialized from saved responses
+  const [formData, setFormData] = useState({
+    email: getResponse('email') || '',
+    name: getResponse('name') || '',
+    company: getResponse('company') || '',
+    phone: getResponse('phone') || '',
+    marketingConsent: getResponse('marketingConsent') || false
+  });
+  
+  // Update form field
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+  
+  // Form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Save all form fields
+    Object.entries(formData).forEach(([key, value]) => {
+      saveResponse(key, value);
+    });
+    
+    // Move to results
+    onComplete();
+  };
+  
+  // Go back to questions
+  const handleBackClick = () => {
+    // Save current form state before navigation
+    Object.entries(formData).forEach(([key, value]) => {
+      saveResponse(key, value);
+    });
+    
+    onBack();
+  };
+  
+  return (
+    <div className={styles.emailGate}>
+      <ProgressBar progress={progress} />
+      
+      <form onSubmit={handleSubmit}>
+        <h2>Just one more step!</h2>
+        <p>Where should we send your results?</p>
+        
+        <div className={styles.formField}>
+          <label htmlFor="email">Email (required)</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        
+        <div className={styles.formField}>
+          <label htmlFor="name">Name (optional)</label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={handleChange}
+          />
+        </div>
+        
+        <div className={styles.formConsent}>
+          <input
+            id="marketingConsent"
+            name="marketingConsent"
+            type="checkbox"
+            checked={formData.marketingConsent}
+            onChange={handleChange}
+            required
+          />
+          <label htmlFor="marketingConsent">
+            I agree to receive marketing emails (GDPR compliant)
+          </label>
+        </div>
+        
+        <div className={styles.formActions}>
+          <button type="button" onClick={handleBackClick} className={styles.backButton}>
+            Back
+          </button>
+          <button type="submit" className={styles.submitButton}>
+            See My Results
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
 ```
 
 ### Stage 7: Results Dashboard
 
 ```jsx
 // Route: /assessment/:type/results
-// Components: ResultsDashboard.jsx + ResultsView.jsx (custom)
-
-// Dashboard receives:
+// Component: ResultsDashboard.jsx receives these props:
 {
-  overallScore: 65,
-  dimensions: {
-    ai_readiness: 70,
-    financial_resilience: 45,
-    team_capability: 80
-  },
-  recommendations: [...],
-  quickWins: [...],
-  benchmarks: {...}
+  assessmentType: 'agency-vulnerability',  // identifies which assessment
+  calculateResults: async () => {...},     // calculates results from responses
+  onRestart: () => {...},                 // navigation callback
+  ResultsView: AgencyResultsView,         // custom view component for this assessment
+  getResponse: (key) => {...},            // access saved responses
+  getContext: () => {...}                 // access assessment context
 }
 
+// ResultsDashboard transforms raw results using adaptResultsFormat:
+{
+  executive: { ... },
+  readiness: {
+    dimensions: [
+      { name: 'Technology', score: 65, description: '...' },
+      { name: 'Team', score: 78, description: '...' }
+    ],
+    serviceReadiness: [
+      { name: 'Content Creation', score: 70, interpretation: 'medium', timeToDisruption: '12-18 months' }
+    ],
+    transformationPaths: { ... }
+  },
+  opportunities: {
+    immediate: [ ... ],
+    serviceSpecific: [ ... ],
+    strategic: [ ... ],
+    valuationImpact: [ ... ]
+  },
+  roadmap: { ... },
+  impact: { ... },
+  nextSteps: { ... }
+}
 ```
 
 ---
 
 ## Core Engine Design
 
-### AssessmentEngine.js
+### AssessmentFlow.jsx (Central Coordinator)
 
 ```jsx
-class AssessmentEngine {
-  constructor(assessmentType) {
-    this.config = loadConfig(assessmentType);
-    this.flow = new FlowController(this.config);
-    this.data = new DataManager();
-    this.scoring = new ScoringEngine(this.config.scoring);
-  }
+// This is the central component that manages state and navigation
+const AssessmentFlow = () => {
+  const { type } = useParams();  // From React Router
+  const navigate = useNavigate();
+  const [step, setStep] = useState('qualifying');
+  const [progress, setProgress] = useState(0);
+  
+  // Centralized response management
+  const saveResponse = (key, value) => {
+    // Save to localStorage with namespacing by assessment type
+    const storageKey = `${type}_${key}`;
+    localStorage.setItem(storageKey, JSON.stringify(value));
+  };
+  
+  const getResponse = (key) => {
+    // Retrieve from localStorage with namespacing
+    const storageKey = `${type}_${key}`;
+    const item = localStorage.getItem(storageKey);
+    return item ? JSON.parse(item) : null;
+  };
+  
+  // Context for assessment-wide data
+  const [context, setContext] = useState({});
+  
+  // Navigation handlers
+  const handleComplete = (currentStep) => {
+    // Determine next step based on current step
+    const nextStep = getNextStep(currentStep);
+    setStep(nextStep);
+    // Update progress
+    setProgress(calculateProgress(nextStep));
+  };
+  
+  // Calculate results based on all responses
+  const calculateResults = async () => {
+    try {
+      // Import scoring module dynamically based on assessment type
+      const scoringModule = await import(`../../assessments/${type}/scoring.js`);
+      // Get all responses
+      const allResponses = getAllResponses();
+      // Calculate scores and recommendations
+      return scoringModule.calculateScores(allResponses);
+    } catch (error) {
+      console.error('Error calculating results:', error);
+      return null;
+    }
+  };
 
-  // Orchestrates the entire assessment
-  async initialize() {
-    await this.loadAssessmentModule();
     this.flow.start();
   }
 
@@ -1217,6 +1673,94 @@ try {
 
 ```
 
+### Obsolete Patterns to Avoid
+
+⚠️ The following patterns are obsolete and should NOT be used in new code or refactoring:
+
+1. **Direct localStorage Manipulation** ❌
+   ```javascript
+   // OBSOLETE - Don't do this
+   localStorage.setItem('assessment_data', JSON.stringify(data));
+   const savedData = JSON.parse(localStorage.getItem('assessment_data'));
+   ```
+   
+   ✅ CORRECT PATTERN:
+   ```javascript
+   // Use centralized data management via props
+   saveResponse('key', data);
+   const savedData = getResponse('key');
+   ```
+
+2. **Incorrect Import Paths** ❌
+   ```javascript
+   // OBSOLETE - Wrong path pattern
+   import(`../../../${assessmentType}/config.json`)
+   ```
+   
+   ✅ CORRECT PATTERN:
+   ```javascript
+   // Use correct relative path from component
+   import(`../../assessments/${assessmentType}/service-questions.json`)
+   ```
+
+3. **Editing Duplicate Components** ❌
+   - Do NOT edit components in `/src/react-app/src/core/components/`
+   - ONLY edit components in `/src/core/components/` (primary path)
+
+4. **Isolated Component State** ❌
+   ```javascript
+   // OBSOLETE - Component manages own state
+   const [services, setServices] = useState([]);
+   useEffect(() => {
+     const savedServices = localStorage.getItem('services');
+     if (savedServices) setServices(JSON.parse(savedServices));
+   }, []);
+   ```
+   
+   ✅ CORRECT PATTERN:
+   ```javascript
+   // Component receives props from parent
+   function ServiceSelector({ assessmentType, getResponse, saveResponse, onComplete }) {
+     const [services, setServices] = useState(getResponse('services') || []);
+     
+     const handleSave = () => {
+       saveResponse('services', services);
+       onComplete(services);
+     };
+   }
+   ```
+
+5. **Direct Route Manipulation** ❌
+   ```javascript
+   // OBSOLETE - Direct history manipulation
+   import { useHistory } from 'react-router-dom';
+   const history = useHistory();
+   history.push('/next-step');
+   ```
+   
+   ✅ CORRECT PATTERN:
+   ```javascript
+   // Use callback props for navigation
+   <button onClick={() => onComplete(data)}>Continue</button>
+   <button onClick={onBack}>Back</button>
+   ```
+
+6. **Inline or Component-Specific Styling** ❌
+   ```javascript
+   // OBSOLETE - Component-specific styles
+   import './ServiceSelector.css';
+   <div style={{ margin: '10px', padding: '20px' }}>
+   ```
+   
+   ✅ CORRECT PATTERN:
+   ```javascript
+   // Use centralized CSS modules
+   import styles from '../styles/components.module.css';
+   <div className={styles.serviceContainer}>
+   ```
+
+Following the current patterns ensures consistency, maintainability, and proper data flow throughout the application.
+
 ### Performance Considerations
 
 1. **Code Splitting**: Each assessment loaded on demand
@@ -1351,9 +1895,397 @@ REACT_APP_SENDINBLUE_API_KEY=
 
 ---
 
-## Future Extensibility
+## Technical Implementation Guide: How It Actually Works
 
-### Planned Assessments
+### Assessment Configuration System
+
+1. **JSON-Driven Question Flow**
+   - Each assessment type has dedicated JSON files in its directory:
+   ```
+   /assessments/agency-vulnerability/
+     ├── services.json         # Available services to select
+     ├── sectors.json          # Industry sectors
+     ├── qualifying-questions.json  # Initial questions
+     ├── service-questions.json     # Service-specific questions
+   ```
+
+2. **Question Loading Pattern**
+   ```javascript
+   // In DynamicQuestions.jsx
+   const loadQuestions = async () => {
+     try {
+       // Direct import pattern compatible with webpack
+       const serviceQuestionsData = await import 
+         (`../../assessments/${assessmentType}/service-questions.json`);
+       
+       // Extract and format questions for selected services
+       const relevantQuestions = selectedServices.flatMap(service => {
+         const serviceQuestions = serviceQuestionsData[service] || [];
+         return serviceQuestions.map(q => ({
+           ...q,
+           serviceId: service // Track which service this question belongs to
+         }));
+       });
+       
+       setQuestions(relevantQuestions);
+     } catch (err) {
+       console.error('Error loading questions:', err);
+       setError('Failed to load questions');
+     }
+   };
+   ```
+
+3. **Response Persistence**
+   ```javascript
+   // In AssessmentFlow.jsx - Centralized data management
+   const saveResponse = (key, value) => {
+     const existingData = JSON.parse(localStorage.getItem(`assessment_${assessmentType}`)) || {};
+     const updatedData = { ...existingData, [key]: value };
+     localStorage.setItem(`assessment_${assessmentType}`, JSON.stringify(updatedData));
+     console.log(`Saved ${key} data for ${assessmentType}`);
+   };
+   
+   const getResponse = (key) => {
+     const data = JSON.parse(localStorage.getItem(`assessment_${assessmentType}`)) || {};
+     return data[key];
+   };
+   ```
+
+### Scoring System Implementation
+
+1. **Scoring Engine Structure**
+   ```javascript
+   // In scoring.js
+   export const calculateScores = (responses, services) => {
+     const serviceScores = {};
+     const dimensionScores = {
+       technology: 0,
+       people: 0,
+       process: 0,
+       data: 0,
+       strategy: 0
+     };
+     
+     // Process qualifying questions first
+     processQualifyingQuestions(responses.qualifying, dimensionScores);
+     
+     // Process service-specific questions
+     services.forEach(service => {
+       const serviceResponses = responses.services?.[service] || [];
+       serviceScores[service] = calculateServiceScore(serviceResponses, service);
+       
+       // Roll up service scores into dimensions
+       updateDimensionScores(serviceResponses, dimensionScores);
+     });
+     
+     // Calculate overall score (weighted average of dimensions)
+     const overall = calculateOverallScore(dimensionScores);
+     
+     return { overall, dimensionScores, serviceScores };
+   };
+   ```
+
+2. **Recommendation Generation**
+   ```javascript
+   // In recommendations.js
+   export const generateRecommendations = (scores, services) => {
+     const recommendations = [];
+     
+     // Generate priority recommendations based on lowest scores
+     const weakDimensions = getWeakDimensions(scores.dimensionScores);
+     weakDimensions.forEach(dimension => {
+       recommendations.push({
+         area: `${dimension.name} Enhancement`,
+         description: dimensionRecommendations[dimension.name],
+         priority: dimension.priority,
+         effort: dimension.score < 30 ? 'High' : 'Medium',
+         impact: dimension.score < 30 ? 'Critical' : 'High'
+       });
+     });
+     
+     // Generate service-specific recommendations
+     Object.entries(scores.serviceScores)
+       .filter(([_, data]) => data.score < 50)
+       .forEach(([service, data]) => {
+         const recommendation = serviceRecommendations[service];
+         if (recommendation) {
+           recommendations.push({
+             area: `${service.replace(/_/g, ' ')} Transformation`,
+             description: recommendation.description,
+             priority: 10 - Math.floor(data.score / 10), // Lower score = higher priority
+             effort: recommendation.effort,
+             impact: recommendation.impact
+           });
+         }
+       });
+     
+     return recommendations;
+   };
+   ```
+
+### React Component Integration
+
+1. **Assessment Flow Orchestration**
+   ```jsx
+   // In AssessmentFlow.jsx
+   function AssessmentFlow({ assessmentType }) {
+     const [currentStep, setCurrentStep] = useState('email');
+     const [progress, setProgress] = useState(0);
+     
+     // Callback for navigation
+     const handleComplete = (step, data) => {
+       // Save data from current step
+       if (data) saveResponse(step, data);
+       
+       // Determine next step in flow
+       const nextStep = getNextStep(step, assessmentType);
+       setCurrentStep(nextStep);
+       
+       // Update progress indicator
+       const progressValue = calculateProgress(nextStep, assessmentType);
+       setProgress(progressValue);
+     };
+     
+     // Render current component based on step
+     return (
+       <div className="assessment-container">
+         <ProgressBar value={progress} />
+         
+         {currentStep === 'email' && (
+           <EmailGate
+             assessmentType={assessmentType}
+             onComplete={(data) => handleComplete('email', data)}
+             saveResponse={saveResponse}
+             getResponse={getResponse}
+             progress={progress}
+           />
+         )}
+         
+         {currentStep === 'services' && (
+           <ServiceSelector
+             assessmentType={assessmentType}
+             onComplete={(data) => handleComplete('services', data)}
+             onBack={() => handleComplete('back_to_email')}
+             saveResponse={saveResponse}
+             getResponse={getResponse}
+             progress={progress}
+           />
+         )}
+         
+         {/* Similar patterns for other steps */}
+       </div>
+     );
+   }
+   ```
+
+2. **Results Dashboard Implementation**
+   ```jsx
+   // In ResultsDashboard.jsx
+   const generateResults = async () => {
+     try {
+       setIsLoading(true);
+       
+       // Step 1: Get all response data
+       const email = getResponse('email');
+       const services = getResponse('services');
+       const qualifyingResponses = getResponse('qualifying');
+       const serviceResponses = getResponse('serviceQuestions');
+       
+       // Step 2: Calculate scores using the scoring engine
+       const scores = await calculateScores({
+         qualifying: qualifyingResponses,
+         services: serviceResponses
+       }, services);
+       
+       // Step 3: Generate recommendations based on scores
+       const recommendations = generateRecommendations(scores, services);
+       
+       // Step 4: Combine all calculation results
+       const calculatedResults = {
+         ...scores,
+         recommendations,
+         insights: generateInsights(scores, services),
+         vulnerabilityMetrics: calculateVulnerabilityMetrics(scores)
+       };
+       
+       // Step 5: Transform for UI consumption
+       const adaptedResults = adaptResultsFormat(calculatedResults);
+       setResults(adaptedResults);
+     } catch (err) {
+       console.error('Error generating results:', err);
+       setError(`Failed to generate results: ${err.message}`);  
+     } finally {
+       setIsLoading(false);
+     }
+   };
+   ```
+
+### CSS Implementation Patterns
+
+1. **Dynamic Class Application**
+   ```jsx
+   // In ResultsView.jsx - Applying risk level classes
+   <div 
+     className={`${styles.serviceCard} ${
+       service.score < 40 ? styles.highRisk :
+       service.score < 70 ? styles.mediumRisk :
+       styles.lowRisk
+     }`}
+   >
+     <h4 className={styles.serviceName}>{service.name}</h4>
+     <div className={styles.scoreCircle}>{service.score}</div>
+   </div>
+   ```
+
+2. **Grid Responsive Implementation**
+   ```css
+   /* In components.module.css */
+   .serviceGrid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+     gap: 1.5rem;
+     margin: 1.5rem 0;
+   }
+   
+   /* Media query for smaller screens */
+   @media (max-width: 768px) {
+     .serviceGrid {
+       grid-template-columns: 1fr; /* Single column on mobile */
+     }
+   }
+   ```
+
+3. **Score Circle Implementation**
+   ```css
+   .scoreCircle {
+     width: 60px;
+     height: 60px;
+     border-radius: 50%;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     font-weight: bold;
+     font-size: 1.25rem;
+     background: linear-gradient(135deg, rgba(255,255,102,0.2) 0%, rgba(255,255,102,0.5) 100%);
+     color: rgba(255, 255, 102, 0.9);
+     border: 2px solid rgba(255, 255, 102, 0.6);
+     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+     margin: 0.5rem 0;
+   }
+   ```
+
+### Debug and Validation System
+
+1. **Component Loading Verification**
+   ```javascript
+   // Add to component initialization to identify which version is loading
+   useEffect(() => {
+     console.log(`[DEBUG] Loading ${componentName} from path: ${__filename}`);
+     console.log(`[DEBUG] Props received:`, props);
+   }, []);
+   ```
+
+2. **Data Structure Validation**
+   ```javascript
+   // Validate result structure before rendering
+   useEffect(() => {
+     if (results) {
+       console.log('Results structure validation:');
+       console.log('- Executive section:', !!results.executive);
+       console.log('- Readiness section:', !!results.readiness);
+       console.log('- Opportunities section:', !!results.opportunities);
+       console.log('- Roadmap section:', !!results.roadmap);
+       
+       // Deep validation of critical structures
+       if (results.readiness && !results.readiness.dimensions) {
+         console.error('Missing readiness.dimensions array!');
+       }
+       
+       if (results.opportunities && !results.opportunities.immediate) {
+         console.error('Missing opportunities.immediate object!');
+       }
+     }
+   }, [results]);
+   ```
+
+## Current System Status & Future Extensibility
+
+### Implemented Assessment Types
+
+- **Agency Vulnerability Assessment** (Complete)
+  - Full question flow with service selection
+  - Scoring engine with multi-dimensional analysis
+  - Enhanced results view with modular CSS styling
+  - Complete recommendations and opportunity analysis
+
+- **Inhouse Marketing Assessment** (Complete)
+  - Specialized questions for internal marketing teams
+  - Custom scoring model based on team size/capabilities
+  - Results view with targeted recommendations
+
+### Component Architecture Status
+
+- **Core Architecture**
+  - ✅ Centralized state management in AssessmentFlow
+  - ✅ Consistent component patterns across assessments
+  - ✅ Modular CSS with centralized styles
+  - ✅ Data persistence via saveResponse/getResponse
+
+- **Component Refactoring**
+  - ✅ ServiceSelector - Refactored with proper props and error handling
+  - ✅ QualifyingQuestions - Migrated to centralized state management
+  - ✅ DynamicQuestions - Improved loading states and error handling
+  - ✅ EmailGate - Updated to consistent pattern
+  - ✅ ResultsDashboard - Enhanced with adaptResultsFormat
+
+### Scoring & Data Processing
+
+- **Data Flow**
+  - ✅ Email capture and validation
+  - ✅ Service selection with sector-specific options
+  - ✅ Question flow with conditional logic
+  - ✅ Score calculation with multi-dimensional weighting
+  - ✅ Results adaptation for UI presentation
+
+- **Recommendations Engine**
+  - ✅ Priority-based immediate recommendations
+  - ✅ Service-specific transformation suggestions
+  - ✅ Strategic long-term opportunities
+  - ✅ Valuation impact analysis
+
+### Reporting Capabilities
+
+- **Executive Summary**
+  - ✅ Overall readiness score with interpretation
+  - ✅ Key metrics with visual indicators
+  - ✅ Competitive positioning
+
+- **Detailed Analysis**
+  - ✅ Dimension-by-dimension capability assessment
+  - ✅ Service vulnerability analysis with risk levels
+  - ✅ Transformation paths for vulnerable services
+  - ✅ Roadmap with phased implementation approach
+
+- **Visual Design**
+  - ✅ Consistent card-based layouts
+  - ✅ Responsive grid systems
+  - ✅ Visual indicators for scores and risk levels
+  - ✅ Semantic section organization
+
+### Known Issues & Areas for Improvement
+
+- **Technical Debt**
+  - Directory structure has duplicated components in `/src/react-app`
+  - Some React Router warnings related to outdated patterns
+  - Limited test coverage for component rendering
+
+- **Future Enhancements**
+  - PDF export functionality for reports
+  - Email sharing of results
+  - Interactive comparison tools
+  - Integration with calendaring for consultation booking
+
+### Planned Future Assessments
 
 - E-commerce readiness
 - SaaS marketing maturity

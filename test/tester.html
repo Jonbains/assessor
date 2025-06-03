@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Report Tester</title>
+    
+    <!-- React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    
+    <!-- Babel standalone for JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #141414;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            width: 300px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+        
+        .panel-section {
+            margin-bottom: 25px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #ffff66;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 18px;
+            color: #ffff66;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ddd;
+        }
+        
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            background: #252525;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        select:focus, input:focus, button:focus {
+            outline: none;
+            border-color: #ffff66;
+        }
+        
+        button {
+            background: #ffff66;
+            color: #141414;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        
+        button:hover {
+            background: #ffffa0;
+            transform: translateY(-2px);
+        }
+        
+        .score-presets {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .preset-btn {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .preset-good {
+            background: rgba(51, 204, 119, 0.2);
+            color: #33cc77;
+            border: 1px solid rgba(51, 204, 119, 0.5);
+        }
+        
+        .preset-medium {
+            background: rgba(255, 204, 0, 0.2);
+            color: #ffcc00;
+            border: 1px solid rgba(255, 204, 0, 0.5);
+        }
+        
+        .preset-bad {
+            background: rgba(255, 102, 102, 0.2);
+            color: #ff6666;
+            border: 1px solid rgba(255, 102, 102, 0.5);
+        }
+        
+        .preset-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Preview Area */
+        .preview-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        /* Custom sliders */
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            color: #ffff66;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            margin: 10px 0;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffff66;
+            cursor: pointer;
+        }
+        
+        /* Status indicator */
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: rgba(51, 204, 119, 0.1);
+            color: #33cc77;
+        }
+        
+        .status.error {
+            background: rgba(255, 102, 102, 0.1);
+            color: #ff6666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h1>Assessment Report Tester</h1>
+            
+            <div class="panel-section">
+                <h2>Assessment Type</h2>
+                <select id="assessment-type">
+                    <option value="inhouse-marketing">Inhouse Marketing</option>
+                    <option value="agency-vulnerability">Agency Vulnerability</option>
+                    <!-- Add more assessment types as they become available -->
+                </select>
+            </div>
+            
+            <div class="panel-section">
+                <h2>Score Presets</h2>
+                <div class="score-presets">
+                    <div class="preset-btn preset-good" onclick="loadPreset('good')">Good</div>
+                    <div class="preset-btn preset-medium" onclick="loadPreset('medium')">Medium</div>
+                    <div class="preset-btn preset-bad" onclick="loadPreset('bad')">Bad</div>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h2>Custom Scores</h2>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Overall Score</span>
+                        <span class="slider-value" id="overall-score-value">75</span>
+                    </div>
+                    <input type="range" id="overall-score" min="0" max="100" value="75" oninput="updateSliderValue(this, 'overall-score-value')">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Strategy Score</span>
+                        <span class="slider-value" id="strategy-score-value">70</span>
+                    </div>
+                    <input type="range" id="strategy-score" min="0" max="100" value="70" oninput="updateSliderValue(this, 'strategy-score-value')">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Tools Score</span>
+                        <span class="slider-value" id="tools-score-value">65</span>
+                    </div>
+                    <input type="range" id="tools-score" min="0" max="100" value="65" oninput="updateSliderValue(this, 'tools-score-value')">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Skills Score</span>
+                        <span class="slider-value" id="skills-score-value">80</span>
+                    </div>
+                    <input type="range" id="skills-score" min="0" max="100" value="80" oninput="updateSliderValue(this, 'skills-score-value')">
+                </div>
+                
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Processes Score</span>
+                        <span class="slider-value" id="processes-score-value">60</span>
+                    </div>
+                    <input type="range" id="processes-score" min="0" max="100" value="60" oninput="updateSliderValue(this, 'processes-score-value')">
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h2>Company Profile</h2>
+                <label for="company-size">Company Size</label>
+                <select id="company-size">
+                    <option value="small">Small (1-10 employees)</option>
+                    <option value="medium" selected>Medium (11-50 employees)</option>
+                    <option value="large">Large (50+ employees)</option>
+                </select>
+                
+                <label for="company-position">Market Position</label>
+                <select id="company-position">
+                    <option value="ahead">Ahead of competitors</option>
+                    <option value="equal" selected>Equal to competitors</option>
+                    <option value="behind">Behind competitors</option>
+                </select>
+            </div>
+            
+            <div class="panel-section">
+                <h2>Selected Activities</h2>
+                <div>
+                    <input type="checkbox" id="activity-content" checked>
+                    <label for="activity-content">Content Marketing</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="activity-email" checked>
+                    <label for="activity-email">Email Marketing</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="activity-social">
+                    <label for="activity-social">Social Media</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="activity-analytics">
+                    <label for="activity-analytics">Analytics & Reporting</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="activity-ads">
+                    <label for="activity-ads">Digital Advertising</label>
+                </div>
+            </div>
+            
+            <button id="generate-report" onclick="generateReport()">Generate Report</button>
+            
+            <div id="status" class="status"></div>
+        </div>
+        
+        <div class="preview-area" id="report-container">
+            <div style="text-align: center; padding: 100px 0;">
+                <h2>Select options and generate a report</h2>
+                <p>Use the controls on the left to configure an assessment report</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <script type="text/babel">
+        // Component stubs for the report views
+        // These will be replaced with actual components once loaded
+        const PlaceholderView = ({ results }) => (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <h2>Loading Components...</h2>
+                <p>Please wait while we load the assessment components</p>
+                <pre style={{ textAlign: 'left', background: '#252525', padding: '15px', borderRadius: '8px', maxHeight: '300px', overflow: 'auto' }}>
+                    {JSON.stringify(results, null, 2)}
+                </pre>
+            </div>
+        );
+        
+        let InhouseResultsView = PlaceholderView;
+        let AgencyResultsView = PlaceholderView;
+        
+        // Update slider value display
+        function updateSliderValue(slider, valueId) {
+            document.getElementById(valueId).textContent = slider.value;
+        }
+        
+        // Load score presets
+        function loadPreset(preset) {
+            let overallScore, strategyScore, toolsScore, skillsScore, processesScore, position;
+            
+            switch(preset) {
+                case 'good':
+                    overallScore = 85;
+                    strategyScore = 80;
+                    toolsScore = 90;
+                    skillsScore = 85;
+                    processesScore = 75;
+                    position = 'ahead';
+                    break;
+                case 'medium':
+                    overallScore = 55;
+                    strategyScore = 60;
+                    toolsScore = 50;
+                    skillsScore = 55;
+                    processesScore = 45;
+                    position = 'equal';
+                    break;
+                case 'bad':
+                    overallScore = 25;
+                    strategyScore = 30;
+                    toolsScore = 20;
+                    skillsScore = 25;
+                    processesScore = 20;
+                    position = 'behind';
+                    break;
+            }
+            
+            // Update sliders
+            document.getElementById('overall-score').value = overallScore;
+            document.getElementById('overall-score-value').textContent = overallScore;
+            
+            document.getElementById('strategy-score').value = strategyScore;
+            document.getElementById('strategy-score-value').textContent = strategyScore;
+            
+            document.getElementById('tools-score').value = toolsScore;
+            document.getElementById('tools-score-value').textContent = toolsScore;
+            
+            document.getElementById('skills-score').value = skillsScore;
+            document.getElementById('skills-score-value').textContent = skillsScore;
+            
+            document.getElementById('processes-score').value = processesScore;
+            document.getElementById('processes-score-value').textContent = processesScore;
+            
+            // Update position
+            document.getElementById('company-position').value = position;
+        }
+        
+        // Generate synthetic data based on form inputs
+        function generateSyntheticData() {
+            const assessmentType = document.getElementById('assessment-type').value;
+            const overallScore = parseInt(document.getElementById('overall-score').value);
+            const strategyScore = parseInt(document.getElementById('strategy-score').value);
+            const toolsScore = parseInt(document.getElementById('tools-score').value);
+            const skillsScore = parseInt(document.getElementById('skills-score').value);
+            const processesScore = parseInt(document.getElementById('processes-score').value);
+            const companySize = document.getElementById('company-size').value;
+            const marketPosition = document.getElementById('company-position').value;
+            
+            // Get selected activities
+            const activities = [];
+            if (document.getElementById('activity-content').checked) activities.push('content_marketing');
+            if (document.getElementById('activity-email').checked) activities.push('email_marketing');
+            if (document.getElementById('activity-social').checked) activities.push('social_media');
+            if (document.getElementById('activity-analytics').checked) activities.push('analytics_reporting');
+            if (document.getElementById('activity-ads').checked) activities.push('digital_advertising');
+            
+            // Common structure for raw results
+            const rawResults = {
+                assessmentType: assessmentType,
+                overallScore: overallScore,
+                dimensions: {
+                    strategy: {
+                        score: strategyScore,
+                        title: "Strategy & Planning",
+                        description: "Your ability to plan and strategize AI adoption"
+                    },
+                    tools: {
+                        score: toolsScore,
+                        title: "Tools & Technology",
+                        description: "Your current AI toolset and technology stack"
+                    },
+                    skills: {
+                        score: skillsScore,
+                        title: "Skills & Knowledge",
+                        description: "Your team's AI expertise and capabilities"
+                    },
+                    processes: {
+                        score: processesScore,
+                        title: "Processes & Operations",
+                        description: "Your operational readiness for AI integration"
+                    }
+                },
+                metadata: {
+                    companySize: companySize,
+                    marketPosition: marketPosition,
+                    selectedActivities: activities,
+                    completedAt: new Date().toISOString()
+                }
+            };
+            
+            return rawResults;
+        }
+        
+        // Generate and render the report
+        function generateReport() {
+            try {
+                const statusEl = document.getElementById('status');
+                const assessmentType = document.getElementById('assessment-type').value;
+                const rawResults = generateSyntheticData();
+                
+                // Mock the getResponse function that's normally provided by AssessmentFlow
+                const getResponse = (key) => {
+                    if (key === 'metadata') {
+                        return rawResults.metadata;
+                    }
+                    return null;
+                };
+                
+                // Process the results using the appropriate adapter
+                let ResultsView, processedResults;
+                
+                // Check if we're trying to use the inhouse marketing assessment
+                if (assessmentType === 'inhouse-marketing') {
+                    // Check if the adapter class exists
+                    if (typeof window.InhouseMarketingResultsAdapter === 'undefined') {
+                        // Fallback to a direct implementation
+                        console.log('InhouseMarketingResultsAdapter not found, using direct implementation');
+                        // Create a simplified adapter that mimics the real one
+                        window.InhouseMarketingResultsAdapter = function() {
+                            this.adaptResults = function(results, getResponse) {
+                                return {
+                                    ...results,
+                                    impact: createDefaultImpactData(results.overallScore),
+                                    opportunities: createDefaultOpportunities(results.overallScore),
+                                    nextSteps: createDefaultNextSteps(results.overallScore, results.metadata.marketPosition)
+                                };
+                            };
+                        };
+                    }
+                    
+                    const adapter = new window.InhouseMarketingResultsAdapter();
+                    processedResults = adapter.adaptResults(rawResults, getResponse);
+                    ResultsView = window.InhouseResultsView || InhouseResultsView;
+                } 
+                // Check if we're trying to use the agency vulnerability assessment
+                else if (assessmentType === 'agency-vulnerability') {
+                    // Check if the adapter class exists
+                    if (typeof window.AgencyVulnerabilityResultsAdapter === 'undefined') {
+                        // Fallback to a direct implementation
+                        console.log('AgencyVulnerabilityResultsAdapter not found, using direct implementation');
+                        // Create a simplified adapter that mimics the real one
+                        window.AgencyVulnerabilityResultsAdapter = function() {
+                            this.adaptResults = function(results, getResponse) {
+                                return {
+                                    ...results,
+                                    actions: {
+                                        items: createDefaultActions(results.overallScore)
+                                    }
+                                };
+                            };
+                        };
+                    }
+                    
+                    const adapter = new window.AgencyVulnerabilityResultsAdapter();
+                    processedResults = adapter.adaptResults(rawResults, getResponse);
+                    ResultsView = window.AgencyResultsView || AgencyResultsView;
+                }
+                
+                // Render the results view
+                const reactContainer = document.getElementById('report-container');
+                reactContainer.innerHTML = ''; // Clear previous content
+                
+                try {
+                    // Create props for the component
+                    const props = {
+                        results: processedResults,
+                        onBack: () => console.log('Back clicked'),
+                        onComplete: () => console.log('Complete clicked')
+                    };
+                    
+                    // Use React.createElement instead of JSX
+                    ReactDOM.render(
+                        React.createElement(ResultsView, props),
+                        reactContainer
+                    );
+                } catch (renderError) {
+                    console.error('Error rendering component:', renderError);
+                    
+                    // Fallback to showing JSON
+                    reactContainer.innerHTML = `
+                        <div style="padding: 20px; background: #252525; border-radius: 8px;">
+                            <h3 style="color: #ff6666;">Error Rendering Component</h3>
+                            <p>${renderError.message}</p>
+                            <pre style="background: #1a1a1a; padding: 15px; border-radius: 4px; overflow: auto; max-height: 500px;">${JSON.stringify(processedResults, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+                
+                statusEl.className = 'status success';
+                statusEl.textContent = 'Report generated successfully!';
+            } catch (error) {
+                console.error('Error generating report:', error);
+                const statusEl = document.getElementById('status');
+                statusEl.className = 'status error';
+                statusEl.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Dynamically load the necessary modules
+        async function loadScripts() {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status';
+            statusEl.textContent = 'Loading scripts...';
+            
+            try {
+                // Create a module loader for our components
+                const loader = document.createElement('script');
+                loader.src = './components-loader.js';
+                document.body.appendChild(loader);
+                
+                // Wait for the loader to complete
+                await new Promise((resolve, reject) => {
+                    loader.onload = resolve;
+                    loader.onerror = () => reject(new Error('Failed to load components loader'));
+                    
+                    // Set a timeout in case the script never loads or errors
+                    setTimeout(() => {
+                        resolve();
+                    }, 5000);
+                });
+                
+                // Check if components were loaded correctly
+                setTimeout(() => {
+                    // Try to get the component constructors from the window object
+                    if (window.InhouseMarketingResultsAdapter && window.InhouseResultsView) {
+                        // Update our module references
+                        InhouseResultsView = window.InhouseResultsView;
+                        AgencyResultsView = window.AgencyResultsView || PlaceholderView;
+                        
+                        statusEl.className = 'status success';
+                        statusEl.textContent = 'Components loaded successfully! Ready to generate reports.';
+                    } else {
+                        statusEl.className = 'status error';
+                        statusEl.textContent = 'Components failed to load correctly. Check console for errors.';
+                    }
+                }, 1000);
+            } catch (error) {
+                console.error('Error loading scripts:', error);
+                statusEl.className = 'status error';
+                statusEl.textContent = `Error loading scripts: ${error.message}`;
+            }
+        }
+        
+        // Helper functions to generate default test data
+        function createDefaultImpactData(score) {
+            return {
+                currentState: {
+                    title: "Current State",
+                    items: [
+                        {
+                            title: "Marketing Efficiency",
+                            description: "Your current marketing operations efficiency",
+                            value: `${Math.max(10, Math.round(score * 0.5))}%`,
+                            status: "warning"
+                        },
+                        {
+                            title: "Team Capacity",
+                            description: "Your team's available bandwidth for strategic work",
+                            value: `${Math.max(15, Math.round(score * 0.45))}%`,
+                            status: "warning"
+                        },
+                        {
+                            title: "Market Reach",
+                            description: "Your ability to target and engage your audience",
+                            value: `${Math.max(20, Math.round(score * 0.6))}%`,
+                            status: "warning"
+                        }
+                    ]
+                },
+                futureState: {
+                    title: "AI-Enhanced Future State",
+                    items: [
+                        {
+                            title: "Marketing Efficiency",
+                            description: "Projected operations efficiency with AI",
+                            value: `${Math.min(95, Math.round(score * 0.5 + 40))}%`,
+                            status: "success"
+                        },
+                        {
+                            title: "Team Capacity",
+                            description: "Projected strategic bandwidth with AI",
+                            value: `${Math.min(90, Math.round(score * 0.45 + 35))}%`,
+                            status: "success"
+                        },
+                        {
+                            title: "Market Reach",
+                            description: "Projected audience engagement with AI",
+                            value: `${Math.min(85, Math.round(score * 0.6 + 30))}%`,
+                            status: "success"
+                        }
+                    ]
+                },
+                improvements: {
+                    title: "Expected Improvements",
+                    items: [
+                        {
+                            title: "Efficiency Gain",
+                            description: "Increase in operational efficiency",
+                            before: `${Math.max(10, Math.round(score * 0.5))}%`,
+                            after: `${Math.min(95, Math.round(score * 0.5 + 40))}%`,
+                            improvement: `${Math.round(40 + score * 0.3)}%`
+                        },
+                        {
+                            title: "Capacity Increase",
+                            description: "Growth in available team bandwidth",
+                            before: `${Math.max(15, Math.round(score * 0.45))}%`,
+                            after: `${Math.min(90, Math.round(score * 0.45 + 35))}%`,
+                            improvement: `${Math.round(35 + score * 0.25)}%`
+                        },
+                        {
+                            title: "Reach Expansion",
+                            description: "Growth in audience targeting capability",
+                            before: `${Math.max(20, Math.round(score * 0.6))}%`,
+                            after: `${Math.min(85, Math.round(score * 0.6 + 30))}%`,
+                            improvement: `${Math.round(30 + score * 0.2)}%`
+                        }
+                    ]
+                }
+            };
+        }
+        
+        function createDefaultOpportunities(score) {
+            // Quick wins are easier for low scores, more advanced for high scores
+            const quickWins = [];
+            
+            // Basic quick wins for everyone
+            quickWins.push({
+                title: "AI Assessment Briefing",
+                description: "Schedule a 30-minute team briefing on your assessment results",
+                impact: "high",
+                effort: "low"
+            });
+            
+            quickWins.push({
+                title: "AI Tools Inventory",
+                description: "Catalog current tools with AI capabilities and identify gaps",
+                impact: "medium",
+                effort: "low"
+            });
+            
+            // Add score-based quick wins
+            if (score < 50) {
+                quickWins.push({
+                    title: "Basic AI Training",
+                    description: "Arrange intro-level AI marketing training for your team",
+                    impact: "high",
+                    effort: "medium"
+                });
+            } else {
+                quickWins.push({
+                    title: "AI Prompting Workshop",
+                    description: "Conduct an advanced AI prompting session for content creation",
+                    impact: "high",
+                    effort: "medium"
+                });
+            }
+            
+            // Short term actions (30-90 days)
+            const shortTermActions = [
+                {
+                    title: "Content Automation Plan",
+                    description: "Develop a roadmap for automating repetitive content creation tasks",
+                    impact: "high",
+                    effort: "medium"
+                },
+                {
+                    title: "AI Skills Assessment",
+                    description: "Evaluate team members' AI proficiency and identify training needs",
+                    impact: "medium",
+                    effort: "medium"
+                }
+            ];
+            
+            // Add score-based short term actions
+            if (score < 40) {
+                shortTermActions.push({
+                    title: "Pilot Project",
+                    description: "Launch a simple AI marketing automation pilot project",
+                    impact: "medium",
+                    effort: "medium"
+                });
+            } else if (score < 70) {
+                shortTermActions.push({
+                    title: "Workflow Redesign",
+                    description: "Redesign one key marketing workflow to incorporate AI",
+                    impact: "high",
+                    effort: "medium"
+                });
+            } else {
+                shortTermActions.push({
+                    title: "Advanced Integration",
+                    description: "Connect AI tools to your existing martech stack",
+                    impact: "high",
+                    effort: "high"
+                });
+            }
+            
+            // Strategic initiatives
+            const strategicActions = [
+                {
+                    title: "AI Marketing Roadmap",
+                    description: "Develop a 12-month strategic plan for AI transformation",
+                    impact: "high",
+                    effort: "high"
+                }
+            ];
+            
+            if (score < 50) {
+                strategicActions.push({
+                    title: "Foundation Building",
+                    description: "Establish the data and technology foundation for AI marketing",
+                    impact: "high",
+                    effort: "high"
+                });
+            } else {
+                strategicActions.push({
+                    title: "Advanced AI Strategy",
+                    description: "Develop predictive modeling and generative AI content strategy",
+                    impact: "high",
+                    effort: "high"
+                });
+            }
+            
+            return {
+                immediate: {
+                    items: quickWins
+                },
+                shortTerm: {
+                    items: shortTermActions
+                },
+                strategic: {
+                    items: strategicActions
+                }
+            };
+        }
+        
+        function createDefaultNextSteps(score, position) {
+            // Urgency message based on score and position
+            let urgency = {
+                level: "medium",
+                message: "Your organization should begin implementing AI marketing tools in the next 3-6 months to maintain competitive parity."
+            };
+            
+            if (score < 30) {
+                urgency = {
+                    level: "critical",
+                    message: "Your organization is at significant risk of falling behind. Immediate action is required to begin AI adoption in your marketing operations."
+                };
+            } else if (score < 50) {
+                urgency = {
+                    level: "high",
+                    message: "Your organization needs to accelerate AI adoption within the next 1-3 months to avoid competitive disadvantage."
+                };
+            } else if (position === "behind") {
+                urgency = {
+                    level: "medium",
+                    message: "While you've made good progress, your competitors are moving faster. Focus on strategic AI implementation in the next quarter."
+                };
+            } else if (score > 75) {
+                urgency = {
+                    level: "opportunity",
+                    message: "Your organization is well-positioned to leverage advanced AI marketing capabilities for competitive advantage."
+                };
+            }
+            
+            return {
+                urgency: urgency,
+                cta: {
+                    title: "Schedule Your AI Strategy Session",
+                    description: "Book a 45-minute consultation to review your assessment and create an actionable implementation plan.",
+                    buttonText: "Book Strategy Session"
+                }
+            };
+        }
+        
+        function createDefaultActions(score) {
+            const actions = [];
+            
+            // Basic actions for all scores
+            actions.push({
+                title: "Client Diversification Strategy",
+                description: "Develop a plan to reduce revenue concentration and diversify your client portfolio",
+                impact: "high",
+                effort: "medium"
+            });
+            
+            actions.push({
+                title: "Value-Based Pricing Model",
+                description: "Transition from hourly billing to outcome-based pricing for key services",
+                impact: "high",
+                effort: "medium"
+            });
+            
+            // Score-based actions
+            if (score < 40) {
+                actions.push({
+                    title: "Emergency Cash Flow Plan",
+                    description: "Create a 90-day cash conservation and revenue acceleration plan",
+                    impact: "high",
+                    effort: "low"
+                });
+                
+                actions.push({
+                    title: "Client Contract Review",
+                    description: "Audit all client contracts to identify at-risk revenue and upsell opportunities",
+                    impact: "high",
+                    effort: "medium"
+                });
+            } else if (score < 70) {
+                actions.push({
+                    title: "Productized Service Launch",
+                    description: "Convert one high-demand service into a standardized product with fixed pricing",
+                    impact: "medium",
+                    effort: "medium"
+                });
+                
+                actions.push({
+                    title: "Strategic Partnership Program",
+                    description: "Establish 2-3 strategic partnerships to expand service offerings without adding overhead",
+                    impact: "medium",
+                    effort: "high"
+                });
+            } else {
+                actions.push({
+                    title: "Recurring Revenue Acceleration",
+                    description: "Increase MRR component of your business by 25% through retainer optimization",
+                    impact: "high",
+                    effort: "medium"
+                });
+                
+                actions.push({
+                    title: "AI Service Transformation",
+                    description: "Develop AI-enhanced service offerings to increase margins and differentiate from competitors",
+                    impact: "high",
+                    effort: "high"
+                });
+            }
+            
+            return actions;
+        }
+        
+        // Load scripts when the page loads
+        window.onload = loadScripts;
+    </script>
+</body>
+</html>
