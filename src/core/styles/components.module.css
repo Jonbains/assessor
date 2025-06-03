@@ -2277,3 +2277,180 @@
   .benchmarkBehind {
     color: #dc3545;
   }
+/* Visualizations.module.css */
+
+/* Base container styles */
+.matrixContainer,
+.radarContainer,
+.waterfallContainer,
+.calculatorContainer,
+.velocityContainer,
+.timelineContainer,
+.spiderContainer,
+.roiContainer {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1.5rem 0;
+}
+
+/* Matrix styles */
+.matrixGrid {
+  position: relative;
+  aspect-ratio: 1;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.matrixSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.quadrantLabel {
+  fill: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+}
+
+.positionDot {
+  fill: #ffff66;
+  cursor: pointer;
+  transition: r 0.2s ease;
+}
+
+.positionDot:hover {
+  r: 7;
+}
+
+/* Radar chart styles */
+.radarSvg {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  display: block;
+}
+
+.serviceLabel {
+  fill: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tooltipText {
+  fill: #fff;
+  font-size: 11px;
+}
+
+/* Waterfall styles */
+.waterfallChart {
+  overflow-x: auto;
+  margin: 2rem 0;
+}
+
+.waterfallBar {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.waterfallBar:hover {
+  opacity: 0.8;
+}
+
+.barValue {
+  fill: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.barLabel {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+/* Calculator styles */
+.metricSelector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.metricButton {
+  flex: 1;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.metricButton.active {
+  background: rgba(255, 255, 102, 0.2);
+  border-color: #ffff66;
+}
+
+.bigNumber {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #ffff66;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+/* Priority matrix */
+.priorityDot {
+  cursor: pointer;
+  transition: r 0.2s ease;
+}
+
+.priorityDot:hover {
+  r: 6;
+}
+
+.quickWinsList {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(102, 255, 102, 0.1);
+  border-radius: 8px;
+}
+
+.quickWinItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quickWinItem:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: translateX(4px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .matrixContainer,
+  .radarContainer,
+  .waterfallContainer,
+  .calculatorContainer,
+  .velocityContainer,
+  .timelineContainer,
+  .spiderContainer,
+  .roiContainer {
+    padding: 1rem;
+  }
+  
+  .bigNumber {
+    font-size: 3rem;
+  }
+  
+  .metricSelector {
+    flex-direction: column;
+  }
+}

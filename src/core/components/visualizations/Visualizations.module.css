@@ -1,0 +1,607 @@
+/* Visualization Components Styling */
+
+/* Shared styles */
+.visualizationContainer {
+  background: #1e1e2f;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #fff;
+}
+
+.visualizationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.visualizationHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Competitive Position Matrix */
+.matrixContainer {
+  composes: visualizationContainer;
+  max-width: 600px;
+}
+
+.matrixHeader {
+  composes: visualizationHeader;
+}
+
+.industryTag {
+  background: rgba(255, 255, 102, 0.2);
+  color: #ffff66;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.matrixGrid {
+  position: relative;
+  margin: 1rem 0;
+}
+
+.matrixSvg {
+  width: 100%;
+  height: auto;
+  background: rgba(30, 30, 50, 0.6);
+  border-radius: 4px;
+}
+
+.quadrantLabel {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+  text-anchor: middle;
+}
+
+.positionDot {
+  fill: #ffff66;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 1;
+  cursor: pointer;
+  transition: r 0.2s;
+}
+
+.positionDot:hover {
+  r: 6;
+}
+
+.detailText {
+  fill: white;
+  font-size: 8px;
+  text-anchor: middle;
+}
+
+.xAxisLabel,
+.yAxisLabel {
+  position: absolute;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.xAxisLabel {
+  bottom: -5px;
+  right: 10px;
+}
+
+.yAxisLabel {
+  transform: rotate(-90deg);
+  transform-origin: top left;
+  top: 50%;
+  left: -5px;
+}
+
+.matrixMetrics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.metricBox {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 0.75rem;
+  width: 32%;
+}
+
+.metricLabel {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.25rem;
+}
+
+.metricValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.risk {
+  color: #ff6666;
+}
+
+/* Service Vulnerability Radar */
+.radarContainer {
+  composes: visualizationContainer;
+  max-width: 650px;
+}
+
+.radarSvg {
+  width: 100%;
+  height: auto;
+  max-height: 350px;
+}
+
+.radarAxis {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+}
+
+.radarLabel {
+  fill: rgba(255, 255, 255, 0.8);
+  font-size: 10px;
+}
+
+.radarPolygon {
+  fill: rgba(102, 255, 102, 0.2);
+  stroke: #66ff66;
+  stroke-width: 2;
+}
+
+.radarBenchmark {
+  fill: rgba(102, 102, 255, 0.2);
+  stroke: #6666ff;
+  stroke-width: 1;
+  stroke-dasharray: 3,2;
+}
+
+.serviceTooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Valuation Waterfall */
+.waterfallContainer {
+  composes: visualizationContainer;
+  max-width: 800px;
+}
+
+.waterfallChart {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.valuationLabel {
+  fill: white;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.valueText {
+  fill: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+.waterfallSummary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+/* Efficiency Calculator */
+.efficiencyContainer {
+  composes: visualizationContainer;
+  max-width: 600px;
+}
+
+.efficiencyGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.efficiencyMetric {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.efficiencyValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #66ff66;
+}
+
+.efficiencyLabel {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.breakdownTable {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+}
+
+.breakdownTable th,
+.breakdownTable td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.breakdownTable th {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Priority Matrix */
+.priorityContainer {
+  composes: visualizationContainer;
+  max-width: 600px;
+}
+
+.prioritySvg {
+  width: 100%;
+  height: auto;
+  background: rgba(30, 30, 50, 0.6);
+  border-radius: 4px;
+}
+
+.priorityQuadrantLabel {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.priorityItem {
+  cursor: pointer;
+  transition: r 0.2s;
+}
+
+.priorityItem:hover {
+  r: 8;
+}
+
+.priorityItemLabel {
+  fill: white;
+  font-size: 9px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.priorityLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+/* Transformation Velocity */
+.velocityContainer {
+  composes: visualizationContainer;
+  max-width: 600px;
+}
+
+.velocityChart {
+  position: relative;
+  margin: 1rem 0;
+}
+
+.velocityLabel {
+  fill: white;
+  font-size: 10px;
+}
+
+.speedometerNeedle {
+  fill: #ffff66;
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 1;
+}
+
+.velocityMetrics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.velocityMetric {
+  text-align: center;
+  width: 30%;
+}
+
+.velocityValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.velocityName {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Risk Evolution Timeline */
+.timelineContainer {
+  composes: visualizationContainer;
+  max-width: 800px;
+}
+
+.timelineSvg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.timelineLine {
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 2;
+}
+
+.timelinePoint {
+  fill: #66ff66;
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 1;
+}
+
+.timelinePoint.risk {
+  fill: #ff6666;
+}
+
+.timelineLabel {
+  fill: white;
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+/* Capability Spider Chart */
+.spiderContainer {
+  composes: visualizationContainer;
+  max-width: 600px;
+}
+
+.spiderSvg {
+  width: 100%;
+  height: auto;
+  max-height: 350px;
+}
+
+.spiderAxis {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+}
+
+.spiderCircle {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1;
+}
+
+.spiderLabel {
+  fill: rgba(255, 255, 255, 0.8);
+  font-size: 10px;
+}
+
+.spiderPolygon {
+  fill: rgba(102, 255, 102, 0.2);
+  stroke: #66ff66;
+  stroke-width: 2;
+}
+
+.spiderBenchmark {
+  fill: rgba(102, 102, 255, 0.2);
+  stroke: #6666ff;
+  stroke-width: 1;
+  stroke-dasharray: 3,2;
+}
+
+.spiderLegend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  margin-right: 0.5rem;
+}
+
+/* Recommendation Card */
+.recContainer {
+  background: rgba(30, 30, 50, 0.8);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.recContainer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.recContainer.highPriority {
+  border-left-color: #ff6666;
+}
+
+.recContainer.mediumPriority {
+  border-left-color: #ffff66;
+}
+
+.recContainer.lowPriority {
+  border-left-color: #66ff66;
+}
+
+.recTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.recDescription {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+}
+
+.recTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.recTag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.recTag.impact {
+  color: #66ff66;
+}
+
+.recTag.effort {
+  color: #ffff66;
+}
+
+.recTag.timeframe {
+  color: #6666ff;
+}
+
+.recTag.category {
+  color: #ff66ff;
+}
+
+.expandButton,
+.selectButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.expandButton:hover,
+.selectButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.selectButton {
+  margin-top: 0.75rem;
+  background: rgba(102, 255, 102, 0.2);
+}
+
+.selectButton:hover {
+  background: rgba(102, 255, 102, 0.3);
+}
+
+.expandedMetrics {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detailMetric {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.detailLabel {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ROI Projection */
+.roiContainer {
+  composes: visualizationContainer;
+  max-width: 800px;
+}
+
+.roiChart {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.monthLabel {
+  fill: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+}
+
+.valueLabel {
+  fill: white;
+  font-size: 10px;
+  text-anchor: end;
+}
+
+.roiSummary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.roiMetric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.roiMetric span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.25rem;
+}
+
+.roiMetric strong {
+  font-size: 1.1rem;
+}

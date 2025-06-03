@@ -2173,6 +2173,78 @@ REACT_APP_SENDINBLUE_API_KEY=
      margin: 0.5rem 0;
    }
    ```
+    
+Chart Example
+
+      // In your ResultsView component
+      import { 
+      CompetitivePositionMatrix,
+      ServiceVulnerabilityRadar,
+      ValuationWaterfall,
+      EfficiencyCalculator,
+      PriorityMatrix 
+      } from '../../../core/components/Visualizations';
+      
+      const AgencyResultsView = ({ results }) => {
+      // Extract data from adapted results
+      const { executive, readiness, opportunities, impact } = results;
+      
+      // Prepare data for visualizations
+      const valuationSteps = [
+      { label: 'Recurring Rev', impact: 0.5, action: 'Convert to 40%+ recurring' },
+      { label: 'AI Capability', impact: 1.0, action: 'Build AI expertise' },
+      { label: 'Client Risk', impact: 0.5, action: 'Diversify to <20% per client' }
+      ];
+      
+      const priorityItems = opportunities.immediate.items.map(item => ({
+      ...item,
+      impact: item.impact === 'Critical' ? 9 : item.impact === 'High' ? 7 : 5,
+      effort: item.effort === 'Low' ? 2 : item.effort === 'Medium' ? 5 : 8,
+      category: 'operational'
+      }));
+      
+      return (
+      <div className={styles.resultsContainer}>
+      {/* Competitive Position */}
+      <CompetitivePositionMatrix
+      score={executive.keyMetrics.readinessScore.value}
+      percentile={90} // Calculate from score
+      marketPosition={executive.headline}
+      timeAdvantage={executive.keyMetrics.transformationUrgency.interpretation}
+      revenueAtRisk={readiness.vulnerabilityMetrics?.atriskRevenue || 30}
+      />
+      
+      {/* Service Analysis */}
+      <ServiceVulnerabilityRadar
+      services={readiness.serviceReadiness}
+      showReadiness={true}
+      />
+      
+      {/* Valuation Impact */}
+      <ValuationWaterfall
+      currentMultiple={parseFloat(impact.current.multiple)}
+      steps={valuationSteps}
+      potentialMultiple={parseFloat(impact.potential.multiple)}
+      />
+      
+      {/* Efficiency Gains */}
+      <EfficiencyCalculator
+      hoursSaved={executive.keyMetrics.efficiencyGain.interpretation}
+      costSavings="£240k"
+      headcountEquivalent="3.2"
+      revenueOpportunity="£450k"
+      />
+      
+      {/* Priorities */}
+      <PriorityMatrix
+      items={priorityItems}
+      onItemClick={(item) => console.log('Selected:', item)}
+      />
+      </div>
+      );
+      };
+      
+      
 
 ### Debug and Validation System
 
