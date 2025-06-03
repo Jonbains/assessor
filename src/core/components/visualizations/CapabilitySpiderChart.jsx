@@ -1,6 +1,24 @@
 import React, { useState } from 'react';
 import styles from './Visualizations.module.css';
 
+// Helper function to calculate point coordinates on the radar chart
+// Defined outside component to be available for export
+const getPointHelper = (value, i, dimensions) => {
+  const numDimensions = dimensions.length;
+  const angleSlice = (Math.PI * 2) / numDimensions;
+  const radius = 120;
+  const center = { x: 150, y: 150 };
+  
+  // Scale the value to the radius
+  const scaledValue = (value / 100) * radius;
+  
+  // Calculate x,y coordinates
+  const x = center.x + scaledValue * Math.cos(angleSlice * i - Math.PI / 2);
+  const y = center.y + scaledValue * Math.sin(angleSlice * i - Math.PI / 2);
+  
+  return { x, y };
+};
+
 export const CapabilitySpiderChart = ({ 
   dimensions,
   showBenchmark = true,
@@ -8,12 +26,15 @@ export const CapabilitySpiderChart = ({
 }) => {
   const [hoveredDimension, setHoveredDimension] = useState(null);
   
+  // Component-scoped function using the helper
+  const getPoint = (value, i) => getPointHelper(value, i, dimensions);
+  
   // Calculate points for spider chart
   const angleStep = (Math.PI * 2) / dimensions.length;
   const center = { x: 150, y: 150 };
   const radius = 120;
   
-  const getPoint = (value, index) => {
+  const getPoint2 = (value, index) => {
     const angle = index * angleStep - Math.PI / 2;
     const r = (value / 100) * radius;
     return {
@@ -181,4 +202,4 @@ export const CapabilitySpiderChart = ({
 };
 
 // Helper method for other components
-CapabilitySpiderChart.getPoint = getPoint;
+CapabilitySpiderChart.getPoint = getPointHelper;

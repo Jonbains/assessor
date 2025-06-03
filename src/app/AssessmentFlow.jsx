@@ -21,7 +21,22 @@ const getResultsView = (assessmentType) => {
       return null;
     }
     
-    // Log the exact path we're trying to load
+    // Special case for agency-vulnerability - use the enhanced toggleable view
+    if (assessmentType === 'agency-vulnerability') {
+      console.log('Loading ToggleableResultsView for agency-vulnerability assessment');
+      try {
+        const ToggleableViewModule = require('../assessments/agency-vulnerability/ToggleableResultsView.jsx');
+        if (ToggleableViewModule && ToggleableViewModule.default) {
+          console.log('Enhanced ToggleableResultsView successfully loaded');
+          return ToggleableViewModule.default;
+        }
+      } catch (enhancedError) {
+        console.error('Failed to load enhanced view, falling back to standard view:', enhancedError);
+        // Continue to standard loading if enhanced view fails
+      }
+    }
+    
+    // Standard path for all other assessment types
     const viewPath = `../assessments/${assessmentType}/ResultsView.jsx`;
     console.log(`Attempting to require: ${viewPath}`);
     

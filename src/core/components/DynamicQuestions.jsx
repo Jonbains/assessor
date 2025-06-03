@@ -1,255 +1,293 @@
-import React, { useState, useEffect } from 'react';
-import { ProgressBar } from './ProgressBar';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import QuestionCard from './QuestionCard';
 import Navigation from './Navigation';
 import styles from '../styles/components.module.css';
 
-// Debug helper function
-const debugLog = (message, data) => {
-    console.log(`DEBUG - ${message}:`, data);
-};
+const DEBUG_MODE = process.env.NODE_ENV === 'development';
 
-const DynamicQuestions = ({ 
-    assessmentType, 
-    saveResponse, 
-    getResponse, 
+const DynamicQuestions = ({
+    assessmentType,
+    saveResponse,
+    getResponse,
     getContext,
-    setContext, 
     onComplete,
     onBack,
-    progress
+    progress = 50
 }) => {
     const [questions, setQuestions] = useState([]);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [allAnswers, setAllAnswers] = useState({});
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        loadQuestions();
-    }, [assessmentType]);
+    // Helper function for debugging - only logs in development mode
+    const debugLog = (...args) => {
+        if (DEBUG_MODE) {
+            console.log(...args);
+        }
+    };
 
+    // Load questions from appropriate JSON files based on assessment type
     const loadQuestions = async () => {
         try {
             setLoading(true);
-            debugLog('Loading questions for assessment type', assessmentType);
+            console.log(`🔍 [${assessmentType}] LOADING QUESTIONS - DEBUGGING ISSUE`);
             
             // Load core questions
             let coreQuestions = [];
+            let categoryQuestionCounts = {};
+            
+            // Enhanced function to recursively extract questions from any nested structure
+            const extractQuestionsFromNestedObject = (obj, path = '') => {
+                let extractedQuestions = [];
+                
+                // Base case: If it's an array, verify each item looks like a question (has id and options)
+                if (Array.isArray(obj)) {
+                    const validQuestions = obj.filter(item => {
+                        return item && typeof item === 'object' && item.id && 
+                               item.options && Array.isArray(item.options) && item.options.length > 0;
+                    });
+                    
+                    if (validQuestions.length > 0) {
+                        console.log(`🔢 Found ${validQuestions.length} valid questions at path: ${path}`);
+                        // Count questions per category for debugging
+                        if (path) {
+                            categoryQuestionCounts[path] = validQuestions.length;
+                        }
+                        return validQuestions;
+                    }
+                    return [];
+                }
+                
+                // If it's an object, traverse its properties
+                if (obj && typeof obj === 'object') {
+                    // First check if this object itself is a question
+                    if (obj.id && obj.options && Array.isArray(obj.options) && obj.options.length > 0) {
+                        console.log(`🔢 Found individual question with ID: ${obj.id}`);
+                        return [obj];
+                    }
+                    
+                    // Otherwise check all properties
+                    for (const key in obj) {
+                        const newPath = path ? `${path}.${key}` : key;
+                        
+                        if (Array.isArray(obj[key])) {
+                            // Check if this array contains question objects
+                            const questions = obj[key].filter(item => {
+                                return item && typeof item === 'object' && item.id && 
+                                      item.options && Array.isArray(item.options) && item.options.length > 0;
+                            });
+                            
+                            if (questions.length > 0) {
+                                console.log(`🔢 Found ${questions.length} valid questions in ${newPath}`);
+                                categoryQuestionCounts[newPath] = questions.length;
+                                extractedQuestions = extractedQuestions.concat(questions);
+                            }
+                        } else if (obj[key] && typeof obj[key] === 'object') {
+                            // Found a nested object, recursively extract questions from it
+                            const nestedQuestions = extractQuestionsFromNestedObject(obj[key], newPath);
+                            if (nestedQuestions.length > 0) {
+                                console.log(`➕ Adding ${nestedQuestions.length} questions from ${newPath}`);
+                                extractedQuestions = extractedQuestions.concat(nestedQuestions);
+                            }
+                        }
+                    }
+                }
+                
+                return extractedQuestions;
+            };
+            
+            // LOAD CORE QUESTIONS
             try {
                 const coreModule = await import(`../../assessments/${assessmentType}/questions.json`);
                 const coreData = coreModule.default || coreModule;
                 
-                debugLog(`Core questions data structure:`, Object.keys(coreData));
+                console.log(`📁 [${assessmentType}] Core questions data structure:`, Object.keys(coreData));
                 
-                // Check for proper structure - either direct array or nested in coreQuestions property
-                if (coreData && Array.isArray(coreData)) {
-                    // Direct array structure
-                    coreQuestions = coreData;
-                    debugLog(`Loaded core questions (direct array):`, coreQuestions.length);
-                } else if (coreData && coreData.coreQuestions && Array.isArray(coreData.coreQuestions)) {
-                    // Nested structure with coreQuestions property as array
-                    coreQuestions = coreData.coreQuestions;
-                    debugLog(`Loaded core questions from coreQuestions property:`, coreQuestions.length);
-                } else if (coreData && coreData.coreQuestions && typeof coreData.coreQuestions === 'object') {
-                    // Handle nested structure with coreQuestions as object containing category arrays
-                    // Combine all question arrays from different categories
-                    coreQuestions = [];
-                    for (const category in coreData.coreQuestions) {
-                        if (Array.isArray(coreData.coreQuestions[category])) {
-                            coreQuestions = coreQuestions.concat(coreData.coreQuestions[category]);
-                            debugLog(`Added questions from category ${category}:`, coreData.coreQuestions[category].length);
+                // Handle different possible structures - with extra debugging
+                console.log(`🔍 EXTRACTING ALL QUESTIONS - Detailed debugging`);
+                
+                // First dump the full structure to debug
+                console.log(`📊 Top-level structure keys:`, Object.keys(coreData));
+                
+                // Always attempt full recursive extraction to get ALL questions
+                let allExtractedQuestions = extractQuestionsFromNestedObject(coreData, 'root');
+                console.log(`📊 Full recursive extraction found ${allExtractedQuestions.length} questions`);
+                
+                // Fallback to individual structure handling if recursive extraction fails
+                if (allExtractedQuestions.length < 5) { // Likely something went wrong
+                    console.log(`⚠️ Few questions found in recursive search, trying specific structures...`);
+                    
+                    if (Array.isArray(coreData)) {
+                        // Direct array structure
+                        coreQuestions = coreData;
+                        console.log(`📊 Loaded ${coreQuestions.length} core questions (direct array)`);
+                    } else if (coreData.coreQuestions) {
+                        // Structure with coreQuestions property
+                        if (Array.isArray(coreData.coreQuestions)) {
+                            // coreQuestions is a direct array
+                            coreQuestions = coreData.coreQuestions;
+                            console.log(`📊 Loaded ${coreQuestions.length} core questions from coreQuestions array`);
+                        } else {
+                            // coreQuestions is an object with nested question arrays
+                            console.log(`🔍 Examining nested coreQuestions object with categories:`, Object.keys(coreData.coreQuestions));
+                            
+                            // Direct category processing (no recursion, just get all question arrays)
+                            let categoryQuestions = [];
+                            for (const category in coreData.coreQuestions) {
+                                if (Array.isArray(coreData.coreQuestions[category])) {
+                                    console.log(`📊 Category ${category} has ${coreData.coreQuestions[category].length} direct questions`);
+                                    categoryQuestions = [...categoryQuestions, ...coreData.coreQuestions[category]];
+                                } else if (typeof coreData.coreQuestions[category] === 'object') {
+                                    console.log(`🔍 Category ${category} has subcategories:`, Object.keys(coreData.coreQuestions[category]));
+                                    
+                                    // Process subcategories
+                                    for (const subCategory in coreData.coreQuestions[category]) {
+                                        if (Array.isArray(coreData.coreQuestions[category][subCategory])) {
+                                            console.log(`📊 SubCategory ${category}.${subCategory} has ${coreData.coreQuestions[category][subCategory].length} direct questions`);
+                                            categoryQuestions = [...categoryQuestions, ...coreData.coreQuestions[category][subCategory]];
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if (categoryQuestions.length > allExtractedQuestions.length) {
+                                coreQuestions = categoryQuestions;
+                                console.log(`📊 Using direct category processing: ${coreQuestions.length} questions`);
+                            } else {
+                                coreQuestions = allExtractedQuestions;
+                                console.log(`📊 Using recursive extraction: ${coreQuestions.length} questions`);
+                            }
                         }
+                    } else {
+                        // No recognizable structure, keep the recursively extracted questions
+                        coreQuestions = allExtractedQuestions;
+                        console.log(`📊 Using recursively extracted questions: ${coreQuestions.length}`);
                     }
-                    debugLog(`Combined questions from all categories:`, coreQuestions.length);
-                } else if (coreData && typeof coreData === 'object') {
-                    // Check for any array property that might contain questions
-                    for (const key in coreData) {
-                        if (Array.isArray(coreData[key])) {
-                            coreQuestions = coreData[key];
-                            debugLog(`Loaded core questions from ${key} property:`, coreQuestions.length);
-                            break;
-                        }
-                    }
+                } else {
+                    // Recursive extraction worked well, use its results
+                    coreQuestions = allExtractedQuestions;
+                    console.log(`📊 Using recursive extraction results: ${coreQuestions.length} questions`);
                 }
+                
+                // Verify by listing all question IDs
+                const coreQuestionIds = coreQuestions.map(q => q.id);
+                console.log(`🆔 Core question IDs (first 10):`, coreQuestionIds.slice(0, 10));
                 
                 if (coreQuestions.length === 0) {
-                    debugLog(`Could not find questions array in core data structure:`, Object.keys(coreData));
+                    console.error(`❌ Could not find questions array in core data structure:`, Object.keys(coreData));
                 }
             } catch (error) {
-                console.error(`Error loading core questions for ${assessmentType}:`, error);
+                console.error(`❌ Error loading core questions for ${assessmentType}:`, error);
             }
-            debugLog(`Loaded core questions`, coreQuestions.length);
             
-            // If we have selected services, load service-specific questions
+            console.log(`📊 Loaded ${coreQuestions.length} core questions`);
+            
+            // LOAD SERVICE QUESTIONS
             let serviceQuestions = [];
+            const selectedServices = getContext('selectedServices');
+            console.log('🏛 Selected services', selectedServices);
             
-            // Get selected services from context or responses with detailed logging
-            let selectedServices;
-            debugLog('Trying to get selectedServices', '');
             try {
-                selectedServices = getContext('selectedServices');
-                debugLog('Retrieved selectedServices from context', selectedServices);
-                
-                // If not in context, try to get from responses
-                if (!selectedServices || Object.keys(selectedServices).length === 0) {
-                    const servicesResponse = getResponse('selectedServices');
-                    if (servicesResponse) {
-                        selectedServices = servicesResponse;
-                        debugLog('Retrieved selectedServices from responses', selectedServices);
-                    }
-                }
-            } catch (err) {
-                console.error('Error getting selectedServices:', err);
-            }
-            
-            if (selectedServices && Object.keys(selectedServices).length > 0) {
+                // First try to load from service-questions.json
+                let serviceModule;
                 try {
-                    // Load service-specific questions - handle different file names based on assessment type
-                    let serviceData;
-                    
-                    try {
-                        // First try to load from service-questions.json (agency-vulnerability)
-                        debugLog(`Trying to load service questions from`, `../../assessments/${assessmentType}/service-questions.json`);
-                        const serviceModule = await import(`../../assessments/${assessmentType}/service-questions.json`);
-                        serviceData = serviceModule.default || serviceModule;
-                        debugLog('Loaded service questions from service-questions.json', Object.keys(serviceData));
-                    } catch (error) {
-                        // If that fails, try activity-questions.json (inhouse-marketing)
-                        debugLog(`First attempt failed, trying activity-questions.json`, error.message);
-                        try {
-                            debugLog(`Loading activity questions from`, `../../assessments/${assessmentType}/activity-questions.json`);
-                            const activityModule = await import(`../../assessments/${assessmentType}/activity-questions.json`);
-                            serviceData = activityModule.default || activityModule;
-                            debugLog('Loaded service questions from activity-questions.json', Object.keys(serviceData));
-                        } catch (activityError) {
-                            debugLog('Failed to load both service-questions.json and activity-questions.json', activityError.message);
-                            throw new Error(`Could not load questions for ${assessmentType}: ${activityError.message}`);
-                        }
-                    }
-                    
-                    // Check if the service data has the proper structure
-                    if (serviceData) {
-                        debugLog('Service questions data structure', Object.keys(serviceData));
-                        
-                        // Check if we have the expected nested structure with serviceQuestions or activityQuestions
-                        const serviceQuestionsData = serviceData.serviceQuestions || serviceData.activityQuestions || {};
-                        debugLog('Service/activity questions nested structure', Object.keys(serviceQuestionsData));
-                        
-                        // Threshold to determine if a service allocation is high enough to include questions
-                        // Lower threshold to 5% (0.05) to be more inclusive
-                        const ALLOCATION_THRESHOLD = 0.05;
-                        
-                        // Define mappings from selected service IDs to question categories
-                        // This helps match services that may have different naming
-                        const serviceIdMappings = {
-                            // Agency mappings
-                            'content_creation': ['content_creation', 'content_marketing'],
-                            'creative_design': ['content_creation', 'creative_design'],
-                            'digital_marketing': ['content_creation', 'digital_marketing'], 
-                            'seo_sem': ['content_creation', 'seo_sem'],
-                            'pr_comms': ['content_creation', 'strategy_consulting', 'pr_comms'],
-                            'web_development': ['strategy_consulting', 'web_development'],
-                            'social_media': ['content_creation', 'social_media'],
-                            
-                            // Inhouse mappings - direct matches to activity names
-                            'content_marketing': ['content_marketing'],
-                            'email_marketing': ['email_marketing'],
-                            'paid_advertising': ['paid_advertising'],
-                            'analytics_data': ['analytics_data'],
-                            'marketing_automation': ['marketing_automation']
-                        };
-                        
-                        debugLog('Service ID mappings available', serviceIdMappings);
-                        debugLog('Assessment type for question loading', assessmentType);
-                        
-                        // Add service questions based on selected services
-                        Object.keys(selectedServices).forEach(serviceId => {
-                            const allocation = selectedServices[serviceId];
-                            
-                            if (allocation >= ALLOCATION_THRESHOLD) {
-                                debugLog(`Service ${serviceId} allocation ${allocation} exceeds threshold ${ALLOCATION_THRESHOLD}`, '');
-                                
-                                // Get the mapped question categories for this service ID
-                                const mappedCategories = serviceIdMappings[serviceId] || [serviceId];
-                                debugLog(`Service ${serviceId} maps to categories`, mappedCategories);
-                                
-                                // Process each mapped category
-                                let foundQuestionsForService = false;
-                                
-                                mappedCategories.forEach(mappedId => {
-                                    // Direct matching in the serviceQuestions object
-                                    if (serviceQuestionsData[mappedId]) {
-                                        const serviceObj = serviceQuestionsData[mappedId];
-                                        // Handle both structures: service-questions has a nested 'questions' array,
-                                        // while activity-questions has direct arrays
-                                        if (serviceObj.questions && Array.isArray(serviceObj.questions)) {
-                                            // Handle service-questions.json structure
-                                            debugLog(`Found ${serviceObj.questions.length} questions for service ID ${mappedId} (nested structure)`, serviceObj);
-                                            serviceQuestions = [...serviceQuestions, ...serviceObj.questions];
-                                            foundQuestionsForService = true;
-                                        } else if (Array.isArray(serviceObj)) {
-                                            // Handle activity-questions.json structure where the questions are directly in an array
-                                            debugLog(`Found ${serviceObj.length} questions for service ID ${mappedId} (direct array)`, serviceObj);
-                                            serviceQuestions = [...serviceQuestions, ...serviceObj];
-                                            foundQuestionsForService = true;
-                                        } else {
-                                            debugLog(`Service ${mappedId} exists but has no questions array or is not an array itself`, serviceObj);
-                                        }
-                                    } else {
-                                        // Try matching by partial service name in keys
-                                        Object.keys(serviceQuestionsData).forEach(key => {
-                                            // Check if the key contains or matches the service ID
-                                            if (
-                                                key.toLowerCase().includes(mappedId.toLowerCase()) || 
-                                                mappedId.toLowerCase().includes(key.toLowerCase())
-                                            ) {
-                                                const serviceObj = serviceQuestionsData[key];
-                                                // Handle both structures: service-questions has a nested 'questions' array,
-                                                // while activity-questions has direct arrays
-                                                if (serviceObj.questions && Array.isArray(serviceObj.questions)) {
-                                                    // Handle service-questions.json structure
-                                                    debugLog(`Found ${serviceObj.questions.length} questions for similar key ${key} matching ${mappedId} (nested structure)`, '');
-                                                    serviceQuestions = [...serviceQuestions, ...serviceObj.questions];
-                                                    foundQuestionsForService = true;
-                                                } else if (Array.isArray(serviceObj)) {
-                                                    // Handle activity-questions.json structure
-                                                    debugLog(`Found ${serviceObj.length} questions for similar key ${key} matching ${mappedId} (direct array)`, '');
-                                                    serviceQuestions = [...serviceQuestions, ...serviceObj];
-                                                    foundQuestionsForService = true;
-                                                }
-                                            }
-                                        });
-                                    }
-                                });
-                                
-                                if (!foundQuestionsForService) {
-                                    debugLog(`Could not find any questions for service ${serviceId}`, '');
-                                }
-                            } else {
-                                debugLog(`Service ${serviceId} allocation ${allocation} below threshold ${ALLOCATION_THRESHOLD}`, '');
-                            }
-                        });
-                        
-                        // Additional debugging info
-                        debugLog('Services in question data', Object.keys(serviceQuestionsData));
-                        debugLog('Selected services', Object.keys(selectedServices));
-                    } else {
-                        debugLog('Service data is empty or invalid', serviceData);
-                    }
+                    serviceModule = await import(`../../assessments/${assessmentType}/service-questions.json`);
+                    console.log(`✅ Loaded service-questions.json for ${assessmentType}`);
                 } catch (error) {
-                    console.error('Error loading service questions:', error);
+                    console.log(`❌ No service-questions.json found for ${assessmentType}, trying activity-questions.json`);
+                    // Fallback to activity-questions.json if service-questions.json doesn't exist
+                    try {
+                        serviceModule = await import(`../../assessments/${assessmentType}/activity-questions.json`);
+                        console.log(`✅ Loaded activity-questions.json as fallback`);
+                    } catch (fallbackError) {
+                        console.error(`❌ Could not load any service questions:`, fallbackError);
+                        serviceModule = { default: { serviceQuestions: {} } };
+                    }
                 }
-            } else {
-                console.warn('No services selected or invalid selectedServices format:', selectedServices);
+                
+                const serviceData = serviceModule.default || serviceModule;
+                const serviceQuestionsData = serviceData.serviceQuestions || {};
+                console.log('📁 Service questions data structure', Object.keys(serviceData));
+                
+                // Handle service ID mappings (for matching with different naming conventions)
+                const serviceIdMappings = {
+                    'social': ['social', 'social-media', 'socialMedia'],
+                    'paid-search': ['paid-search', 'paidSearch', 'sem', 'ppc'],
+                    'content': ['content', 'content-marketing', 'contentMarketing'],
+                    'seo': ['seo', 'search-engine-optimization'],
+                    'content_creation': ['content', 'content-creation', 'contentCreation'],
+                    'creative_design': ['creative', 'design', 'creative-design'],
+                    'digital_marketing': ['digital', 'digital-marketing', 'digitalMarketing'],
+                    'seo_sem': ['seo', 'sem', 'search', 'seo-sem'],
+                    'pr_comms': ['pr', 'communications', 'pr-comms'],
+                    'strategy_consulting': ['strategy', 'consulting', 'strategy-consulting'],
+                    'email': ['email', 'email-marketing', 'emailMarketing'],
+                    'web': ['web', 'website', 'web-development'],
+                    'data': ['data', 'analytics', 'data-analytics'],
+                    'crm': ['crm', 'customer-relationship-management'],
+                    'automation': ['automation', 'marketing-automation'],
+                    'strategy': ['strategy', 'marketing-strategy']
+                };
+                
+                // IMPORTANT: Load ALL service questions regardless of allocation or selection
+                // Just iterate through all available service questions and include them all
+                console.log('🔎 LOADING ALL SERVICE QUESTIONS (no allocation threshold)');
+                
+                // First get a direct list of all services in the JSON
+                const allServiceCategories = Object.keys(serviceQuestionsData);
+                console.log('📋 Available service categories:', allServiceCategories);
+                
+                // Process ALL service categories - no filtering by allocation
+                allServiceCategories.forEach(serviceKey => {
+                    const serviceObj = serviceQuestionsData[serviceKey];
+                    console.log(`⚙️ Processing service category: ${serviceKey}`);
+                    
+                    // Handle both structures: nested 'questions' array or direct array
+                    if (serviceObj.questions && Array.isArray(serviceObj.questions)) {
+                        serviceQuestions = [...serviceQuestions, ...serviceObj.questions];
+                        console.log(`✅ Added ${serviceObj.questions.length} questions from service: ${serviceKey}`);
+                    } else if (Array.isArray(serviceObj)) {
+                        serviceQuestions = [...serviceQuestions, ...serviceObj];
+                        console.log(`✅ Added ${serviceObj.length} questions from service: ${serviceKey}`);
+                    }
+                });
+                
+                // Log if no service questions found at all
+                if (serviceQuestions.length === 0) {
+                    console.warn('⚠️ No service questions found in any category');
+                }
+                
+                console.log('🔑 Processing service questions complete');
+                
+                // Log all service questions we found
+                console.log(`📊 Found ${serviceQuestions.length} total service-specific questions`);
+                
+                // Verify by listing all service question IDs for debugging
+                if (serviceQuestions.length > 0) {
+                    const serviceQuestionIds = serviceQuestions.map(q => q.id);
+                    console.log(`🆔 Service question IDs:`, serviceQuestionIds);
+                }
+            } catch (error) {
+                console.error('❌ Error loading service questions:', error);
             }
             
-            debugLog(`Found service-specific questions`, serviceQuestions.length);
+            console.log(`📊 Found ${serviceQuestions.length} service-specific questions`);
             
-            // Remove any potential duplicate questions by ID
+            // REMOVE DUPLICATES AND VALIDATE QUESTIONS
             const uniqueQuestions = [];
             const questionIds = new Set();
             
-            // First add core questions
+            // Process core questions first
             coreQuestions.forEach(q => {
-                if (!questionIds.has(q.id)) {
+                if (q && q.id && !questionIds.has(q.id)) {
+                    // Ensure question has all required properties
+                    if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
+                        console.log(`⚠️ Skipping invalid question without options:`, q.id);
+                        return;
+                    }
+                    
                     questionIds.add(q.id);
                     uniqueQuestions.push(q);
                 }
@@ -257,72 +295,96 @@ const DynamicQuestions = ({
             
             // Then add service questions, avoiding duplicates
             serviceQuestions.forEach(q => {
-                if (!questionIds.has(q.id)) {
+                if (q && q.id && !questionIds.has(q.id)) {
+                    // Ensure question has all required properties
+                    if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
+                        console.log(`⚠️ Skipping invalid service question without options:`, q.id);
+                        return;
+                    }
+                    
                     questionIds.add(q.id);
                     uniqueQuestions.push(q);
                 }
             });
             
-            debugLog(`Total unique questions to display`, uniqueQuestions.length);
-            debugLog('Question IDs', Array.from(questionIds));
+            console.log(`📊 FINAL COUNT: Total unique questions to display: ${uniqueQuestions.length}`);
+            console.log('🆔 Question IDs:', Array.from(questionIds));
+            
+            // Double-check for any issues with question structure
+            uniqueQuestions.forEach((q, index) => {
+                if (!q.id) console.log(`⚠️ Question at index ${index} has no ID!`, q);
+                if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
+                    console.log(`⚠️ Question ${q.id} has invalid options!`, q.options);
+                }
+            });
+            
+            // Force log each category's question count again to make it clear
+            console.log('📊 FINAL CATEGORY QUESTION COUNTS:', categoryQuestionCounts);
+            console.log(`🔍 TOTAL CORE QUESTIONS: ${coreQuestions.length}`);
+            console.log(`🔍 TOTAL SERVICE QUESTIONS: ${serviceQuestions.length}`);
+            console.log(`🔍 TOTAL AFTER DEDUPLICATION: ${uniqueQuestions.length}`);
+            
+            if (uniqueQuestions.length < 50) {
+                console.log('⚠️ WARNING: Expected more than 50 questions but only found', uniqueQuestions.length);
+            }
             
             setQuestions(uniqueQuestions);
         } catch (error) {
-            console.error('Failed to load questions:', error);
+            console.error('❌ Failed to load questions:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const currentQuestion = questions[currentQuestionIndex];
-    const isLastQuestion = currentQuestionIndex === questions.length - 1;
+    // Load initial questions and answers
+    useEffect(() => {
+        const loadInitialData = async () => {
+            // Get previously saved answers if available
+            const savedAnswers = getResponse('answers') || {};
+            debugLog('Loaded saved answers', savedAnswers);
+            setAllAnswers(savedAnswers);
+            
+            // Load questions from JSON file
+            await loadQuestions();
+        };
+        
+        loadInitialData();
+    }, [assessmentType, getResponse]);
 
-    const handleAnswer = (questionId, value) => {
-        // Save the answer
-        saveResponse(questionId, value);
+    // Handle answer changes and auto-advance to next question
+    const handleAnswerChange = (questionId, answer, optionObj = null) => {
+        console.log(`Saving answer for question ${questionId}:`, answer, optionObj);
+        const updatedAnswers = {
+            ...allAnswers,
+            [questionId]: answer
+        };
         
-        // Log the answer being saved for debugging
-        debugLog(`Saving answer for question ${questionId}:`, value);
-        
-        // Try to retrieve all saved answers
-        if (typeof getResponse === 'function') {
-            const allAnswers = {};
-            questions.forEach(q => {
-                const answer = getResponse(q.id);
-                if (answer !== undefined) {
-                    allAnswers[q.id] = answer;
-                }
-            });
-            debugLog('Current saved answers:', allAnswers);
-        }
+        setAllAnswers(updatedAnswers);
+        saveResponse('answers', updatedAnswers);
+        debugLog(`Answer updated for question ${questionId}:`, answer);
         
         // Auto-advance to next question after a short delay
         setTimeout(() => {
-            if (currentQuestionIndex < questions.length - 1) {
-                setCurrentQuestionIndex(currentQuestionIndex + 1);
+            if (currentQuestion < questions.length - 1) {
+                setCurrentQuestion(currentQuestion + 1);
+                window.scrollTo(0, 0);
+            } else if (onComplete) {
+                // If this was the last question, complete the assessment
+                saveResponse('answers', updatedAnswers);
+                onComplete();
             }
-        }, 300);
+        }, 500); // Half-second delay for user to see their selection before advancing
     };
 
+    // Navigation functions
     const handleNext = () => {
-        // Validate if the current question is answered
-        const currentQ = questions[currentQuestionIndex];
-        if (currentQ && currentQ.required !== false && !getResponse(currentQ.id)) {
-            alert('Please answer this question before continuing');
-            return;
-        }
-        
-        if (isLastQuestion) {
-            // Collect and log all answers for debugging
-            const allAnswers = {};
-            questions.forEach(q => {
-                const answer = getResponse(q.id);
-                if (answer !== undefined) {
-                    allAnswers[q.id] = answer;
-                }
-            });
-            debugLog('FINAL ANSWERS being submitted:', allAnswers);
-            debugLog('Number of answered questions:', Object.keys(allAnswers).length);
+        if (currentQuestion < questions.length - 1) {
+            setCurrentQuestion(currentQuestion + 1);
+            window.scrollTo(0, 0);
+        } else {
+            // Save final answers and complete
+            saveResponse('answers', allAnswers);
+            
             debugLog('Total questions:', questions.length);
             
             // Before completing, ensure selectedServices is stored in both context and responses
@@ -345,108 +407,85 @@ const DynamicQuestions = ({
             if (onComplete) {
                 onComplete();
             }
-        } else {
-            setCurrentQuestionIndex(prev => prev + 1);
         }
     };
 
-    const handlePrevious = () => {
-        if (currentQuestionIndex > 0) {
-            setCurrentQuestionIndex(prev => prev - 1);
+    const handleBack = () => {
+        if (currentQuestion > 0) {
+            setCurrentQuestion(currentQuestion - 1);
+            window.scrollTo(0, 0);
         } else {
-            // Go back to the previous stage in the assessment flow
-            onBack();
+            // Go back to previous component
+            if (onBack) {
+                onBack();
+            }
         }
-    };
-
-    const handleSkip = () => {
-        handleNext();
     };
 
     if (loading) {
         return (
             <div className={styles.loadingContainer}>
-                <div className={styles.spinner} />
-                <p>Loading questions...</p>
+                <div className={styles.loadingSpinner}></div>
+                <h3 className={styles.loadingText}>
+                    Loading questions...
+                </h3>
             </div>
         );
     }
 
-    if (!currentQuestion) {
+    if (questions.length === 0) {
         return (
             <div className={styles.errorContainer}>
-                <p>No questions available for this assessment.</p>
-                <button onClick={onBack}>Go Back</button>
+                <h3 className={styles.errorHeading}>
+                    Error: No questions found for this assessment
+                </h3>
+                <button 
+                    onClick={onBack} 
+                    className={styles.errorButton}
+                >
+                    Go Back
+                </button>
             </div>
         );
     }
 
-    const selectedValue = getResponse(currentQuestion.id);
-
+    const currentQuestionData = questions[currentQuestion];
+    
     return (
-        <div className={styles.qualifyingContainer}>
-            <ProgressBar progress={progress || 65} stage="assessment" />
-            
-            <div className={styles.questionContainer}>
-                <div className={styles.questionHeader}>
-                    <h2>Your Organization Assessment</h2>
-                    <p className={styles.questionNumber}>
-                        Question {currentQuestionIndex + 1} of {questions.length}
-                    </p>
-                </div>
-
-                {currentQuestion && (
-                    <div className={styles.questionContent}>
-                        <h3 className={styles.questionText}>
-                            {currentQuestion.question || currentQuestion.text}
-                            {currentQuestion.required !== false && <span className={styles.required}>*</span>}
-                        </h3>
-                        
-                        <div className={styles.optionsGrid}>
-                            {currentQuestion.options.map((option, index) => (
-                                <button
-                                    key={index}
-                                    className={`${styles.optionButton} ${
-                                        selectedValue === (option.value || option.score || index) ? styles.selected : ''
-                                    }`}
-                                    onClick={() => handleAnswer(currentQuestion.id, option.value || option.score || index)}
-                                >
-                                    <span className={styles.optionLabel}>{option.label || option.text}</span>
-                                </button>
-                            ))}
-                        </div>
-                        
-                        {currentQuestion.insight && (
-                            <p className={styles.questionInsight}>{currentQuestion.insight}</p>
-                        )}
-                        
-                        {currentQuestion.benchmark && (
-                            <p className={styles.questionBenchmark}>{currentQuestion.benchmark}</p>
-                        )}
-                    </div>
-                )}
-
-                {/* Question navigation dots */}
-                <div className={styles.questionDots}>
-                    {questions.map((_, index) => (
-                        <button
-                            key={index}
-                            className={`${styles.dot} ${
-                                index === currentQuestionIndex ? styles.active : ''
-                            } ${getResponse(questions[index].id) ? styles.answered : ''}`}
-                            onClick={() => setCurrentQuestionIndex(index)}
-                            aria-label={`Go to question ${index + 1}`}
-                        />
-                    ))}
-                </div>
+        <div className={styles.questionsContainer}>
+            <div className={styles.questionHeader}>
+                <h2 className={styles.assessmentTitle}>
+                    {assessmentType === 'agency-vulnerability' 
+                        ? 'Agency AI Vulnerability Assessment' 
+                        : 'Marketing Assessment'}
+                </h2>
+                <p className={styles.questionCounter}>
+                    Question {currentQuestion + 1} of {questions.length}
+                </p>
             </div>
-
-            <Navigation
-                onBack={handlePrevious}
+            
+            {currentQuestionData && (
+                <QuestionCard
+                    question={currentQuestionData}
+                    questionNumber={currentQuestion + 1}
+                    totalQuestions={questions.length}
+                    selectedValue={allAnswers[currentQuestionData.id] || ''}
+                    onSelect={(value, option) => {
+                        // Explicitly console log to verify parameters
+                        console.log('Option selected:', value, option);
+                        handleAnswerChange(currentQuestionData.id, value, option);
+                    }}
+                    key={currentQuestionData.id} // Add key to force re-render when question changes
+                />
+            )}
+            
+            <Navigation 
+                currentStep={currentQuestion + 1}
+                totalSteps={questions.length}
                 onNext={handleNext}
-                onSkip={currentQuestion?.required === false ? handleSkip : null}
-                nextLabel={isLastQuestion ? "Complete" : "Continue"}
-                showNext={true}
+                onBack={handleBack}
+                nextDisabled={!allAnswers[currentQuestionData?.id]}
+                progress={progress}
             />
         </div>
     );

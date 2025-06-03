@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import styles from './Visualizations.module.css';
 
+// Define getPosition helper function outside of component scope
+const getPosition = (item) => {
+  // Impact (0-100) maps to Y-axis (90-10)
+  // Effort (0-100) maps to X-axis (10-90)
+  return {
+    x: 10 + (item.effort / 100) * 80,
+    y: 90 - (item.impact / 100) * 80
+  };
+};
+
 export const PriorityMatrix = ({ items, onItemClick }) => {
   const [hoveredItem, setHoveredItem] = useState(null);
-  
-  // Get position for item based on impact and effort
-  const getPosition = (item) => {
-    // Impact (0-100) maps to Y-axis (90-10)
-    // Effort (0-100) maps to X-axis (10-90)
-    return {
-      x: 10 + (item.effort / 100) * 80,
-      y: 90 - (item.impact / 100) * 80
-    };
-  };
   
   // Get color based on category
   const getCategoryColor = (category) => {
